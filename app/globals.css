@@ -7,6 +7,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --green-button: #0F582A;
+  --red-button: #BC1F1B;
 }
 
 @media (prefers-color-scheme: dark) {
