@@ -12,11 +12,8 @@ UnidadePrivativaPage.forEach((item) => {
   itemAreaPrivativaSection.push(item.nome)
 })
 
-const nomeMarcasPageSection: string[] = []
+const nomeMarcasPageSection: string[] = ["Descrição das Marcas"]
 
-MarcasPage.forEach((item) => {
-  nomeMarcasPageSection.push(item.nome)
-})
 
 const areaComumSection: string[] = []
 AreaComumPage.forEach((item) => {
@@ -98,7 +95,7 @@ const Sidebar: React.FC = () => {
       items: areaComumSection,
     },
     {
-      title: "3. Descrição das Marcas",
+      title: "3. Marcas",
       items: nomeMarcasPageSection
     },
   ];
@@ -106,7 +103,7 @@ const Sidebar: React.FC = () => {
   return (
     <div
       className={`flex flex-col transition-all duration-300 border-r border-gray-200 h-screen bg-white
-        ${isCollapsed ? "w-16 min-w-[64px]" : "w-64 min-w-[256px]"}`}
+        ${isCollapsed ? "w-16 min-w-[64px]" : "w-64 min-w-[300px]"}`}
     >
       {/* Botão retrátil dentro da sidebar */}
       <div className="flex justify-end p-2">
