@@ -43,7 +43,7 @@ const NavSection: React.FC<NavItemProps> = ({
   return (
     <div className="mb-2">
       <button
-        className="flex justify-between items-center w-full px-3 py-2 text-left font-bold text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-none"
+        className="cursor-pointer flex justify-between items-center w-full px-3 py-2 text-left font-bold text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-none"
         onClick={() => setIsOpen(!isOpen)}
       >
         {!isCollapsed && <span>{title}</span>}
@@ -112,7 +112,7 @@ const Sidebar: React.FC = () => {
       <div className="flex justify-end p-2">
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="bg-gray-200 hover:bg-gray-300 p-1 rounded-full shadow"
+          className="bg-gray-200 hover:bg-gray-300 p-1 rounded-full shadow cursor-pointer"
         >
           {isCollapsed ? (
             <svg
