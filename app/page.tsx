@@ -65,10 +65,10 @@ export default function JotanunesLogin() {
               <label className="mb-1 block text-sm font-medium text-gray-800">
                 Usuário
               </label>
-              <input
+              <input 
                 type="text"
-                inputMode="numeric"
-                placeholder="Digite sua matrícula"
+                inputMode="text"
+                placeholder="Digite o nome do usuário"
                 value={matricula}
                 onChange={(e) => setMatricula(e.target.value)}
                 className="w-full rounded-lg border border-neutral-300/50 bg-white/70 px-3 py-2.5 text-[15px] outline-none ring-2 ring-transparent transition focus:border-neutral-400 focus:ring-red-100 text-neutral-800 placeholder-neutral-500 shadow-md"
