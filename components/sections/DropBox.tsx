@@ -9,7 +9,7 @@ interface DropDownProps {
 }
 
 export default function DropDown({
-  options = ["Opção 12", "Opção 2", "Opção 3"],
+  options = ["Opção 1", "Opção 2", "Opção 3"],
   defaultLabel = "Selecione a categoria",
   onSelect,
 }: DropDownProps) {

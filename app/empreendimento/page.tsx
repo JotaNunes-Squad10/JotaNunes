@@ -18,6 +18,7 @@ const EmpreendimentoPage: React.FC = () => {
             options={["1. Unidades Privativas", "2. Área Comum", "3. Marcas"]}
           />
           <DropBoxSubSelect options={["Opção 1", "Opção 2"]} />
+          <label className="text-black">Item</label>
           <SelectedEdit />
           <Button color="green" onClick={() => alert("Botão foi clicado")}>
             Adicionar Item

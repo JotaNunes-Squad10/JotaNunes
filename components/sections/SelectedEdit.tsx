@@ -26,7 +26,7 @@ export default function ChipsDemo() {
   );
 
   return (
-    <div className="flex w-full p-4">
+    <div className="flex w-full p-4 px-0">
       <MultiSelect
         value={selectedItems}
         onChange={(e: MultiSelectChangeEvent) =>
