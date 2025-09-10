@@ -2,17 +2,17 @@
 
 import { useState } from "react";
 
-interface DropDownProps {
+interface DropDownSubSelectionProps {
   options: string[];
   defaultLabel?: string;
   onSelect?: (selected: string) => void;
 }
 
-export default function DropDown({
-  options = ["Opção 12", "Opção 2", "Opção 3"],
-  defaultLabel = "Selecione a categoria",
+export default function DropBoxSubSelect({
+  options = ["Opção 1", "Opção 2", "Opção 3"],
+  defaultLabel = "Selecione o item",
   onSelect,
-}: DropDownProps) {
+}: DropDownSubSelectionProps) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [selected, setSelected] = useState<string>(defaultLabel);
 
@@ -30,7 +30,7 @@ export default function DropDown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="  cursor-pointer flex justify-between items-center w-full px-3 py-2 text-left font-bold text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-none"
+        className="cursor-pointer flex justify-between items-center w-full px-3 py-2 text-left text-black text-sm hover:bg-gray-100 rounded-lg focus:outline-none"
       >
         {selected}
         <svg
