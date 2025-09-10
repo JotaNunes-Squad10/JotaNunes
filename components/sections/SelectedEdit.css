@@ -1,0 +1,4 @@
+/* Remove o ícone de check do item selecionado no MultiSelect */
+.no-check-icon .p-multiselect-item .p-checkbox {
+  display: none !important;
+}
