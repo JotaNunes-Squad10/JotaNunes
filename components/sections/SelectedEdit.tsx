@@ -3,22 +3,23 @@ import { MultiSelect, MultiSelectChangeEvent } from "primereact/multiselect";
 import "primereact/resources/themes/saga-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import { Plus } from "lucide-react";
-import ItemPage from "../item/page";
+import ItemPage from "../item/page"; // Assumindo que isso é um array de objetos com propriedade `nome`
 
 interface Items {
   name: string;
   code: string;
 }
 
-export default function ChipsDemo() {
-  const [selectedItems, setSelectedItems] = useState<Items[]>([]);
-  const items: Items[] = [];
+export default function FilterDemo() {
+  const [selectedItems, setSelectedItems] = useState<Items[] | null>(null);
 
+  // Montando os items dinamicamente com base em ItemPage
+  const items: Items[] = [];
   ItemPage.forEach((item) => {
     items.push({ name: item.nome, code: item.nome });
   });
 
-  // Template para remover o ícone de verificado
+  // Template personalizado (sem ícone de verificado)
   const itemTemplate = (option: Items) => (
     <div className="px-3 py-2 text-sm text-black hover:bg-blue-100 rounded-md">
       {option.name}
@@ -40,6 +41,8 @@ export default function ChipsDemo() {
         itemTemplate={itemTemplate}
         className="w-full max-w-md border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
         panelClassName="no-check-icon max-h-60 overflow-y-auto border border-gray-200 shadow-md rounded-md"
+        filter
+        filterDelay={400}
       />
       <button
         type="button"
