@@ -7,6 +7,7 @@ import DropDown from "@/components/sections/DropBox";
 import DropBoxSubSelect from "@/components/sections/DropBoxSubSelect";
 import SelectedEdit from "@/components/sections/SelectedEdit";
 import CustomTable from "@/components/tableInfo/page";
+import ObserverComponent from "@/components/ObserverComponent/page";
 
 const EmpreendimentoPage: React.FC = () => {
   return (
@@ -42,6 +43,9 @@ const EmpreendimentoPage: React.FC = () => {
             </div>
             <div className="flex justify-center">
               <CustomTable />
+            </div>
+            <div>
+              <ObserverComponent />
             </div>
           </div>
         </div>
