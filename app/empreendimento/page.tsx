@@ -6,6 +6,7 @@ import Button from "@/components/sections/Button";
 import DropDown from "@/components/sections/DropBox";
 import DropBoxSubSelect from "@/components/sections/DropBoxSubSelect";
 import SelectedEdit from "@/components/sections/SelectedEdit";
+import CustomTable from "@/components/tableInfo/page";
 
 const EmpreendimentoPage: React.FC = () => {
   return (
@@ -38,6 +39,9 @@ const EmpreendimentoPage: React.FC = () => {
                   Adicionar Item
                 </Button>
               </div>
+            </div>
+            <div className="flex justify-center">
+              <CustomTable />
             </div>
           </div>
         </div>
