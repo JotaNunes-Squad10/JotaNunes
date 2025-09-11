@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useState } from "react";
 import Sidebar from "@/components/sections/Sidebar";
 import Button from "@/components/sections/Button";
 import DropDown from "@/components/sections/DropBox";
@@ -9,7 +10,14 @@ import SelectedEdit from "@/components/sections/SelectedEdit";
 import CustomTable from "@/components/tableInfo/page";
 import ObserverComponent from "@/components/ObserverComponent/page";
 
+interface Items {
+  name: string;
+  code: string;
+}
+
 const EmpreendimentoPage: React.FC = () => {
+  const [selectedItems, setSelectedItems] = useState<Items[] | null>(null);
+
   return (
     <div>
       <div className="flex h-screen">
@@ -31,7 +39,7 @@ const EmpreendimentoPage: React.FC = () => {
             <div>
               <label className="text-black">Item</label>
               <div className="flex flex-col items-center space-y4 md:items-start">
-                <SelectedEdit />
+                <SelectedEdit onSelectionChange={setSelectedItems} />
 
                 <Button
                   color="green"

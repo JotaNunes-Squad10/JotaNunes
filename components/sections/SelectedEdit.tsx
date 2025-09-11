@@ -4,43 +4,45 @@ import {
   MultiSelectChangeEvent,
   MultiSelect as MultiSelectRef,
 } from "primereact/multiselect";
-import "primereact/resources/themes/saga-blue/theme.css";
-import "primereact/resources/primereact.min.css";
 import { Plus } from "lucide-react";
-import ItemPage from "../item/page"; // Assumindo que isso é um array de objetos com propriedade `nome`
+import ItemPage from "../item/page"; // Assumindo que é um array de objetos com propriedade `nome`
 
 interface Items {
   name: string;
   code: string;
 }
 
-export default function FilterDemo() {
-  const [selectedItems, setSelectedItems] = useState<Items[] | null>(null);
+interface FilterDemoProps {
+  onSelectionChange: (items: Items[] | null) => void;
+}
 
-  // Ref para acessar o MultiSelect
+export default function FilterDemo({ onSelectionChange }: FilterDemoProps) {
+  const [selectedItems, setSelectedItems] = useState<Items[] | null>(null);
   const multiSelectRef = useRef<MultiSelectRef>(null);
 
-  // Montando os items dinamicamente com base em ItemPage
   const items: Items[] = ItemPage.map((item) => ({
     name: item.nome,
     code: item.nome,
   }));
 
-  // Template personalizado (sem ícone de verificado)
   const itemTemplate = (option: Items) => (
     <div className="px-3 py-2 text-sm text-black hover:bg-blue-100 rounded-md">
       {option.name}
     </div>
   );
 
+  const handleChange = (e: MultiSelectChangeEvent) => {
+    const newValue = e.value as Items[];
+    setSelectedItems(newValue);
+    onSelectionChange(newValue); // ✅ Aqui enviamos para o componente pai
+  };
+
   return (
     <div className="flex w-full p-4 px-0">
       <MultiSelect
-        ref={multiSelectRef} // <== Referência aqui
+        ref={multiSelectRef}
         value={selectedItems}
-        onChange={(e: MultiSelectChangeEvent) =>
-          setSelectedItems(e.value as Items[])
-        }
+        onChange={handleChange}
         options={items}
         display="chip"
         optionLabel="name"
@@ -55,7 +57,7 @@ export default function FilterDemo() {
       <button
         type="button"
         className="ml-2 p-2 rounded-sm hover:bg-gray-100 border border-gray-200 cursor-pointer"
-        onClick={() => multiSelectRef.current?.show()} // <== Abrir o dropdown
+        onClick={() => multiSelectRef.current?.show()}
       >
         <Plus className="w-4 h-4 text-green-500" />
       </button>
