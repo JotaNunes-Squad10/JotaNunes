@@ -30,7 +30,7 @@ const EmpreendimentoPage: React.FC = () => {
 
             <div>
               <label className="text-black">Item</label>
-              <div className="flex items-center flex-col mr-120">
+              <div className="flex flex-col items-center space-y4 md:items-start">
                 <SelectedEdit />
 
                 <Button
