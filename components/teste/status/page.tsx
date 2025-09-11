@@ -30,6 +30,7 @@ const StatusSummary: React.FC = () => {
           sx={{
             p: 3,
             minWidth:260,
+            maxWidth: 400,
             border: "1px solid #eee",
             flex: "1 1 calc(20% - 16px)", 
             height: 120, 
