@@ -60,7 +60,7 @@ export default function CustomTable() {
             <th className="text-left px-4 py-2 font-semibold text-black">
               Descrição
             </th>
-            <th className="px-2"></th> {/* coluna do ícone */}
+            <th className="px-2"></th>
           </tr>
         </thead>
         <tbody>
@@ -83,7 +83,7 @@ export default function CustomTable() {
               <DropBoxSubSelect options={optionsDescripton} />{" "}
             </td>
             <td className="px-2 py-2 align-top text-red-500 cursor-pointer">
-              <X size={16} />
+              <X size={20} className="hover:bg-red-00 hover:bg-opacity-30 " />
             </td>
           </tr>
         </tbody>
