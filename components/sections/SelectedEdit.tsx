@@ -1,5 +1,9 @@
-import React, { useState } from "react";
-import { MultiSelect, MultiSelectChangeEvent } from "primereact/multiselect";
+import React, { useState, useRef } from "react";
+import {
+  MultiSelect,
+  MultiSelectChangeEvent,
+  MultiSelect as MultiSelectRef,
+} from "primereact/multiselect";
 import "primereact/resources/themes/saga-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import { Plus } from "lucide-react";
@@ -13,11 +17,14 @@ interface Items {
 export default function FilterDemo() {
   const [selectedItems, setSelectedItems] = useState<Items[] | null>(null);
 
+  // Ref para acessar o MultiSelect
+  const multiSelectRef = useRef<MultiSelectRef>(null);
+
   // Montando os items dinamicamente com base em ItemPage
-  const items: Items[] = [];
-  ItemPage.forEach((item) => {
-    items.push({ name: item.nome, code: item.nome });
-  });
+  const items: Items[] = ItemPage.map((item) => ({
+    name: item.nome,
+    code: item.nome,
+  }));
 
   // Template personalizado (sem ícone de verificado)
   const itemTemplate = (option: Items) => (
@@ -29,6 +36,7 @@ export default function FilterDemo() {
   return (
     <div className="flex w-full p-4 px-0">
       <MultiSelect
+        ref={multiSelectRef} // <== Referência aqui
         value={selectedItems}
         onChange={(e: MultiSelectChangeEvent) =>
           setSelectedItems(e.value as Items[])
@@ -47,6 +55,7 @@ export default function FilterDemo() {
       <button
         type="button"
         className="ml-2 p-2 rounded-sm hover:bg-gray-100 border border-gray-200 cursor-pointer"
+        onClick={() => multiSelectRef.current?.show()} // <== Abrir o dropdown
       >
         <Plus className="w-4 h-4 text-green-500" />
       </button>
