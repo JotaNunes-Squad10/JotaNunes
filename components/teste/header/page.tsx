@@ -3,7 +3,7 @@ import React from "react";
 
 const Header: React.FC = () => {
   return (
-    <header className="bg-white shadow flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 gap-2">
+    <header className="bg-gray-50 shadow flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 gap-2">
       <div className="flex items-center gap-3">
         <button className="text-gray-700 hover:text-gray-900">
           {/* Ícone de menu (SVG) */}

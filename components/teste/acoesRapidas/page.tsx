@@ -5,7 +5,7 @@ import AddIcon from "@mui/icons-material/Add";
 const AcoesRapidas: React.FC = () => {
   return (
     <>
-      <Typography variant="subtitle1" fontWeight={600} mb={2}>
+      <Typography variant="subtitle1" fontWeight={600} mb={3}>
         Ações Rápidas
       </Typography>
       <Card variant="outlined">
@@ -23,7 +23,7 @@ const AcoesRapidas: React.FC = () => {
             fullWidth
             sx={{ textTransform: "none", fontWeight: 600 }}
           >
-            + Começar
+            Começar
           </Button>
         </CardContent>
       </Card>

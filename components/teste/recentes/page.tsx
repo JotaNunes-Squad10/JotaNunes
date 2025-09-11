@@ -45,7 +45,7 @@ const Recentes: React.FC = () => {
         {recentes.map((r, i) => (
           <div
             key={i}
-            className="flex flex-col items-start border border-gray-200 rounded-lg bg-white shadow-sm p-5 h-[200px] min-w-[200px] w-full"
+            className="bg-gray-50 flex flex-col items-start border border-gray-200 rounded-lg p-5 h-[200px] min-w-[200px] w-full"
           >
             {/* Ícone de arquivo (SVG) */}
             <svg
