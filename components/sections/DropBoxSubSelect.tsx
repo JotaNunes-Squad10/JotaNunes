@@ -6,12 +6,14 @@ interface DropDownSubSelectionProps {
   options: string[];
   defaultLabel?: string;
   onSelect?: (selected: string) => void;
+  className?: string;
 }
 
 export default function DropBoxSubSelect({
   options = ["Opção 1", "Opção 2", "Opção 3"],
   defaultLabel = "Selecione o item",
   onSelect,
+  className = "mb-2 w-60",
 }: DropDownSubSelectionProps) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [selected, setSelected] = useState<string>(defaultLabel);
@@ -26,7 +28,7 @@ export default function DropBoxSubSelect({
   };
 
   return (
-    <div className="mb-2 w-60">
+    <div className={className}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}

@@ -9,6 +9,8 @@ import DropBoxSubSelect from "@/components/sections/DropBoxSubSelect";
 import SelectedEdit from "@/components/sections/SelectedEdit";
 import CustomTable from "@/components/tableInfo/page";
 import ObserverComponent from "@/components/ObserverComponent/page";
+import ItemPage from "@/components/item/page";
+import FilterDemo from "@/components/sections/SelectedEdit";
 
 interface Items {
   name: string;
@@ -16,7 +18,25 @@ interface Items {
 }
 
 const EmpreendimentoPage: React.FC = () => {
-  const [selectedItems, setSelectedItems] = useState<Items[] | null>(null);
+  const [selectedItemsTemp, setSelectedItemsTemp] = useState<Items[] | null>(
+    null
+  );
+  const [tableItems, setTableItems] = useState<Items[]>([]);
+
+  const items: Items[] = ItemPage.map((item) => ({
+    name: item.nome,
+    code: item.nome,
+  }));
+
+  const handleAddItems = () => {
+    if (selectedItemsTemp && selectedItemsTemp.length > 0) {
+      const newItems = selectedItemsTemp.filter(
+        (item) => !tableItems.some((t) => t.code === item.code)
+      );
+      setTableItems([...tableItems, ...newItems]);
+      setSelectedItemsTemp(null);
+    }
+  };
 
   return (
     <div>
@@ -39,18 +59,19 @@ const EmpreendimentoPage: React.FC = () => {
             <div>
               <label className="text-black">Item</label>
               <div className="flex flex-col items-center space-y4 md:items-start">
-                <SelectedEdit onSelectionChange={setSelectedItems} />
+                <FilterDemo
+                  items={items}
+                  selectedItems={selectedItemsTemp}
+                  onSelectionChange={setSelectedItemsTemp}
+                />
 
-                <Button
-                  color="green"
-                  onClick={() => alert("Botão foi clicado")}
-                >
+                <Button color="green" onClick={() => handleAddItems()}>
                   Adicionar Item
                 </Button>
               </div>
             </div>
             <div className="flex justify-center">
-              <CustomTable />
+              <CustomTable data={tableItems || []} />
             </div>
             <div>
               <ObserverComponent />
