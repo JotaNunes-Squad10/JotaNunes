@@ -11,6 +11,9 @@ import ObserverComponent from "@/components/ObserverComponent/page";
 import ItemPage from "@/components/item/page";
 import FilterDemo from "@/components/sections/SelectedEdit";
 
+import UnidadePrivativaPage from "@/components/unidadePrivativa/page";
+import AreaComumPage from "@/components/areaComum/page";
+
 interface Items {
   name: string;
   code: string;
@@ -21,6 +24,9 @@ const EmpreendimentoPage: React.FC = () => {
     null
   );
   const [tableItems, setTableItems] = useState<Items[]>([]);
+
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
   const items: Items[] = ItemPage.map((item) => ({
     name: item.nome,
@@ -41,22 +47,55 @@ const EmpreendimentoPage: React.FC = () => {
     }
   };
 
+  const categories = [
+    {
+      title: "1. Unidades Privativas",
+      items: UnidadePrivativaPage.map((i) => i.nome),
+    },
+    {
+      title: "2. Área Comum",
+      items: AreaComumPage.map((i) => i.nome),
+    },
+    {
+      title: "3. Marcas",
+      items: ["Descrição das Marcas"],
+    },
+  ];
+
+  const currentOptions =
+    categories.find((c) => c.title === selectedCategory)?.items || [];
+
   return (
     <div>
       <div className="flex h-screen">
-        <Sidebar />
+        <Sidebar
+          sections={categories}
+          selectedCategory={selectedCategory}
+          selectedItem={selectedItem}
+          onSelect={(category, item) => {
+            setSelectedCategory(category);
+            setSelectedItem(item);
+          }}
+        />
         <div className="flex-1 bg-white p-6 shadow-md overflow-auto">
           <h2 className="text-black font-semibold mb-4">Adicionar Itens</h2>
           <div>
             <div>
               <DropDown
-                options={[
-                  "1. Unidades Privativas",
-                  "2. Área Comum",
-                  "3. Marcas",
-                ]}
+                options={categories.map((c) => c.title)}
+                defaultLabel="Selecione a categoria"
+                onSelect={(category) => {
+                  setSelectedCategory(category);
+                  setSelectedItem(null);
+                }}
               />
-              <DropBoxSubSelect options={["Opção 1", "Opção 2"]} />
+              <DropBoxSubSelect
+                options={currentOptions}
+                defaultLabel="Selecione o item"
+                onSelect={(item) => {
+                  setSelectedItem(item);
+                }}
+              />
             </div>
 
             <div>

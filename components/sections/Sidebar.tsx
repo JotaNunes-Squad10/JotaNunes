@@ -1,38 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
-import UnidadePrivativaPage from "../unidadePrivativa/page";
-import MarcasPage from "../marcas/page";
-import AreaComumPage from "../areaComum/page";
-
-// Inserindo os itens em arrays
-const itemAreaPrivativaSection: string[] = []
-
-UnidadePrivativaPage.forEach((item) => {
-  itemAreaPrivativaSection.push(item.nome)
-})
-
-const nomeMarcasPageSection: string[] = ["Descrição das Marcas"]
-
-
-const areaComumSection: string[] = []
-AreaComumPage.forEach((item) => {
-  areaComumSection.push(item.nome)
-})
 
 type NavItemProps = {
   title: string;
   items: string[];
-  activeItem: string | null;
-  setActiveItem: (item: string) => void;
+  selectedItem: string | null;
+  onSelect: (item: string) => void;
   isCollapsed: boolean;
 };
 
 const NavSection: React.FC<NavItemProps> = ({
   title,
   items,
-  activeItem,
-  setActiveItem,
+  selectedItem,
+  onSelect,
   isCollapsed,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -65,9 +47,9 @@ const NavSection: React.FC<NavItemProps> = ({
           {items.map((item, index) => (
             <li
               key={index}
-              onClick={() => setActiveItem(item)}
+              onClick={() => onSelect(item)}
               className={`cursor-pointer px-3 py-1 rounded-md text-sm ${
-                activeItem === item
+                selectedItem === item
                   ? "bg-red-600 text-white font-medium"
                   : "text-gray-700 hover:bg-gray-200"
               }`}
@@ -81,24 +63,20 @@ const NavSection: React.FC<NavItemProps> = ({
   );
 };
 
-const Sidebar: React.FC = () => {
-  const [activeItem, setActiveItem] = useState<string | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+interface SideBarProps {
+  sections: { title: string; items: string[] }[];
+  selectedCategory: string | null;
+  selectedItem: string | null;
+  onSelect: (category: string, item: string) => void;
+}
 
-  const sections = [
-    {
-      title: "1. Unidades privativas",
-      items: itemAreaPrivativaSection,
-    },
-    {
-      title: "2. Área comum",
-      items: areaComumSection,
-    },
-    {
-      title: "3. Marcas",
-      items: nomeMarcasPageSection
-    },
-  ];
+const Sidebar: React.FC<SideBarProps> = ({
+  sections,
+  selectedCategory,
+  selectedItem,
+  onSelect,
+}) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
     <div
@@ -144,14 +122,15 @@ const Sidebar: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-2">
-
         {sections.map((section, index) => (
           <NavSection
             key={index}
             title={section.title}
             items={section.items}
-            activeItem={activeItem}
-            setActiveItem={setActiveItem}
+            selectedItem={
+              selectedCategory === section.title ? selectedItem : null
+            }
+            onSelect={(item) => onSelect(section.title, item)}
             isCollapsed={isCollapsed}
           />
         ))}

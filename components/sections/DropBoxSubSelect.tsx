@@ -54,9 +54,9 @@ export default function DropBoxSubSelect({
 
       {isOpen && (
         <ul className="mt-1 pl-4 space-y-1">
-          {options.map((option) => (
+          {options.map((option, index) => (
             <li
-              key={option}
+              key={index}
               onClick={() => handleSelect(option)}
               className={`cursor-pointer px-3 py-1 rounded-md text-sm ${
                 selected === option
