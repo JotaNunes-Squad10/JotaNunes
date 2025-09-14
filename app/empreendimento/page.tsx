@@ -6,7 +6,6 @@ import Sidebar from "@/components/sections/Sidebar";
 import Button from "@/components/sections/Button";
 import DropDown from "@/components/sections/DropBox";
 import DropBoxSubSelect from "@/components/sections/DropBoxSubSelect";
-import SelectedEdit from "@/components/sections/SelectedEdit";
 import CustomTable from "@/components/tableInfo/page";
 import ObserverComponent from "@/components/ObserverComponent/page";
 import ItemPage from "@/components/item/page";
@@ -28,12 +27,16 @@ const EmpreendimentoPage: React.FC = () => {
     code: item.nome,
   }));
 
+  const availableItems = items.filter(
+    (item) => !tableItems.some((t) => t.code === item.code)
+  );
+
   const handleAddItems = () => {
     if (selectedItemsTemp && selectedItemsTemp.length > 0) {
       const newItems = selectedItemsTemp.filter(
         (item) => !tableItems.some((t) => t.code === item.code)
       );
-      setTableItems([...tableItems, ...newItems]);
+      setTableItems((prev) => [...prev, ...newItems]);
       setSelectedItemsTemp(null);
     }
   };
@@ -60,7 +63,7 @@ const EmpreendimentoPage: React.FC = () => {
               <label className="text-black">Item</label>
               <div className="flex flex-col items-center space-y4 md:items-start">
                 <FilterDemo
-                  items={items}
+                  items={availableItems}
                   selectedItems={selectedItemsTemp}
                   onSelectionChange={setSelectedItemsTemp}
                 />
