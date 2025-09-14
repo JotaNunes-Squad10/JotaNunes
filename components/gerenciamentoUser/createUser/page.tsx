@@ -24,9 +24,9 @@ export default function CreateUserModal({ onClose }: { onClose: () => void }) {
 
   // Mapeamento de role para profile
   const roleToProfile: Record<string, number> = {
-    Administrador: 0,
-    Gestor: 1,
-    Operador: 2,
+    Administrador: 1,
+    Gestor: 2,
+    Operador: 3,
   };
 
   // Função para gerar senha aleatória
