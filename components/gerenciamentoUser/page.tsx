@@ -133,17 +133,22 @@ export default function GerenciamentoUser() {
 
             {/* Botões */}
             <div className="flex flex-row gap-2 w-full md:w-auto justify-start items-center">
+              {/*
               <Button
+                icon={<i className="pi pi-search pr-2" />}
                 label="Pesquisar"
                 className="bg-blue-500 text-white rounded-3xl px-6 py-2 text-sm md:text-xl font-normal hover:bg-blue-700 transition-all duration-200"
               />
+              */}
               <Button
+                icon={<i className="pi pi-user-plus pr-2" />}
                 label="Novo Usuário"
                 className="bg-gray-300 text-black rounded-3xl px-6 py-2 text-sm md:text-xl font-normal hover:bg-gray-400 transition-all duration-200"
                 onClick={() => setShowCreateModal(true)}
               />
               {selected && (
                 <Button
+                  icon={<i className="pi pi-trash pr-2" />}
                   label="Deletar"
                   className="bg-red-400 text-black rounded-3xl px-6 py-2 text-sm md:text-xl font-normal hover:bg-red-500 transition-all duration-200"
                 />
