@@ -7,6 +7,7 @@ interface DropDownSubSelectionProps {
   defaultLabel?: string;
   onSelect?: (selected: string) => void;
   className?: string;
+  colorText?: string;
 }
 
 export default function DropBoxSubSelect({
@@ -32,7 +33,9 @@ export default function DropBoxSubSelect({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="cursor-pointer flex justify-between items-center w-full px-3 py-2 text-left text-black text-sm hover:bg-gray-100 rounded-lg focus:outline-none"
+        className={`cursor-pointer flex justify-between items-center w-full px-3 py-2 text-left text-black text-sm hover:bg-gray-100 rounded-lg focus:outline-none ${
+          selected === defaultLabel ? "text-gray-700" : "text-black"
+        }`}
       >
         {selected}
         <svg

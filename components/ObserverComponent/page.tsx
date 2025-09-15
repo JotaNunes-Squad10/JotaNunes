@@ -1,6 +1,6 @@
 export default function ObserverComponent() {
   return (
-    <div className="flex flex-col space-y-2">
+    <div className="flex flex-col space-y-2 w-225">
       <label htmlFor="observacao" className="text-black font-medium">
         Observação
       </label>
