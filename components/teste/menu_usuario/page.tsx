@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Button } from 'primereact/button';
 import { TieredMenu } from 'primereact/tieredmenu';
@@ -6,7 +5,7 @@ import { MenuItem } from 'primereact/menuitem';
 
 import { UserRound } from 'lucide-react'
 
-export default function PopupDemo() {
+export default function menu_usuario() {
     const menu = useRef(null);
     const items: MenuItem[] = [
         {

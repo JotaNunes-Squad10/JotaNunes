@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import Dropdown from "../drop_usuario/page";
+import Menu_usuario from "../menu_usuario/page";
 
 const Header: React.FC = () => {
   return (
@@ -19,7 +19,7 @@ const Header: React.FC = () => {
         />
       </div>
       <div className="flex items-center gap-1 sm:gap-2">
-        <Dropdown />
+        <Menu_usuario />
       </div>
     </header>
   );

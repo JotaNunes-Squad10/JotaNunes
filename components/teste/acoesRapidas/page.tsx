@@ -1,6 +1,8 @@
+"use client";
 import React from "react";
 import { Card, CardContent, Typography, Button } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import Menu_acoes_rapidas from "../menu_acoes_rapidas/page";
 
 const AcoesRapidas: React.FC = () => {
   return (
@@ -16,15 +18,9 @@ const AcoesRapidas: React.FC = () => {
           <Typography variant="body2" color="text.secondary" mb={2}>
             Inicie um novo documento usando nossos templates prontos
           </Typography>
-          <Button
-            variant="contained"
-            color="error"
-            startIcon={<AddIcon />}
-            fullWidth
-            sx={{ textTransform: "none", fontWeight: 600 }}
-          >
-            Começar
-          </Button>
+
+          <Menu_acoes_rapidas/>
+
         </CardContent>
       </Card>
     </>
