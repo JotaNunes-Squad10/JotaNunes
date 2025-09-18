@@ -34,7 +34,7 @@ export default function FilterDemo({
   );
 
   return (
-    <div className="flex w-full p-4 px-0">
+    <div className="flex w-full max-w-4xl p-4 px-0">
       <MultiSelect
         ref={multiSelectRef} // <== Referência aqui
         value={selectedItems}
@@ -46,7 +46,7 @@ export default function FilterDemo({
         optionLabel="name"
         placeholder="Selecione os items"
         maxSelectedLabels={3}
-        className="w-full max-w-md border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+        className="w-full max-w-4xl border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
         panelClassName="no-check-icon max-h-60 overflow-y-auto border border-gray-200 shadow-md rounded-md"
         filter
         filterDelay={400}
