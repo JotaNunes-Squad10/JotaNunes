@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "@/components/sections/Sidebar";
 import Button from "@/components/sections/Button";
 import DropDown from "@/components/sections/DropBox";
@@ -15,13 +15,40 @@ import UnidadePrivativaPage from "@/components/unidadePrivativa/page";
 import AreaComumPage from "@/components/areaComum/page";
 import ActionBar from "@/components/componentHeader/page";
 import FormEmpreendimento from "@/components/formEditPage/page";
+import Header from "@/components/teste/header/page";
+import axios from "axios";
 
 interface Items {
   name: string;
   code: string;
 }
 
+interface Item {
+  id: number;
+  nome: string;
+}
+
+// interface Item {
+//   nome: string
+//   descricao: string[]
+// }
+
+// type Documento = {
+//   titulo: string
+//   unidadesPrivativas: Item[]
+//   areaComum: Item[]
+//   descricaoMarca: Item[]
+// }
+
 const EmpreendimentoPage: React.FC = () => {
+  const [item, setItem] = useState<Item[]>([]);
+
+  useEffect(() => {
+    axios
+      .get("https://jotanunesservice.onrender.com/api/v1/items/GetAllItems")
+      .then((res) => setItem(res.data.data));
+  }, []);
+
   const [selectedItemsTemp, setSelectedItemsTemp] = useState<Items[] | null>(
     null
   );
@@ -30,7 +57,7 @@ const EmpreendimentoPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
-  const items: Items[] = ItemPage.map((item) => ({
+  const items: Items[] = item?.map((item) => ({
     name: item.nome,
     code: item.nome,
   }));
@@ -69,6 +96,9 @@ const EmpreendimentoPage: React.FC = () => {
 
   return (
     <div>
+      <div>
+        <Header />
+      </div>
       <div className="flex h-screen">
         <Sidebar
           sections={categories}
