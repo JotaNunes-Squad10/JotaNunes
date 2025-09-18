@@ -13,6 +13,8 @@ import FilterDemo from "@/components/sections/SelectedEdit";
 
 import UnidadePrivativaPage from "@/components/unidadePrivativa/page";
 import AreaComumPage from "@/components/areaComum/page";
+import ActionBar from "@/components/componentHeader/page";
+import FormEmpreendimento from "@/components/formEditPage/page";
 
 interface Items {
   name: string;
@@ -78,7 +80,16 @@ const EmpreendimentoPage: React.FC = () => {
           }}
         />
         <div className="flex-1 bg-white p-6 shadow-md overflow-auto">
-          <h2 className="text-black font-semibold mb-4">Adicionar Itens</h2>
+          <div>
+            <ActionBar />
+          </div>
+          <div>
+            <FormEmpreendimento />
+          </div>
+
+          <h2 className="text-black font-semibold mb-4 py-5">
+            Adicionar Itens
+          </h2>
           <div>
             <div>
               <DropDown
