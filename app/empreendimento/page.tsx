@@ -8,7 +8,6 @@ import DropDown from "@/components/sections/DropBox";
 import DropBoxSubSelect from "@/components/sections/DropBoxSubSelect";
 import CustomTable from "@/components/tableInfo/page";
 import ObserverComponent from "@/components/ObserverComponent/page";
-import ItemPage from "@/components/item/page";
 import FilterDemo from "@/components/sections/SelectedEdit";
 
 import UnidadePrivativaPage from "@/components/unidadePrivativa/page";
