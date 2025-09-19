@@ -7,9 +7,10 @@ import { Sidebar } from "primereact/sidebar";
 import { Button } from "primereact/button";
 
 export default function GerenciamentoUser() {
+  const [searchTerm, setSearchTerm] = useState("");
   const [visible, setVisible] = useState(false);
   const [rotated, setRotated] = useState(false);
-  const [selected, setSelected] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<(string | number)[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   type User = {
     id?: string | number;
@@ -17,7 +18,8 @@ export default function GerenciamentoUser() {
     email: string;
     firstName: string;
     lastName: string;
-    profile: number;
+    profile?: number;
+    phone?: string;
   };
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -33,7 +35,6 @@ export default function GerenciamentoUser() {
           },
         });
         const data = await response.json();
-        console.log("Resposta da API de usuários:", data);
         if (Array.isArray(data.data)) {
           setUsers(data.data);
         } else {
@@ -128,6 +129,8 @@ export default function GerenciamentoUser() {
                 type="text"
                 className="flex-1 py-2 px-2 bg-transparent outline-none text-gray-700 placeholder-gray-400 rounded-2xl focus:ring-0 text-sm sm:text-base"
                 placeholder="Buscar usuários"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
 
@@ -146,7 +149,7 @@ export default function GerenciamentoUser() {
                 className="bg-gray-300 text-black rounded-3xl px-6 py-2 text-sm md:text-xl font-normal hover:bg-gray-400 transition-all duration-200"
                 onClick={() => setShowCreateModal(true)}
               />
-              {selected && (
+              {selectedUsers.length > 0 && (
                 <Button
                   icon={<i className="pi pi-trash pr-2" />}
                   label="Deletar"
@@ -161,11 +164,12 @@ export default function GerenciamentoUser() {
             <div className="overflow-x-auto w-full">
               <table className="min-w-full bg-white rounded-lg shadow text-xs md:text-base">
                 <thead>
-                  <tr className="bg-gray-100 text-gray-700 text-left">
+                  <tr className="bg-gray-700 text-white text-left">
                     <th className="px-2 sm:px-4 py-2 sm:py-4 font-semibold"></th>
                     <th className="px-2 sm:px-6 py-2 sm:py-4 font-semibold">Usuário</th>
                     <th className="px-2 sm:px-6 py-2 sm:py-4 font-semibold">E-mail</th>
                     <th className="px-2 sm:px-6 py-2 sm:py-4 font-semibold">Nome</th>
+                    <th className="px-2 sm:px-6 py-2 sm:py-4 font-semibold">Telefone</th>
                     <th className="px-2 sm:px-6 py-2 sm:py-4 font-semibold">Perfil</th>
                     <th className="px-2 sm:px-6 py-2 sm:py-4 font-semibold">Editar</th>
                   </tr>
@@ -176,20 +180,52 @@ export default function GerenciamentoUser() {
                   ) : users.length === 0 ? (
                     <tr><td colSpan={6} className="text-center py-6">Nenhum usuário encontrado.</td></tr>
                   ) : (
-                    users.map((user, idx) => (
-                      <tr key={user.id || idx} className="bg-gray-200 hover:bg-gray-300 transition">
+                    users
+                      .filter(user => {
+                        const term = searchTerm.toLowerCase();
+                        return (
+                          user.username.toLowerCase().includes(term) ||
+                          user.firstName.toLowerCase().includes(term) ||
+                          user.lastName.toLowerCase().includes(term) ||
+                          (user.email && user.email.toLowerCase().includes(term))
+                        );
+                      })
+                      .map((user, idx) => (
+                      <tr
+                        key={user.id || idx}
+                        className={`transition ${idx % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'} hover:bg-gray-300`}
+                      >
                         <td className="px-2 sm:px-3 py-2 sm:py-4">
                           <input
                             type="checkbox"
                             className="form-checkbox h-4 w-4 text-blue-600"
-                            checked={selected}
-                            onChange={(e) => setSelected(e.target.checked)}
+                            checked={selectedUsers.includes(user.id ?? idx)}
+                            onChange={(e) => {
+                              const id = user.id ?? idx;
+                              if (e.target.checked) {
+                                setSelectedUsers((prev) => [...prev, id]);
+                              } else {
+                                setSelectedUsers((prev) => prev.filter((uid) => uid !== id));
+                              }
+                            }}
                           />
                         </td>
                         <td className="px-2 sm:px-6 py-2 sm:py-4 text-gray-600">{user.username}</td>
                         <td className="px-2 sm:px-6 py-2 sm:py-4 text-gray-600">{user.email}</td>
                         <td className="px-2 sm:px-6 py-2 sm:py-4 text-gray-600">{user.firstName} {user.lastName}</td>
-                        <td className="px-2 sm:px-6 py-2 sm:py-4 text-gray-600">{user.profile === 0 ? "Administrador" : user.profile === 1 ? "Gestor" : "Operador"}</td>
+                        <td className="px-2 sm:px-6 py-2 sm:py-4 text-gray-600">{user.phone ? user.phone : "Não informado"}</td>
+                        <td className="px-2 sm:px-6 py-2 sm:py-4 text-gray-600">
+                          {user.profile === undefined || user.profile === null
+                            ? "Sem perfil"
+                            : user.profile === 0
+                              ? "Administrador"
+                              : user.profile === 1
+                                ? "Gestor"
+                                : "Operador"}
+                          {user.profile !== undefined && user.profile !== null && (
+                            <span className="ml-2 text-xs text-gray-400">({String(user.profile)})</span>
+                          )}
+                        </td>
                         <td className="px-2 sm:px-6 py-2 sm:py-4">
                           <button className="p-2 rounded hover:bg-gray-300">
                             <i className="pi pi-pencil text-gray-800 text-lg sm:text-xl" />
