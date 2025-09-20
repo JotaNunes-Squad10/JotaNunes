@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { getCookie } from "cookies-next";
 import Header from "./headerUser/page";
 import CreateUserModal from "./createUser/page";
+import EditUserModal from "./editUser/page";
 import { Sidebar } from "primereact/sidebar";
 import { Button } from "primereact/button";
 import { ProgressSpinner } from "primereact/progressspinner";
@@ -13,6 +14,8 @@ export default function GerenciamentoUser() {
   const [rotated, setRotated] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<(string | number)[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<User | null>(null);
   type User = {
     id?: string | number;
     username: string;
@@ -26,8 +29,15 @@ export default function GerenciamentoUser() {
   const [loadingUsers, setLoadingUsers] = useState(false);
   // Buscar usuários na API
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    let didTimeout = false;
     async function fetchUsers() {
       setLoadingUsers(true);
+      timeoutId = setTimeout(() => {
+        didTimeout = true;
+        setLoadingUsers(false);
+        setUsers([]);
+      }, 10000); 
       try {
         const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
         const response = await fetch("https://jotanunesservice.onrender.com/api/v1/authentication/GetAllUsers", {
@@ -35,6 +45,8 @@ export default function GerenciamentoUser() {
             Authorization: token ? `Bearer ${token}` : "",
           },
         });
+        if (didTimeout) return;
+        clearTimeout(timeoutId);
         const data = await response.json();
         if (Array.isArray(data.data)) {
           setUsers(data.data);
@@ -43,12 +55,17 @@ export default function GerenciamentoUser() {
           console.error("Formato inesperado da resposta de usuários", data);
         }
       } catch {
-        setUsers([]);
+        if (!didTimeout) {
+          setUsers([]);
+        }
       } finally {
-        setLoadingUsers(false);
+        if (!didTimeout) {
+          setLoadingUsers(false);
+        }
       }
     }
     fetchUsers();
+    return () => clearTimeout(timeoutId);
   }, [showCreateModal]);
 
   const handleMenuClick = () => {
@@ -87,7 +104,8 @@ export default function GerenciamentoUser() {
         <Sidebar
           visible={visible}
           onHide={handleHide}
-          className="w-full max-w-xs md:w-80 bg-gray-600 mt-16 md:mt-32 z-20"
+          style={{ width: 'clamp(220px, 25vw, 360px)' }}
+          className="bg-gray-600 mt-24 md:mt-32  z-20"
           closeIcon={
             <i
               className={`pi pi-angle-left text-white py-3 mr-3 font-bold text-2xl transition-transform duration-400 ${
@@ -165,25 +183,25 @@ export default function GerenciamentoUser() {
             <div className="overflow-x-auto w-full">
               <table className="min-w-full bg-white rounded-lg shadow text-xs md:text-base">
                 <thead>
-                  <tr className="bg-gray-700 text-white text-left">
-                    <th className="px-2 sm:px-4 py-2 sm:py-4 font-semibold"></th>
-                    <th className="px-2 sm:px-6 py-2 sm:py-4 font-semibold">Usuário</th>
-                    <th className="px-2 sm:px-6 py-2 sm:py-4 font-semibold">E-mail</th>
-                    <th className="px-2 sm:px-6 py-2 sm:py-4 font-semibold">Nome</th>
-                    <th className="px-2 sm:px-6 py-2 sm:py-4 font-semibold">Telefone</th>
-                    <th className="px-2 sm:px-6 py-2 sm:py-4 font-semibold">Perfil</th>
-                    <th className="px-2 sm:px-6 py-2 sm:py-4 font-semibold">Editar</th>
+                    <tr className="bg-gray-700 text-white text-left">
+                    <th className="px-2 sm:px-4 py-1 sm:py-2 font-semibold"></th>
+                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold">Usuário</th>
+                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold">E-mail</th>
+                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold">Nome</th>
+                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold">Telefone</th>
+                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold">Perfil</th>
+                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold">Editar</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loadingUsers ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-6">
-                        <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="5" fill="transparent" animationDuration=".5s" />
+                      <td colSpan={6} className="text-center py-4">
+                        <ProgressSpinner style={{width: '42px', height: '42px'}} strokeWidth="4" fill="transparent" animationDuration=".5s" />
                       </td>
                     </tr>
                   ) : users.length === 0 ? (
-                    <tr><td colSpan={6} className="text-center py-6">Nenhum usuário encontrado.</td></tr>
+                    <tr><td colSpan={6} className="text-center py-4">Nenhum usuário encontrado.</td></tr>
                   ) : (
                     users
                       .filter(user => {
@@ -200,7 +218,7 @@ export default function GerenciamentoUser() {
                         key={user.id || idx}
                         className={`transition ${idx % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'} hover:bg-gray-300`}
                       >
-                        <td className="px-2 sm:px-3 py-2 sm:py-4">
+                        <td className="px-2 sm:px-3 py-1 sm:py-2">
                           <input
                             type="checkbox"
                             className="form-checkbox h-4 w-4 text-blue-600"
@@ -215,26 +233,44 @@ export default function GerenciamentoUser() {
                             }}
                           />
                         </td>
-                        <td className="px-2 sm:px-6 py-2 sm:py-4 text-gray-600">{user.username}</td>
-                        <td className="px-2 sm:px-6 py-2 sm:py-4 text-gray-600">{user.email}</td>
-                        <td className="px-2 sm:px-6 py-2 sm:py-4 text-gray-600">{user.firstName} {user.lastName}</td>
-                        <td className="px-2 sm:px-6 py-2 sm:py-4 text-gray-600">{user.phone ? user.phone : "Não informado"}</td>
-                        <td className="px-2 sm:px-6 py-2 sm:py-4 text-gray-600">
-                          {user.profile === undefined || user.profile === null
-                            ? "Sem perfil"
-                            : user.profile === 0
-                              ? "Administrador"
-                              : user.profile === 1
-                                ? "Gestor"
-                                : "Operador"}
-                          {user.profile !== undefined && user.profile !== null && (
-                            <span className="ml-2 text-xs text-gray-400">({String(user.profile)})</span>
-                          )}
+                        <td className="px-2 sm:px-6 py-1 sm:py-2 text-gray-600">{user.username}</td>
+                        <td className="px-2 sm:px-6 py-1 sm:py-2 text-gray-600">{user.email}</td>
+                        <td className="px-2 sm:px-6 py-1 sm:py-2 text-gray-600">
+                          <div className="truncate max-w-[140px] sm:max-w-[250px]" title={`${user.firstName} ${user.lastName}`}>
+                            {user.firstName} {user.lastName}
+                          </div>
                         </td>
-                        <td className="px-2 sm:px-6 py-2 sm:py-4">
+                        <td className="px-2 sm:px-6 py-1 sm:py-2 text-gray-600">{user.phone ? user.phone : "Não informado"}</td>
+                        <td className="px-2 sm:px-6 py-1 sm:py-2 text-gray-600">
+                          <div className="truncate max-w-[90px] sm:max-w-[160px]" title={
+                            user.profile === undefined || user.profile === null
+                              ? "Sem perfil"
+                              : user.profile === 0
+                                ? "Administrador"
+                                : user.profile === 1
+                                  ? "Gestor"
+                                  : "Operador"
+                          }>
+                            {user.profile === undefined || user.profile === null
+                              ? "Sem perfil"
+                              : user.profile === 0
+                                ? "Administrador"
+                                : user.profile === 1
+                                  ? "Gestor"
+                                  : "Operador"}
+                            {user.profile !== undefined && user.profile !== null && (
+                              <span className="ml-2 text-xs text-gray-400">({String(user.profile)})</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-2 sm:px-6 py-1 sm:py-2">
                           <button
                             className="p-2 rounded hover:bg-gray-300 active:scale-90 transition-transform duration-150"
                             style={{ outline: 'none' }}
+                            onClick={() => {
+                              setUserToEdit(user);
+                              setShowEditModal(true);
+                            }}
                           >
                             <i
                               className="pi pi-pen-to-square text-gray-800 hover:text-blue-500 text-lg sm:text-xl transition-transform duration-300"
@@ -259,6 +295,61 @@ export default function GerenciamentoUser() {
       </div>
       {showCreateModal && (
         <CreateUserModal onClose={() => setShowCreateModal(false)} />
+      )}
+      {showEditModal && userToEdit && (
+        <EditUserModal
+          user={userToEdit}
+          visible={showEditModal}
+          actions={{
+            onClose: () => setShowEditModal(false),
+            onSave: async (updatedUser: User) => {
+              try {
+                const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
+                const response = await fetch(`https://jotanunesservice.onrender.com/api/v1/authentication/UpdateUser/${updatedUser.id}`,
+                  {
+                    method: "PUT",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: token ? `Bearer ${token}` : "",
+                    },
+                    body: JSON.stringify(updatedUser),
+                  }
+                );
+                if (!response.ok) {
+                  throw new Error("Erro ao atualizar usuário");
+                }
+                setUsers((prev) => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+              } catch (err) {
+                throw err;
+              }
+            },
+            onResetPassword: async (userId: string | number | undefined) => {
+              try {
+                const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
+                const response = await fetch(`https://jotanunesservice.onrender.com/api/v1/authentication/ResetPassword/${userId}`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: token ? `Bearer ${token}` : "",
+                    },
+                  }
+                );
+                if (!response.ok) {
+                  const data = await response.json();
+                  throw new Error(data?.message || "Erro ao resetar senha");
+                }
+                return "Senha resetada com sucesso!";
+              } catch (err) {
+                if (err instanceof Error) {
+                  throw err;
+                } else {
+                  throw new Error("Erro ao resetar senha");
+                }
+              }
+            },
+          }}
+        />
       )}
     </div>
   );
