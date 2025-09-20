@@ -44,6 +44,9 @@ export default function CreateUserModal({ onClose }: { onClose: () => void }) {
     setLoading(true);
   const token = getCookie("accessToken");
     try {
+      // Formatar telefone para o padrão internacional
+      const phoneRaw = form.phone.replace(/\D/g, "");
+      const phoneFormatted = phoneRaw.length === 11 ? `+55${phoneRaw}` : form.phone;
       const response = await axios.post(
         `${BASE_URL}/api/v1/authentication/CreateUser`,
         {
@@ -53,11 +56,14 @@ export default function CreateUserModal({ onClose }: { onClose: () => void }) {
           email: form.email,
           profile: roleToProfile[form.role],
           password: generatePassword(10),
+          phone: phoneFormatted,
         },
         {
           timeout: 10000,
           headers: {
             Authorization: token ? `Bearer ${token}` : "",
+            'Content-Type': 'application/json-patch+json',
+            'accept': '*/*',
           },
         }
       );
