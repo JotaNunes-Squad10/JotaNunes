@@ -5,6 +5,7 @@ import Header from "./headerUser/page";
 import CreateUserModal from "./createUser/page";
 import { Sidebar } from "primereact/sidebar";
 import { Button } from "primereact/button";
+import { ProgressSpinner } from "primereact/progressspinner";
 
 export default function GerenciamentoUser() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -176,7 +177,11 @@ export default function GerenciamentoUser() {
                 </thead>
                 <tbody>
                   {loadingUsers ? (
-                    <tr><td colSpan={6} className="text-center py-6">Carregando usuários...</td></tr>
+                    <tr>
+                      <td colSpan={6} className="text-center py-6">
+                        <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="5" fill="transparent" animationDuration=".5s" />
+                      </td>
+                    </tr>
                   ) : users.length === 0 ? (
                     <tr><td colSpan={6} className="text-center py-6">Nenhum usuário encontrado.</td></tr>
                   ) : (
@@ -227,8 +232,20 @@ export default function GerenciamentoUser() {
                           )}
                         </td>
                         <td className="px-2 sm:px-6 py-2 sm:py-4">
-                          <button className="p-2 rounded hover:bg-gray-300">
-                            <i className="pi pi-pencil text-gray-800 text-lg sm:text-xl" />
+                          <button
+                            className="p-2 rounded hover:bg-gray-300 active:scale-90 transition-transform duration-150"
+                            style={{ outline: 'none' }}
+                          >
+                            <i
+                              className="pi pi-pen-to-square text-gray-800 hover:text-blue-500 text-lg sm:text-xl transition-transform duration-300"
+                              style={{ cursor: 'pointer' }}
+                              onMouseEnter={e => {
+                                e.currentTarget.classList.add('scale-110');
+                              }}
+                              onMouseLeave={e => {
+                                e.currentTarget.classList.remove('scale-110');
+                              }}
+                            />
                           </button>
                         </td>
                       </tr>
