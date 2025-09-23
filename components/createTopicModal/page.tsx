@@ -5,6 +5,7 @@ import { Dialog } from "primereact/dialog";
 import axios from "axios";
 import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
+import { InputText } from "primereact/inputtext";
 
 interface CreateTopicProps {
   visible: boolean;
@@ -67,15 +68,15 @@ export default function CreateTopic({ visible, onHide }: CreateTopicProps) {
     <Dialog
       header="Novo tópico"
       visible={visible}
-      style={{ width: "50vw" }}
+      style={{ width: "40vw" }}
       onHide={onHide}
     >
       <Toast ref={toast} />
-      <form onSubmit={handleSubmit} className="flex flex-col">
-        <label>Nome do tópico</label>
-        <input
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <label className="font-bold">Nome do tópico</label>
+        <InputText
           type="text"
-          placeholder="Digite o nome do tópico"
+          placeholder="Nome tópico"
           onChange={(e) => setNome(e.target.value)}
           required
           value={nome}
