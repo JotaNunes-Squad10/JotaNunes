@@ -32,7 +32,7 @@ export default function CreateTopic({ visible, onHide }: CreateTopicProps) {
 
   return (
     <Dialog
-      header="Criar novo tópico"
+      header="Novo tópico"
       visible={visible}
       style={{ width: "50vw" }}
       onHide={onHide}

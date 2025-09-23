@@ -9,7 +9,7 @@ interface BasicDocProps {
 export default function BasicDoc({ visible, onHide }: BasicDocProps) {
   return (
     <Dialog
-      header="Header"
+      header="Novo Item"
       visible={visible}
       style={{ width: "50vw" }}
       onHide={onHide}
