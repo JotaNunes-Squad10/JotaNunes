@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import "primeicons/primeicons.css";
+import CreateTopic from "../createTopicModal/page";
 
 type NavItemProps = {
   title: string;
@@ -77,6 +79,7 @@ const Sidebar: React.FC<SideBarProps> = ({
   onSelect,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [viewModal, setViewModal] = useState(false);
 
   return (
     <div
@@ -134,7 +137,18 @@ const Sidebar: React.FC<SideBarProps> = ({
             isCollapsed={isCollapsed}
           />
         ))}
+        {!isCollapsed && (
+          <div className="p-3">
+            <button
+              className="border-2 border-dashed border-gray-300 text-gray-400 p-3 w-full cursor-pointer flex justify-center items-center gap-3 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-500"
+              onClick={() => setViewModal(true)}
+            >
+              <i className="pi pi-plus"> </i> <p>Adicione novo tópico</p>
+            </button>
+          </div>
+        )}
       </div>
+      <CreateTopic visible={viewModal} onHide={() => setViewModal(false)} />
     </div>
   );
 };

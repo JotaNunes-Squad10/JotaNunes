@@ -11,7 +11,6 @@ import ObserverComponent from "@/components/ObserverComponent/page";
 import FilterDemo from "@/components/sections/SelectedEdit";
 
 import UnidadePrivativaPage from "@/components/unidadePrivativa/page";
-import AreaComumPage from "@/components/areaComum/page";
 import ActionBar from "@/components/componentHeader/page";
 import FormEmpreendimento from "@/components/formEditPage/page";
 import Header from "@/components/teste/header/page";
@@ -31,18 +30,6 @@ interface Ambiente {
   id: number;
   nome: string;
 }
-
-// interface Item {
-//   nome: string
-//   descricao: string[]
-// }
-
-// type Documento = {
-//   titulo: string
-//   unidadesPrivativas: Item[]
-//   areaComum: Item[]
-//   descricaoMarca: Item[]
-// }
 
 const EmpreendimentoPage: React.FC = () => {
   const [item, setItem] = useState<Item[]>([]);
