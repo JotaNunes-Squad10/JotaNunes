@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Dialog } from "primereact/dialog";
 import axios from "axios";
+import { Button } from "primereact/button";
+import { Toast } from "primereact/toast";
 
 interface CreateTopicProps {
   visible: boolean;
@@ -10,8 +12,37 @@ interface CreateTopicProps {
 }
 
 export default function CreateTopic({ visible, onHide }: CreateTopicProps) {
-  const [nomeTopico, setNomeTopico] = useState<string>("");
-  const [status, setStatus] = useState<string>("");
+  const [nome, setNome] = useState<string>("");
+
+  //   Configgurações do Toast
+  const toast = useRef<Toast>(null);
+
+  const showInfo = () => {
+    toast.current?.show({
+      severity: "info",
+      summary: "Info",
+      detail: "Enviando informações...",
+      life: 3000,
+    });
+  };
+
+  const showSuccess = () => {
+    toast.current?.show({
+      severity: "success",
+      summary: "Success",
+      detail: "Novo tópico criado com sucesso",
+      life: 3000,
+    });
+  };
+
+  const showError = (error: any) => {
+    toast.current?.show({
+      severity: "error",
+      summary: "Error",
+      detail: `Erro: ${error}`,
+      life: 3000,
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,13 +51,15 @@ export default function CreateTopic({ visible, onHide }: CreateTopicProps) {
       const response = await axios.post(
         "https://jotanunesservice.onrender.com/api/v1/topico/CreateTopico",
         {
-          nomeTopico,
+          nome: nome,
         }
       );
-      setStatus("Enviado com sucesso!");
-    } catch (error) {
-      setStatus("Erro ao tentar enviar!");
-      console.log(error);
+      showSuccess();
+    } catch (error: any) {
+      showError(error);
+      if (error.response) {
+        console.error("Erro da API:", error.response.data);
+      }
     }
   };
 
@@ -37,18 +70,23 @@ export default function CreateTopic({ visible, onHide }: CreateTopicProps) {
       style={{ width: "50vw" }}
       onHide={onHide}
     >
+      <Toast ref={toast} />
       <form onSubmit={handleSubmit} className="flex flex-col">
         <label>Nome do tópico</label>
         <input
           type="text"
           placeholder="Digite o nome do tópico"
-          onChange={(e) => setNomeTopico(e.target.value)}
+          onChange={(e) => setNome(e.target.value)}
           required
+          value={nome}
         />
-        <button type="submit" className="cursor-pointer">
-          Enviar
-        </button>
-        {status && <p>{status}</p>}
+
+        <Button
+          type="submit"
+          severity="info"
+          label="Enviar"
+          onClick={showInfo}
+        />
       </form>
     </Dialog>
   );
