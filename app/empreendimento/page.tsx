@@ -27,6 +27,11 @@ interface Item {
   nome: string;
 }
 
+interface Ambiente {
+  id: number;
+  nome: string;
+}
+
 // interface Item {
 //   nome: string
 //   descricao: string[]
@@ -75,6 +80,18 @@ const EmpreendimentoPage: React.FC = () => {
     }
   };
 
+  const [ambiente, setAmbiente] = useState<Ambiente[] | []>([]);
+
+  useEffect(() => {
+    axios
+      .get(
+        "https://jotanunesservice.onrender.com/api/v1/ambiente/GetAllAmbientes"
+      )
+      .then((res) => setAmbiente(res.data.data));
+  }, []);
+
+  console.log(ambiente);
+
   const categories = [
     {
       title: "1. Unidades Privativas",
@@ -82,7 +99,7 @@ const EmpreendimentoPage: React.FC = () => {
     },
     {
       title: "2. Área Comum",
-      items: AreaComumPage.map((i) => i.nome),
+      items: ambiente.map((a) => a.nome),
     },
     {
       title: "3. Marcas",
