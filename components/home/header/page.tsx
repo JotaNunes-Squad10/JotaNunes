@@ -19,7 +19,6 @@ const Header: React.FC = () => {
         />
       </div>
       <div className="flex items-center gap-1 sm:gap-2">
-        <Menu_usuario />
       </div>
     </header>
   );
