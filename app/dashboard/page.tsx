@@ -1,10 +1,10 @@
 import React from "react";
 import { Box } from "@mui/material";
 
-import Header from "../../components/teste/header/page";
-import StatusSummary from "../../components/teste/status/page";
-import Recentes from "../../components/teste/recentes/page";
-import AcoesRapidas from "../../components/teste/acoesRapidas/page";
+import Header from "../../components/headerUser/page";
+import StatusSummary from "../../components/home/status/page";
+import Recentes from "../../components/home/recentes/page";
+import AcoesRapidas from "../../components/home/acoesRapidas/page";
 
 const Dashboard: React.FC = () => {
   return (
