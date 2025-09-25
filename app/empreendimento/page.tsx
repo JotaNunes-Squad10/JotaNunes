@@ -31,6 +31,34 @@ interface Ambiente {
   nome: string;
 }
 
+// Preparando o documento para payload
+
+type Material = {
+  id: number;
+  nome: string;
+  descricao: string;
+};
+
+type Topico = {
+  nomeTopico: string;
+  itemsTopico: ItemsTopico[];
+};
+
+type ItemsTopico = {
+  id: number;
+  nome: string;
+  materiais: Material[];
+};
+
+type Documento = {
+  id: number;
+  empreendimento: string;
+  localizacao: string;
+  descricaoEmpreendimento: string;
+  observacao: string;
+  topicos: Topico[];
+};
+
 const EmpreendimentoPage: React.FC = () => {
   const [item, setItem] = useState<Item[]>([]);
 
