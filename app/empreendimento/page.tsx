@@ -34,14 +34,14 @@ interface Ambiente {
 // Preparando o documento para payload
 
 type Material = {
-  id: number;
+  id: string | number;
   nome: string;
-  descricao: string;
+  descricao: string | "";
 };
 
 type Topico = {
-  nomeTopico: string;
-  itemsTopico: ItemsTopico[];
+  title: string;
+  items: ItemsTopico[];
 };
 
 type ItemsTopico = {
@@ -59,7 +59,13 @@ type Documento = {
   topicos: Topico[];
 };
 
+interface Categories {
+  title: string;
+  items: string[];
+}
+
 const EmpreendimentoPage: React.FC = () => {
+  // Inicializando estados da página
   const [item, setItem] = useState<Item[]>([]);
 
   useEffect(() => {
@@ -85,16 +91,6 @@ const EmpreendimentoPage: React.FC = () => {
     (item) => !tableItems.some((t) => t.code === item.code)
   );
 
-  const handleAddItems = () => {
-    if (selectedItemsTemp && selectedItemsTemp.length > 0) {
-      const newItems = selectedItemsTemp.filter(
-        (item) => !tableItems.some((t) => t.code === item.code)
-      );
-      setTableItems((prev) => [...prev, ...newItems]);
-      setSelectedItemsTemp(null);
-    }
-  };
-
   const [ambiente, setAmbiente] = useState<Ambiente[] | []>([]);
 
   useEffect(() => {
@@ -105,25 +101,104 @@ const EmpreendimentoPage: React.FC = () => {
       .then((res) => setAmbiente(res.data.data));
   }, []);
 
-  console.log(ambiente);
+  // Funções da página
+  const itemsUnidadesPrivativas: ItemsTopico[] = [
+    { id: 1, nome: "Área Técnica", materiais: [] },
+    { id: 2, nome: "Circulação", materiais: [] },
+    { id: 3, nome: "Cozinha/Área de Serviço", materiais: [] },
+    { id: 4, nome: "Garden", materiais: [] },
+    { id: 4, nome: "Quarto e Suíte", materiais: [] },
+    { id: 6, nome: "Sanitário/Lavabo", materiais: [] },
+    { id: 7, nome: "Sala de Estar/Jantar", materiais: [] },
+    { id: 8, nome: "Varanda", materiais: [] },
+  ];
 
-  const categories = [
+  //   Exemplo de um mapeamento de items já integrado
+  const AmbientesItems: ItemsTopico[] = [];
+
+  ambiente.forEach((a) => {
+    AmbientesItems.push({
+      id: a.id,
+      nome: a.nome,
+      materiais: [],
+    });
+  });
+
+  const DescricaoMarcaItems: ItemsTopico[] = [
     {
-      title: "1. Unidades Privativas",
-      items: UnidadePrivativaPage.map((i) => i.nome),
-    },
-    {
-      title: "2. Área Comum",
-      items: ambiente.map((a) => a.nome),
-    },
-    {
-      title: "3. Marcas",
-      items: ["Descrição das Marcas"],
+      id: 1,
+      nome: "Drescrição da Marca",
+      materiais: [],
     },
   ];
 
+  const Topic: Topico[] = [
+    {
+      title: "1. Unidades Privativas",
+      items: itemsUnidadesPrivativas,
+    },
+    {
+      title: "2. Área Comum",
+      items: AmbientesItems,
+    },
+    {
+      title: "3. Marcas",
+      items: DescricaoMarcaItems,
+    },
+  ];
+
+  const Docs: Documento = {
+    id: 1,
+    empreendimento: "Pérolas do mar",
+    localizacao: "Coroa do meio",
+    descricaoEmpreendimento: "Empreendimento na coroa do meio",
+    observacao: "Nenhuma observação",
+    topicos: Topic,
+  };
+
+  const categories: Categories[] = [];
+
+  Topic.forEach((t) => {
+    categories.push({
+      title: t.title,
+      items: t.items.map((i) => i.nome),
+    });
+  });
+
   const currentOptions =
     categories.find((c) => c.title === selectedCategory)?.items || [];
+
+  const handleAddItems = () => {
+    if (selectedItemsTemp && selectedItemsTemp.length > 0) {
+      const newItems = selectedItemsTemp.filter(
+        (item) => !tableItems.some((t) => t.code === item.code)
+      );
+      setTableItems((prev) => [...prev, ...newItems]);
+      setSelectedItemsTemp(null);
+
+      console.log(`Tópico selecionado: ${selectedCategory}`);
+      console.log(`Item tópico selecionado: ${selectedItem}`);
+      console.log(`Items adicionados: ${newItems.map((items) => items.name)}`);
+
+      Docs.topicos.forEach((topic) => {
+        if (topic.title === selectedCategory) {
+          topic.items.forEach((items) => {
+            if (items.nome === selectedItem) {
+              newItems.forEach((item) => {
+                items.materiais.push({
+                  id: item.code,
+                  nome: item.name,
+                  descricao: "",
+                });
+              });
+            }
+          });
+        }
+      });
+
+      console.log(Docs);
+    }
+  };
 
   return (
     <div>
