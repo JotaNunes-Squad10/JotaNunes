@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 import { getCookie } from "cookies-next";
 import { InputMask } from "primereact/inputmask";
@@ -17,6 +18,42 @@ export default function CreateUserModal({ onClose }: { onClose: () => void }) {
     role: "",
   });
   const [loading, setLoading] = useState(false);
+
+  // Verificação de admin
+  const checkIsAdmin = (): boolean => {
+    const token = getCookie("accessToken");
+    if (!token) return false;
+    try {
+      const decoded = jwtDecode(token as string) as { realm_access?: { roles?: string[] }, groups?: string[] };
+      const roles = decoded?.realm_access?.roles || [];
+      const groups = decoded?.groups || [];
+      return roles.includes("Administrador") || roles.includes("admin") || groups.includes("Administrador");
+    } catch {
+      return false;
+    }
+  };
+
+  // Checagem de admin antes do restante do JSX
+  if (!checkIsAdmin()) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="bg-white rounded-3xl shadow-2xl p-6 w-[95vw] max-w-md border border-gray-200">
+          <h2 className="text-xl font-bold text-red-600 text-center mb-4">
+            Acesso restrito
+          </h2>
+          <p className="text-gray-700 text-center">
+            Apenas administradores podem criar novos usuários.
+          </p>
+          <button
+            className="mt-6 w-full rounded-xl bg-red-600 px-4 py-2 text-base font-bold text-white"
+            onClick={onClose}
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -41,29 +78,46 @@ export default function CreateUserModal({ onClose }: { onClose: () => void }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Validações específicas (HTML5 já valida campos required)
+    if (!roleToProfile[form.role]) {
+      toast.error("Selecione um perfil válido!");
+      return;
+    }
+    
+    // Validação do formato do telefone
+    const phonePattern = /^\(\d{2}\)\s\d{5}-\d{4}$/;
+    if (!phonePattern.test(form.phone)) {
+      toast.error("Digite um telefone válido no formato (xx) xxxxx-xxxx!");
+      return;
+    }
+
+    // Converter telefone para formato de 14 dígitos (+55xxxxxxxxxx)
+    // Exemplo: "(79) 98765-4321" -> "+5579987654321"
+    const phoneDigitsOnly = form.phone.replace(/\D/g, ''); // Remove tudo que não é dígito
+    const formattedPhone = `+55${phoneDigitsOnly}`; // Adiciona código do país (+55)
+
+    const password = generatePassword(10);
+    const payload = {
+      username: form.username.trim(),
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      email: form.email.trim(),
+      phone: formattedPhone,
+      profile: roleToProfile[form.role],
+      password: password
+    };
+
     setLoading(true);
-  const token = getCookie("accessToken");
+    const token = getCookie("accessToken");
     try {
-      // Formatar telefone para o padrão internacional
-      const phoneRaw = form.phone.replace(/\D/g, "");
-      const phoneFormatted = phoneRaw.length === 11 ? `+55${phoneRaw}` : form.phone;
       const response = await axios.post(
         `${BASE_URL}/api/v1/authentication/CreateUser`,
-        {
-          username: form.username,
-          firstName: form.firstName,
-          lastName: form.lastName,
-          email: form.email,
-          profile: roleToProfile[form.role],
-          password: generatePassword(10),
-          phone: phoneFormatted,
-        },
+        payload,
         {
           timeout: 10000,
           headers: {
             Authorization: token ? `Bearer ${token}` : "",
-            'Content-Type': 'application/json-patch+json',
-            'accept': '*/*',
+            'Content-Type': 'application/json',
           },
         }
       );
@@ -85,11 +139,15 @@ export default function CreateUserModal({ onClose }: { onClose: () => void }) {
       }
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        toast.error(
-          err.response?.data?.message || "Erro ao criar usuário!"
-        );
+        console.error("Erro detalhado:", err.response?.data); // Para debug detalhado
+        const errorMessage = err.response?.data?.message || 
+                           err.response?.data?.error || 
+                           `Erro ${err.response?.status}: ${err.response?.statusText}` ||
+                           "Erro ao criar usuário!";
+        toast.error(errorMessage);
       } else {
-        toast.error("Erro ao criar usuário!");
+        console.error("Erro não identificado:", err);
+        toast.error("Erro inesperado ao criar usuário!");
       }
     } finally {
       setLoading(false);
@@ -105,7 +163,7 @@ export default function CreateUserModal({ onClose }: { onClose: () => void }) {
           onClick={onClose}
           aria-label="Fechar"
         >
-          <span aria-hidden="true">×</span>
+          ×
         </button>
         <h2 className="text-2xl font-extrabold mb-2 text-gray-800 text-center flex items-center gap-2">
           <i className="pi pi-user-plus text-red-600 text-2xl" /> Criar Usuário
