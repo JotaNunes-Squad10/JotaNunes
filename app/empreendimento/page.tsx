@@ -15,6 +15,18 @@ import ActionBar from "@/components/componentHeader/page";
 import FormEmpreendimento from "@/components/formEditPage/page";
 import Header from "@/components/teste/header/page";
 import axios from "axios";
+import {
+  Material,
+  Topico,
+  ItemsTopico,
+  Documento,
+  Categories,
+} from "@/app/features/docs/docsTypes";
+
+// Configuração do documento pelo toolkit
+import { useAppSelector, useAppDispatch } from "../hooks";
+import { addMaterials } from "../features/docs/docsSlice";
+import { useDispatch } from "react-redux";
 
 interface Items {
   name: string;
@@ -29,39 +41,6 @@ interface Item {
 interface Ambiente {
   id: number;
   nome: string;
-}
-
-// Preparando o documento para payload
-
-type Material = {
-  id: string | number;
-  nome: string;
-  descricao: string | "";
-};
-
-type Topico = {
-  title: string;
-  items: ItemsTopico[];
-};
-
-type ItemsTopico = {
-  id: number;
-  nome: string;
-  materiais: Material[];
-};
-
-type Documento = {
-  id: number;
-  empreendimento: string;
-  localizacao: string;
-  descricaoEmpreendimento: string;
-  observacao: string;
-  topicos: Topico[];
-};
-
-interface Categories {
-  title: string;
-  items: string[];
 }
 
 const EmpreendimentoPage: React.FC = () => {
@@ -101,13 +80,17 @@ const EmpreendimentoPage: React.FC = () => {
       .then((res) => setAmbiente(res.data.data));
   }, []);
 
+  // Adicionando configuração do documento
+  const DocumentoEmpreendimento = useAppSelector((state) => state.docs);
+  const dispatch = useAppDispatch();
+
   // Funções da página
   const itemsUnidadesPrivativas: ItemsTopico[] = [
     { id: 1, nome: "Área Técnica", materiais: [] },
     { id: 2, nome: "Circulação", materiais: [] },
     { id: 3, nome: "Cozinha/Área de Serviço", materiais: [] },
     { id: 4, nome: "Garden", materiais: [] },
-    { id: 4, nome: "Quarto e Suíte", materiais: [] },
+    { id: 5, nome: "Quarto e Suíte", materiais: [] },
     { id: 6, nome: "Sanitário/Lavabo", materiais: [] },
     { id: 7, nome: "Sala de Estar/Jantar", materiais: [] },
     { id: 8, nome: "Varanda", materiais: [] },
@@ -173,32 +156,59 @@ const EmpreendimentoPage: React.FC = () => {
       const newItems = selectedItemsTemp.filter(
         (item) => !tableItems.some((t) => t.code === item.code)
       );
+
+      if (newItems.length === 0) return;
+
       setTableItems((prev) => [...prev, ...newItems]);
       setSelectedItemsTemp(null);
 
       console.log(`Tópico selecionado: ${selectedCategory}`);
       console.log(`Item tópico selecionado: ${selectedItem}`);
       console.log(`Items adicionados: ${newItems.map((items) => items.name)}`);
+      // console.log(
+      //   selectedItemsTemp.filter(
+      //     (item) => !tableItems.some((t) => t.code === item.code)
+      //   )
+      // );
 
-      Docs.topicos.forEach((topic) => {
-        if (topic.title === selectedCategory) {
-          topic.items.forEach((items) => {
-            if (items.nome === selectedItem) {
-              newItems.forEach((item) => {
-                items.materiais.push({
-                  id: item.code,
-                  nome: item.name,
-                  descricao: "",
-                });
-              });
-            }
-          });
-        }
-      });
+      dispatch(
+        addMaterials({
+          topicSelected: selectedCategory,
+          itemSelected: selectedItem,
+          itemsAdded: newItems.map((ni) => ({
+            id: ni.code,
+            nome: ni.name,
+          })),
+        })
+      );
 
-      console.log(Docs);
+      // dispatch(addMaterials({
+      //   topicSelected: selectedCategory,
+      //   itemSelected: selectedItem,
+      //   itemsAdded: newItems.
+      // }))
+
+      // Docs.topicos.forEach((topic) => {
+      //   if (topic.title === selectedCategory) {
+      //     topic.items.forEach((items) => {
+      //       if (items.nome === selectedItem) {
+      //         newItems.forEach((item) => {
+      //           items.materiais.push({
+      //             id: item.code,
+      //             nome: item.name,
+      //             descricao: "",
+      //           });
+      //         });
+      //       }
+      //     });
+      //   }
+      // });
+
+      // console.log(Docs);
     }
   };
+
+  console.log(DocumentoEmpreendimento);
 
   return (
     <div>

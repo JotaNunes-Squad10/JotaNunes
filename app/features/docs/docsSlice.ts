@@ -1,0 +1,81 @@
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  Material,
+  Topico,
+  ItemsTopico,
+  Documento,
+  Categories,
+} from "./docsTypes";
+
+const itemsUnidadesPrivativas: ItemsTopico[] = [
+  { id: 1, nome: "Área Técnica", materiais: [] },
+  { id: 2, nome: "Circulação", materiais: [] },
+  { id: 3, nome: "Cozinha/Área de Serviço", materiais: [] },
+  { id: 4, nome: "Garden", materiais: [] },
+  { id: 5, nome: "Quarto e Suíte", materiais: [] },
+  { id: 6, nome: "Sanitário/Lavabo", materiais: [] },
+  { id: 7, nome: "Sala de Estar/Jantar", materiais: [] },
+  { id: 8, nome: "Varanda", materiais: [] },
+];
+
+const Topic: Topico[] = [
+  {
+    title: "1. Unidades Privativas",
+    items: itemsUnidadesPrivativas,
+  },
+  {
+    title: "2. Área Comum",
+    items: [],
+  },
+  {
+    title: "3. Marcas",
+    items: [],
+  },
+];
+
+const Docs: Documento = {
+  id: 1,
+  empreendimento: "Pérolas do mar",
+  localizacao: "Coroa do meio",
+  descricaoEmpreendimento: "Empreendimento na coroa do meio",
+  observacao: "Nenhuma observação",
+  topicos: Topic,
+};
+
+interface MaterialPayload {
+  topicSelected: any;
+  itemSelected: any;
+  itemsAdded: {
+    id: any;
+    nome: any;
+  }[];
+}
+
+export const docsSlide = createSlice({
+  name: "docs",
+  initialState: Docs,
+  reducers: {
+    addMaterials: (state, action: PayloadAction<MaterialPayload>) => {
+      state.topicos.forEach((t) => {
+        const { topicSelected, itemSelected, itemsAdded } = action.payload;
+
+        const topic = state.topicos.find((t) => t.title === topicSelected);
+        if (!topic) return;
+
+        const item = topic.items.find((i) => i.nome === itemSelected);
+        if (!item) return;
+
+        itemsAdded.forEach((mat) => {
+          item.materiais.push({
+            id: mat.id,
+            nome: mat.nome,
+            descricao: "",
+          });
+        });
+      });
+    },
+  },
+});
+
+export const { addMaterials } = docsSlide.actions;
+export default docsSlide.reducer;
