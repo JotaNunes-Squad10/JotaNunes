@@ -1,14 +1,34 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getCookie } from "cookies-next";
 import Header from "./headerUser/page";
 import CreateUserModal from "./createUser/page";
 import EditUserModal from "./editUser/page";
+import DeleteUserModal from './deleteUser/page';
 import { Sidebar } from "primereact/sidebar";
 import { Button } from "primereact/button";
-import { ProgressSpinner } from "primereact/progressspinner";
 
 export default function GerenciamentoUser() {
+  type LocalToast = { id: string; severity: 'success'|'error'|'info'|'warn'; summary?: string; detail?: string };
+  const [localToasts, setLocalToasts] = useState<LocalToast[]>([]);
+  const lastRef = useRef({ key: '', ts: 0 } as { key: string; ts: number });
+
+  useEffect(() => {
+    const onNotify = (e: Event) => {
+      const ce = e as CustomEvent<LocalToast>;
+      if (!ce?.detail) return;
+      const key = `${ce.detail.severity || 'info'}|${ce.detail.summary || ''}|${ce.detail.detail || ''}`;
+      const now = Date.now();
+      if (key === lastRef.current.key && now - lastRef.current.ts < 2000) return;
+      lastRef.current.key = key;
+      lastRef.current.ts = now;
+      const t = { id: (Math.random() + 1).toString(36).slice(2), severity: ce.detail.severity || 'info', summary: ce.detail.summary, detail: ce.detail.detail } as LocalToast;
+      setLocalToasts((s) => [...s, t]);
+      setTimeout(() => setLocalToasts((s) => s.filter(x => x.id !== t.id)), 3500);
+    };
+    window.addEventListener('gerenciamentoUser:notify', onNotify as EventListener);
+    return () => window.removeEventListener('gerenciamentoUser:notify', onNotify as EventListener);
+  }, []);
   const [searchTerm, setSearchTerm] = useState("");
   const [visible, setVisible] = useState(false);
   const [rotated, setRotated] = useState(false);
@@ -16,6 +36,7 @@ export default function GerenciamentoUser() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   type User = {
     id?: string | number;
     username: string;
@@ -24,9 +45,13 @@ export default function GerenciamentoUser() {
     lastName: string;
     profile?: number;
     phone?: string;
+    profiles?: Array<{ id: number; name: string }>;
   };
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [removingIds, setRemovingIds] = useState<(string|number)[]>([]);
+  const ROW_ANIM_MS = 350;
+  const [deleting, setDeleting] = useState(false);
   // Buscar usuários na API
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -37,24 +62,37 @@ export default function GerenciamentoUser() {
         didTimeout = true;
         setLoadingUsers(false);
         setUsers([]);
-      }, 10000); 
+      }, 10000);
       try {
         const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
         const response = await fetch("https://jotanunesservice.onrender.com/api/v1/authentication/GetAllUsers", {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-          },
+          headers: { Authorization: token ? `Bearer ${token}` : "" },
         });
         if (didTimeout) return;
         clearTimeout(timeoutId);
+        if (!response.ok) {
+          if (response.status === 401) {
+            try {
+              // Limpar cookie de auth e redirecionar para login
+              if (typeof window !== 'undefined') {
+                document.cookie = "accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                try { window.dispatchEvent(new CustomEvent('gerenciamentoUser:notify', { detail: { severity: 'info', summary: 'Sessão', detail: 'Sessão expirada. Redirecionando para login...' } })); } catch {}
+                setTimeout(() => { window.location.href = '/login'; }, 900);
+              }
+            } catch {
+              // falha ao tentar limpar cookie/redirect
+            }
+          }
+          throw new Error(`HTTP ${response.status}`);
+        }
         const data = await response.json();
-        if (Array.isArray(data.data)) {
-          setUsers(data.data);
-        } else {
+        if (Array.isArray(data.data)) setUsers(data.data);
+        else {
           setUsers([]);
           console.error("Formato inesperado da resposta de usuários", data);
         }
-      } catch {
+      } catch (error) {
+        console.error('[GerenciamentoUser] Erro na requisição GetAllUsers:', error);
         if (!didTimeout) {
           setUsers([]);
         }
@@ -67,6 +105,69 @@ export default function GerenciamentoUser() {
     fetchUsers();
     return () => clearTimeout(timeoutId);
   }, [showCreateModal]);
+
+  useEffect(() => {
+    const handler = async (e: Event) => {
+      const ce = e as CustomEvent<{ action: string; ids?: (string|number)[] }>;
+      if (!ce?.detail) return;
+      const { action, ids } = ce.detail;
+      if (action === 'close') {
+        setShowDeleteModal(false);
+        return;
+      }
+      if (action === 'confirm' && ids && ids.length > 0) {
+        const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
+        const baseUrl = `https://jotanunesservice.onrender.com/api/v1/authentication`;
+        const results: { id: string|number; ok: boolean; status?: number; error?: string }[] = [];
+        if (deleting) return; 
+        setDeleting(true);
+        for (const id of ids) {
+          try {
+            const url = `${baseUrl}/DeleteUser/${id}`;
+            const res = await fetch(url, {
+              method: 'DELETE',
+              headers: {
+                Authorization: token ? `Bearer ${token}` : '',
+              },
+            });
+            if (!res.ok) {
+              let body = '';
+              try { body = await res.text(); } catch { body = '<no body>'; }
+              results.push({ id, ok: false, status: res.status, error: body });
+            } else {
+              results.push({ id, ok: true });
+            }
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            results.push({ id, ok: false, error: message });
+          }
+        }
+
+        const failed = results.filter(r => !r.ok);
+        if (failed.length === 0) {
+          setRemovingIds(prev => [...prev, ...ids]);
+          setTimeout(() => {
+            setUsers(prev => prev.filter(u => !ids.includes(u.id ?? -1)));
+            setSelectedUsers([]);
+            setRemovingIds(prev => prev.filter(i => !ids.includes(i)));
+          }, ROW_ANIM_MS);
+          try { window.dispatchEvent(new CustomEvent('gerenciamentoUser:notify', { detail: { severity: 'success', summary: 'Sucesso', detail: 'Usuário(s) deletado(s) com sucesso!' } })); } catch { }
+        } else {
+          try { window.dispatchEvent(new CustomEvent('gerenciamentoUser:notify', { detail: { severity: 'error', summary: 'Erro', detail: `Falha ao deletar ${failed.length} usuário(s).` } })); } catch { }
+          console.error('[GerenciamentoUser] Erros ao deletar:', failed);
+        }
+        setShowDeleteModal(false);
+        setDeleting(false);
+        try { window.dispatchEvent(new CustomEvent('gerenciamentoUser:delete:finished', { detail: { results } })); } catch {}
+      }
+    };
+    window.addEventListener('gerenciamentoUser:delete', handler as EventListener);
+    return () => window.removeEventListener('gerenciamentoUser:delete', handler as EventListener);
+  }, [users, selectedUsers, deleting]);
+
+  // Listener para notificações vindas do modal ou outros componentes (ex.: delete modal)
+  useEffect(() => {
+  }, []);
 
   const handleMenuClick = () => {
     setVisible(true);
@@ -83,10 +184,8 @@ export default function GerenciamentoUser() {
 
   // Função para deslogar e redirecionar para login
   function handleLogout() {
-    // Remove o token de autenticação
     if (typeof window !== "undefined") {
       document.cookie = "accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      // Redireciona para a tela de login
       window.location.href = "/login";
     }
   }
@@ -99,6 +198,20 @@ export default function GerenciamentoUser() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header onMenuClick={handleMenuClick} />
+      {/* Toasters locais (inline) */}
+      <div className="fixed top-4 right-4 z-[11000] flex flex-col gap-2">
+        {localToasts.map(t => (
+          <div key={t.id} className={`w-80 max-w-full p-3 rounded-lg shadow-md border ${t.severity === 'success' ? 'bg-green-50 border-green-200' : t.severity === 'error' ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200'}`}>
+            <div className="flex items-start gap-2">
+              <div className="flex-1">
+                {t.summary && <div className="font-semibold text-sm text-gray-800">{t.summary}</div>}
+                {t.detail && <div className="text-sm text-gray-700 mt-1">{t.detail}</div>}
+              </div>
+              <button onClick={() => setLocalToasts(prev => prev.filter(x => x.id !== t.id))} className="text-gray-500 hover:text-gray-700 ml-2">×</button>
+            </div>
+          </div>
+        ))}
+      </div>
       <div className="relative flex flex-col md:flex-row w-full">
         {/* Sidebar */}
         <Sidebar
@@ -155,13 +268,6 @@ export default function GerenciamentoUser() {
 
             {/* Botões */}
             <div className="flex flex-row gap-2 w-full md:w-auto justify-start items-center">
-              {/*
-              <Button
-                icon={<i className="pi pi-search pr-2" />}
-                label="Pesquisar"
-                className="bg-blue-500 text-white rounded-3xl px-6 py-2 text-sm md:text-xl font-normal hover:bg-blue-700 transition-all duration-200"
-              />
-              */}
               <Button
                 icon={<i className="pi pi-user-plus pr-2" />}
                 label="Novo Usuário"
@@ -171,8 +277,10 @@ export default function GerenciamentoUser() {
               {selectedUsers.length > 0 && (
                 <Button
                   icon={<i className="pi pi-trash pr-2" />}
-                  label="Deletar"
+                  label={deleting ? 'Deletando...' : 'Deletar'}
                   className="bg-red-400 text-black rounded-3xl px-6 py-2 text-sm md:text-xl font-normal hover:bg-red-500 transition-all duration-200"
+                  onClick={() => setShowDeleteModal(true)}
+                  disabled={deleting}
                 />
               )}
             </div>
@@ -195,13 +303,20 @@ export default function GerenciamentoUser() {
                 </thead>
                 <tbody>
                   {loadingUsers ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-4">
-                        <ProgressSpinner style={{width: '42px', height: '42px'}} strokeWidth="4" fill="transparent" animationDuration=".5s" />
-                      </td>
-                    </tr>
+                    // Skeleton loading: mostra linhas de placeholder
+                    Array.from({ length: 6 }).map((_, i) => (
+                      <tr key={`skeleton-${i}`} className={`bg-white`}>
+                        <td className="px-2 sm:px-3 py-3"><div className="h-4 w-4 bg-gray-200 rounded animate-pulse" /></td>
+                        <td className="px-2 sm:px-6 py-3"><div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" /></td>
+                        <td className="px-2 sm:px-6 py-3"><div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" /></td>
+                        <td className="px-2 sm:px-6 py-3"><div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" /></td>
+                        <td className="px-2 sm:px-6 py-3"><div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" /></td>
+                        <td className="px-2 sm:px-6 py-3"><div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" /></td>
+                        <td className="px-2 sm:px-6 py-3"><div className="h-4 bg-gray-200 rounded w-12 animate-pulse" /></td>
+                      </tr>
+                    ))
                   ) : users.length === 0 ? (
-                    <tr><td colSpan={6} className="text-center py-4">Nenhum usuário encontrado.</td></tr>
+                    <tr><td colSpan={7} className="text-center py-4">Nenhum usuário encontrado.</td></tr>
                   ) : (
                     users
                       .filter(user => {
@@ -216,13 +331,15 @@ export default function GerenciamentoUser() {
                       .map((user, idx) => (
                       <tr
                         key={user.id || idx}
-                        className={`transition ${idx % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'} hover:bg-gray-300`}
+                        className={`transition-all duration-300 ease-in-out ${idx % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'} hover:bg-gray-300 ${removingIds.includes(user.id ?? idx) ? 'opacity-0 -translate-y-2' : 'opacity-100'}`}
+                        style={{ transformOrigin: 'top' }}
                       >
                         <td className="px-2 sm:px-3 py-1 sm:py-2">
                           <input
                             type="checkbox"
                             className="form-checkbox h-4 w-4 text-blue-600"
                             checked={selectedUsers.includes(user.id ?? idx)}
+                            disabled={deleting}
                             onChange={(e) => {
                               const id = user.id ?? idx;
                               if (e.target.checked) {
@@ -242,25 +359,17 @@ export default function GerenciamentoUser() {
                         </td>
                         <td className="px-2 sm:px-6 py-1 sm:py-2 text-gray-600">{user.phone ? user.phone : "Não informado"}</td>
                         <td className="px-2 sm:px-6 py-1 sm:py-2 text-gray-600">
-                          <div className="truncate max-w-[90px] sm:max-w-[160px]" title={
-                            user.profile === undefined || user.profile === null
-                              ? "Sem perfil"
-                              : user.profile === 0
-                                ? "Administrador"
-                                : user.profile === 1
-                                  ? "Gestor"
-                                  : "Operador"
-                          }>
-                            {user.profile === undefined || user.profile === null
-                              ? "Sem perfil"
-                              : user.profile === 0
-                                ? "Administrador"
-                                : user.profile === 1
-                                  ? "Gestor"
-                                  : "Operador"}
-                            {user.profile !== undefined && user.profile !== null && (
-                              <span className="ml-2 text-xs text-gray-400">({String(user.profile)})</span>
-                            )}
+                          <div className="truncate max-w-[90px] sm:max-w-[160px]">
+                            {(() => {
+                              const profileId = user.profiles && user.profiles.length > 0 
+                                ? user.profiles[0].id 
+                                : user.profile;
+                              const profileName = user.profiles && user.profiles.length > 0 
+                                ? user.profiles[0].name 
+                                : (profileId === 1 ? "Administrador" : profileId === 2 ? "Gestor" : profileId === 3 ? "Operador" : "Sem perfil");
+                              
+                              return profileName;
+                            })()}
                           </div>
                         </td>
                         <td className="px-2 sm:px-6 py-1 sm:py-2">
@@ -268,7 +377,11 @@ export default function GerenciamentoUser() {
                             className="p-2 rounded hover:bg-gray-300 active:scale-90 transition-transform duration-150"
                             style={{ outline: 'none' }}
                             onClick={() => {
-                              setUserToEdit(user);
+                              const userForEdit = {
+                                ...user,
+                                profile: user.profiles && user.profiles.length > 0 ? user.profiles[0].id : user.profile
+                              };
+                              setUserToEdit(userForEdit);
                               setShowEditModal(true);
                             }}
                           >
@@ -303,21 +416,75 @@ export default function GerenciamentoUser() {
           actions={{
             onClose: () => setShowEditModal(false),
             onSave: async (updatedUser: User) => {
+              const tryFetch = async (url: string, options: RequestInit) => {
+                const res = await fetch(url, options);
+                return res;
+              };
+
               try {
-                const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
-                const response = await fetch(`https://jotanunesservice.onrender.com/api/v1/authentication/UpdateUser/${updatedUser.id}`,
-                  {
-                    method: "PUT",
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: token ? `Bearer ${token}` : "",
-                    },
-                    body: JSON.stringify(updatedUser),
-                  }
-                );
-                if (!response.ok) {
-                  throw new Error("Erro ao atualizar usuário");
+                if (!updatedUser || !updatedUser.id) {
+                  throw new Error('ID do usuário ausente ao tentar atualizar');
                 }
+                const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
+
+                // Construir payload simples conforme esquema da API
+                const updatePayload = {
+                  id: updatedUser.id,
+                  username: updatedUser.username,
+                  firstName: updatedUser.firstName,
+                  lastName: updatedUser.lastName,
+                  email: updatedUser.email,
+                  phone: updatedUser.phone,
+                  profile: updatedUser.profile
+                };
+                // Validação básica
+                if (!updatedUser.id) {
+                  throw new Error('ID do usuário é obrigatório');
+                }
+                if (!updatedUser.username || !updatedUser.firstName || !updatedUser.lastName || !updatedUser.email) {
+                  throw new Error('Campos obrigatórios não preenchidos');
+                }
+
+                // PATCH /UpdateUser (sem ID na URL, ID vai no payload)
+                const url = `https://jotanunesservice.onrender.com/api/v1/authentication/UpdateUser`;
+                const response = await tryFetch(url, {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: token ? `Bearer ${token}` : '',
+                  },
+                  body: JSON.stringify(updatePayload),
+                });
+
+                if (!response.ok) {
+                  let bodyText = '';
+                  try {
+                    const json = await response.json();
+                    bodyText = JSON.stringify(json);
+                  } catch {
+                    try {
+                      bodyText = await response.text();
+                    } catch {
+                      bodyText = '<não disponível>';
+                    }
+                  }
+                  
+                  console.error(`[GerenciamentoUser] PATCH UpdateUser falhou:`, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    url: url,
+                    body: bodyText
+                  });
+
+                  // Se for 404, talvez o endpoint seja diferente
+                  if (response.status === 404) {
+                    throw new Error(`Endpoint não encontrado: ${url}. Verifique se o endpoint de atualização está correto.`);
+                  }
+                  
+                  throw new Error(`Erro ao atualizar usuário: ${response.status} - ${bodyText}`);
+                }
+
+                // usuário atualizado com sucesso
                 setUsers((prev) => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
               } catch (err) {
                 throw err;
@@ -325,8 +492,12 @@ export default function GerenciamentoUser() {
             },
             onResetPassword: async (userId: string | number | undefined) => {
               try {
+                if (!userId) {
+                  throw new Error('ID do usuário ausente ao tentar resetar senha');
+                }
                 const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
-                const response = await fetch(`https://jotanunesservice.onrender.com/api/v1/authentication/ResetPassword/${userId}`,
+                const url = `https://jotanunesservice.onrender.com/api/v1/authentication/UpdateUser/${userId}`;
+                const response = await fetch(url,
                   {
                     method: "POST",
                     headers: {
@@ -336,8 +507,19 @@ export default function GerenciamentoUser() {
                   }
                 );
                 if (!response.ok) {
-                  const data = await response.json();
-                  throw new Error(data?.message || "Erro ao resetar senha");
+                  let bodyText = '';
+                  try {
+                    const json = await response.json();
+                    bodyText = JSON.stringify(json);
+                  } catch {
+                    try {
+                      bodyText = await response.text();
+                    } catch {
+                      bodyText = '<não disponível>';
+                    }
+                  }
+                  console.error(`[GerenciamentoUser] ResetPassword falhou: status=${response.status} body=${bodyText}`);
+                  throw new Error(bodyText || `Erro ao resetar senha (status=${response.status})`);
                 }
                 return "Senha resetada com sucesso!";
               } catch (err) {
@@ -349,6 +531,12 @@ export default function GerenciamentoUser() {
               }
             },
           }}
+        />
+      )}
+      {showDeleteModal && (
+        <DeleteUserModal
+          visible={showDeleteModal}
+          selectedUsers={users.filter(u => selectedUsers.includes(u.id ?? -1)).map(u => ({ id: u.id, username: u.username, firstName: u.firstName, lastName: u.lastName }))}
         />
       )}
     </div>

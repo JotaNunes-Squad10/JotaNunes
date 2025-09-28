@@ -22,6 +22,7 @@ export default function JotanunesLogin() {
   const [senha, setSenha] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [videoSrc, setVideoSrc] = useState(BG_VIDEO_1);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const updateVideo = () => {
@@ -39,54 +40,52 @@ export default function JotanunesLogin() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     const _axios = axios.create({
-      baseURL: "https://jotanunesservice.onrender.com", 
+      baseURL: "https://jotanunesservice.onrender.com",
       timeout: 10000,
     });
-    toast.promise(
-      _axios.post("/api/v1/authentication/Authenticate", {
-        username: username,
-        password: senha,
-      }).then((response) => {
-  const token = response?.data?.data?.accessToken?.trim();
-        if (!token || typeof token !== "string") {
-          console.error("Token inválido ou não é uma string:", token);
-        }
-        interface JwtPayload {
-          groups?: string[];
-        }
-        try {
-          const payload = jwtDecode<JwtPayload>(token);
-          setCookie("accessToken", token);
-          if (payload.groups?.includes("Administrador")) {
-            router.push("/adm");
-          } else {
-            router.push("/dashboard");
-          }
-          return Promise.resolve();
-        } catch (err) {
-          console.error("Erro ao decodificar JWT:", err);
-          return Promise.reject(new Error("Token inválido"));
-        }
-      }),
-      {
-        pending: {
-          render() {
-            return "Autenticando...";
-          },
+
+    setLoading(true);
+    const promise = _axios.post("/api/v1/authentication/Authenticate", { username, password: senha })
+      .then((response) => {
+        const token = response?.data?.data?.accessToken;
+        const trimmed = typeof token === "string" ? token.trim() : undefined;
+        if (!trimmed) throw new Error("Token inválido");
+
+        type JwtPayload = { groups?: string | string[] } & Record<string, unknown>;
+        const payload = jwtDecode<JwtPayload>(trimmed);
+
+        setCookie("accessToken", trimmed);
+
+        const groupsRaw = payload?.groups;
+        let groups: string[] = [];
+        if (typeof groupsRaw === "string") groups = groupsRaw.split(",").map((s) => s.trim()).filter(Boolean);
+        else if (Array.isArray(groupsRaw)) groups = groupsRaw as string[];
+
+        if (groups.includes("Administrador")) router.push("/adm");
+        else router.push("/dashboard");
+
+        return response;
+      });
+
+    toast.promise(promise, {
+      pending: {
+        render() {
+          return "Autenticando...";
         },
-        success: {
-          render() {
-            return "Login realizado com sucesso!";
-          },
+      },
+      success: {
+        render() {
+          return "Login realizado com sucesso!";
         },
-        error: {
-          render() {
-            return "Usuário ou senha inválidos!";
-          },
+      },
+      error: {
+        render() {
+          return "Usuário ou senha inválidos!";
         },
-      }
-    );
+      },
+    }).finally(() => setLoading(false));
   };
 
   return (
@@ -131,6 +130,8 @@ export default function JotanunesLogin() {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 className="w-full rounded-lg border border-neutral-300/50 bg-white/70 px-3 py-2.5 text-[15px] outline-none ring-2 ring-transparent transition focus:border-neutral-400 focus:ring-red-100 text-neutral-800 placeholder-neutral-500 shadow-md"
+                disabled={loading}
+                autoFocus
               />
             </div>
 
@@ -146,12 +147,15 @@ export default function JotanunesLogin() {
                   onChange={(e) => setSenha(e.target.value)}
                   required
                   className="w-full rounded-lg border border-neutral-300/50 bg-white/70 px-3 py-2.5 text-[15px] pr-10 outline-none ring-2 ring-transparent transition focus:border-neutral-400 focus:ring-red-100 text-neutral-800 placeholder-neutral-500 shadow-md"
+                  disabled={loading}
                 />
                 <button
-                  type="button"                  
+                  type="button"
                   onClick={() => setShowPass((v) => !v)}
                   className="absolute inset-y-0 right-2 my-auto rounded-md px-2 text-sm text-neutral-700 hover:text-neutral-900"
-                >                  
+                  aria-label={showPass ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                  <i className={`pi ${showPass ? 'pi-eye' : 'pi-eye-slash'}`} />
                 </button>
               </div>
               <div className="mt-2 text-right">
@@ -167,8 +171,10 @@ export default function JotanunesLogin() {
 
             <button
               type="submit"
-              className="mt-2 w-full rounded-lg bg-red-700 px-4 py-2.5 text-base font-semibold text-white shadow-md transition hover:bg-red-600 active:bg-red-800 focus:outline-none focus:ring-4 focus:ring-red-200"
+              className="mt-2 w-full rounded-lg bg-red-700 px-4 py-2.5 text-base font-semibold text-white shadow-md transition hover:bg-red-600 active:bg-red-800 focus:outline-none focus:ring-4 focus:ring-red-200 flex items-center justify-center gap-2"
+              disabled={loading}
             >
+              {loading ? (<i className="pi pi-spin pi-spinner text-white" />) : null}
               Entrar
             </button>
           </form>

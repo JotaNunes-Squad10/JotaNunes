@@ -139,16 +139,11 @@ export default function CreateUserModal({ onClose }: { onClose: () => void }) {
       }
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        console.error("Erro detalhado:", err.response?.data); // Para debug detalhado
-        const errorMessage = err.response?.data?.message || 
-                           err.response?.data?.error || 
-                           `Erro ${err.response?.status}: ${err.response?.statusText}` ||
-                           "Erro ao criar usuário!";
-        toast.error(errorMessage);
-      } else {
-        console.error("Erro não identificado:", err);
-        toast.error("Erro inesperado ao criar usuário!");
-      }
+          const errorMessage = err.response?.data?.message || err.response?.data?.error || `Erro ${err.response?.status}: ${err.response?.statusText}` || "Erro ao criar usuário!";
+          toast.error(errorMessage);
+        } else {
+          toast.error("Erro inesperado ao criar usuário!");
+        }
     } finally {
       setLoading(false);
     }
