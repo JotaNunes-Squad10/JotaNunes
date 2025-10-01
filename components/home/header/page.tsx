@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import Menu_usuario from "../menu_usuario/page";
 
 const Header: React.FC = () => {
   return (
@@ -18,12 +19,6 @@ const Header: React.FC = () => {
         />
       </div>
       <div className="flex items-center gap-1 sm:gap-2">
-        {/* Ícone de usuário (SVG) */}
-        <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <circle cx="12" cy="8" r="4" />
-          <path d="M6 20v-2a6 6 0 0 1 12 0v2" />
-        </svg>
-        <span className="text-sm sm:text-base text-gray-700">Usuário</span>
       </div>
     </header>
   );

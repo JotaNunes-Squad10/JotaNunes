@@ -30,7 +30,7 @@ const Recentes: React.FC = () => {
     <>
       {/* Cabeçalho */}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-lg font-semibold">Recentes</span>
+        <span className="text-lg font-semibold">Editados Recentemente</span>
         <button className="flex items-center gap-1 bg-red-600 text-white px-4 py-2 rounded font-medium text-sm hover:bg-red-700 transition">
           Ver Todos
           {/* Ícone seta (SVG) */}
