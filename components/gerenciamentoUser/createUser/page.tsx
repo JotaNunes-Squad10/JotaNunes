@@ -122,7 +122,8 @@ export default function CreateUserModal({ onClose }: { onClose: () => void }) {
         }
       );
       if (response.status === 200 || response.status === 201) {
-        toast.success("Usuário criado com sucesso!");
+        // Mostrar senha gerada no toast de sucesso
+        toast.success(`Usuário criado com sucesso! Senha: ${password}`);
         setForm({
           username: "",
           email: "",
@@ -133,7 +134,7 @@ export default function CreateUserModal({ onClose }: { onClose: () => void }) {
         });
         setTimeout(() => {
           onClose();
-        }, 1800);
+        }, 3800);
       } else {
         toast.error("Não foi possível criar o usuário. Tente novamente.");
       }

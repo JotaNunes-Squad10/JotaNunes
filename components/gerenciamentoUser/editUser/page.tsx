@@ -112,12 +112,9 @@ export default function EditUserModal({ user, visible, actions }: EditUserModalP
     if (!onResetPassword) return;
     try {
       setResetting(true);
-      const result = await onResetPassword(user.id);
-      if (typeof result === 'string') {
-        toast.success(result);
-      } else {
-        toast.success("Senha resetada com sucesso!");
-      }
+      await onResetPassword(user.id);
+      // Fechar o modal após reset bem-sucedido
+      try { onClose(); } catch { }
     } catch (err) {
       if (err instanceof Error && err.message) {
         toast.error(err.message);

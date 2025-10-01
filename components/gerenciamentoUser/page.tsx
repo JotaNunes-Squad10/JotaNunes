@@ -496,16 +496,30 @@ export default function GerenciamentoUser() {
                   throw new Error('ID do usuário ausente ao tentar resetar senha');
                 }
                 const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
-                const url = `https://jotanunesservice.onrender.com/api/v1/authentication/UpdateUser/${userId}`;
-                const response = await fetch(url,
-                  {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: token ? `Bearer ${token}` : "",
-                    },
+
+                const url = `https://jotanunesservice.onrender.com/api/v1/authentication/ResetPassword`;
+
+                const generateTempPassword = (length = 8) => {
+                  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+                  let pass = "";
+                  for (let i = 0; i < length; i++) {
+                    pass += chars.charAt(Math.floor(Math.random() * chars.length));
                   }
-                );
+                  return pass;
+                };
+
+                const tempPassword = generateTempPassword(8);
+                const payload = { userId: String(userId), password: tempPassword };
+
+                const response = await fetch(url, {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: token ? `Bearer ${token}` : '',
+                  },
+                  body: JSON.stringify(payload),
+                });
+
                 if (!response.ok) {
                   let bodyText = '';
                   try {
@@ -519,9 +533,17 @@ export default function GerenciamentoUser() {
                     }
                   }
                   console.error(`[GerenciamentoUser] ResetPassword falhou: status=${response.status} body=${bodyText}`);
+                  try { window.dispatchEvent(new CustomEvent('gerenciamentoUser:notify', { detail: { severity: 'error', summary: 'Erro', detail: 'Falha ao resetar senha.' } })); } catch {}
                   throw new Error(bodyText || `Erro ao resetar senha (status=${response.status})`);
                 }
-                return "Senha resetada com sucesso!";
+
+                // Sucesso: notificar com a senha temporária (aviso: sensível)
+                try {
+                  window.dispatchEvent(new CustomEvent('gerenciamentoUser:notify', { detail: { severity: 'success', summary: 'Senha resetada', detail: `Senha temporária: ${tempPassword}` } }));
+                } catch {}
+
+                // Também retornar a senha para quem chamou a função
+                return tempPassword;
               } catch (err) {
                 if (err instanceof Error) {
                   throw err;
