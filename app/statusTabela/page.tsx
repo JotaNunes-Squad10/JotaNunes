@@ -3,8 +3,8 @@
 import React, {useState} from "react";
 import { Box } from "@mui/material";
 
-import Header from "../../components/teste/header/page";
-import StatusSummary from "../../components/teste/status/page";
+import Header from "../../components/headerUser/page";
+import StatusSummary from "../../components/home/status/page";
 import EmpreendimentosTable, { Empreendimento } from "../../components/listaStatus/page";
 
 
