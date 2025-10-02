@@ -10,7 +10,6 @@ import CustomTable from "@/components/tableInfo/page";
 import ObserverComponent from "@/components/ObserverComponent/page";
 import FilterDemo from "@/components/sections/SelectedEdit";
 
-import UnidadePrivativaPage from "@/components/unidadePrivativa/page";
 import ActionBar from "@/components/componentHeader/page";
 import FormEmpreendimento from "@/components/formEditPage/page";
 import Header from "@/components/teste/header/page";
@@ -24,8 +23,25 @@ import {
 } from "@/app/features/docs/docsTypes";
 
 // Configuração do documento pelo toolkit
-import { useAppSelector, useAppDispatch } from "../hooks";
-import { addMaterials } from "../features/docs/docsSlice";
+import { useAppSelector, useAppDispatch } from "@/app/hooks";
+import {
+  addMaterials,
+  LoadDocumentPayload,
+} from "@/app/features/docs/docsSlice";
+import { loadDocument } from "@/app/features/docs/docsSlice";
+
+interface AcessDocument {
+  type: "document";
+  id: number;
+}
+
+interface CreateDocument {
+  type: "create";
+}
+
+interface DocumentParams {
+  params: AcessDocument | CreateDocument;
+}
 
 interface Items {
   name: string;
@@ -42,7 +58,7 @@ interface Ambiente {
   nome: string;
 }
 
-const EmpreendimentoPage: React.FC = () => {
+const EmpreendimentoPage = (params: DocumentParams) => {
   // Inicializando estados da página
   const [item, setItem] = useState<Item[]>([]);
 
@@ -130,20 +146,25 @@ const EmpreendimentoPage: React.FC = () => {
   ];
 
   const Docs: Documento = {
-    id: 1,
-    empreendimento: "Pérolas do mar",
-    localizacao: "Coroa do meio",
-    descricaoEmpreendimento: "Empreendimento na coroa do meio",
-    observacao: "Nenhuma observação",
+    id: 0,
+    empreendimento: "",
+    localizacao: "",
+    descricaoEmpreendimento: "",
+    observacao: "",
     topicos: Topic,
   };
 
-  const [topic, setTopic] = useState<Categories | null>(null);
-  useEffect(() => {
-    axios
-      .get("https://jotanunesservice.onrender.com/api/v1/topico/GetAllTopicos")
-      .then((res) => setTopic(res.data.data));
-  });
+  //   carregar documento
+
+  if ("type" in params.params && params.params.type === "create") {
+    console.log("Criando novo documento");
+    // Não inseria nada, o documento foi criado anteriormente.
+  } else {
+    const loadingDocument: LoadDocumentPayload = {
+      id: Number(params.params.id),
+    };
+    dispatch(loadDocument(loadingDocument));
+  }
 
   const categories: Categories[] = [];
 

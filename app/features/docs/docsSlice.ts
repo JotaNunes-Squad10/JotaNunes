@@ -1,11 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import {
-  Material,
-  Topico,
-  ItemsTopico,
-  Documento,
-  Categories,
-} from "./docsTypes";
+import { Topico, ItemsTopico, Documento } from "./docsTypes";
 
 const itemsUnidadesPrivativas: ItemsTopico[] = [
   { id: 1, nome: "Área Técnica", materiais: [] },
@@ -51,10 +45,17 @@ interface MaterialPayload {
   }[];
 }
 
+export interface LoadDocumentPayload {
+  id: number;
+}
+
 export const docsSlide = createSlice({
   name: "docs",
   initialState: Docs,
   reducers: {
+    loadDocument: (state, action: PayloadAction<LoadDocumentPayload>) => {
+      state.id = action.payload.id;
+    },
     addMaterials: (state, action: PayloadAction<MaterialPayload>) => {
       state.topicos.forEach((t) => {
         const { topicSelected, itemSelected, itemsAdded } = action.payload;
@@ -77,5 +78,6 @@ export const docsSlide = createSlice({
   },
 });
 
+export const { loadDocument } = docsSlide.actions;
 export const { addMaterials } = docsSlide.actions;
 export default docsSlide.reducer;
