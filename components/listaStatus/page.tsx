@@ -210,6 +210,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                     borderTop: "1px solid #d7d7d7",
                     borderBottom: "1px solid #d7d7d7",
                     padding: "12px 16px",
+                    transition: "background-color 0.3s",
                   },
                   "& td:first-of-type": {
                     borderLeft: "1px solid #d7d7d7",
@@ -220,6 +221,9 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                     borderRight: "1px solid #d7d7d7",
                     borderTopRightRadius: "12px",
                     borderBottomRightRadius: "12px",
+                  },
+                  "&:hover td": {
+                    backgroundColor: "#e9e9e9",
                   },
                 }}
               >
