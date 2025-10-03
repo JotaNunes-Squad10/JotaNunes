@@ -15,14 +15,14 @@ import {
   IconButton,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import EditIcon from "@mui/icons-material/Edit";
 import FirstPageIcon from "@mui/icons-material/FirstPage";
 import LastPageIcon from "@mui/icons-material/LastPage";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 
 export type Empreendimento = {
   id: number;
   nome: string;
-  ultimaAlteracao: string;
+  ultimaAlteracao: string; // espera DD/MM/YYYY
   versao: string;
   usuario: string;
   status: string;
@@ -45,6 +45,41 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   const [page, setPage] = useState(0);
   const rowsPerPage = 10;
 
+  // Estado para ordenação
+  const [orderBy, setOrderBy] = useState<"nome" | "ultimaAlteracao" | "usuario">("nome");
+  const [orderAsc, setOrderAsc] = useState(true);
+
+  // Função para parsear DD/MM/YYYY para timestamp (ms)
+  const parseDateToTimestamp = (s?: string): number => {
+    if (!s) return 0;
+    const trimmed = s.trim();
+    // Formato esperado: DD/MM/YYYY
+    const parts = trimmed.split("/");
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        return new Date(year, month, day).getTime();
+      }
+    }
+    // fallback: tenta parsear ISO ou outros formatos
+    const t = Date.parse(trimmed);
+    if (!isNaN(t)) return t;
+    return 0;
+  };
+
+  // Alternar coluna + direção (reseta página para 0)
+  const handleSort = (column: "nome" | "ultimaAlteracao" | "usuario") => {
+    setPage(0);
+    if (orderBy === column) {
+      setOrderAsc((prev) => !prev); // só troca direção
+    } else {
+      setOrderBy(column);
+      setOrderAsc(true); // reset para asc
+    }
+  };
+
   // Filtragem
   const empreendimentosFiltrados = empreendimentos.filter(
     (emp) =>
@@ -54,15 +89,57 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
         emp.ultimaAlteracao.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Paginação com slice
+  // Ordenação dinâmica: trata datas separadamente
+  const empreendimentosOrdenados = [...empreendimentosFiltrados].sort((a, b) => {
+    if (orderBy === "ultimaAlteracao") {
+      const ta = parseDateToTimestamp(a.ultimaAlteracao);
+      const tb = parseDateToTimestamp(b.ultimaAlteracao);
+      if (ta === tb) return 0;
+      return orderAsc ? ta - tb : tb - ta;
+    } else {
+      // nome ou usuario -> natural sort (numeric + ignore accents/case)
+      const fa = (a[orderBy] || "").toString();
+      const fb = (b[orderBy] || "").toString();
+      if (orderAsc) {
+        return fa.localeCompare(fb, undefined, { numeric: true, sensitivity: "base" });
+      } else {
+        return fb.localeCompare(fa, undefined, { numeric: true, sensitivity: "base" });
+      }
+    }
+  });
+
+  // Paginação
   const startIndex = page * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
-  const empreendimentosPaginados = empreendimentosFiltrados.slice(
-    startIndex,
-    endIndex
-  );
+  const empreendimentosPaginados = empreendimentosOrdenados.slice(startIndex, endIndex);
 
   const totalPages = Math.ceil(empreendimentosFiltrados.length / rowsPerPage);
+
+  // Cabeçalho com seta
+  const SortableHeader: React.FC<{ label: string; column: "nome" | "ultimaAlteracao" | "usuario" }> = ({ label, column }) => (
+    <TableCell
+      sx={{ fontWeight: "bold", cursor: "pointer" }}
+      align="center"
+      onClick={() => handleSort(column)}
+    >
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {label}
+        <ArrowDropDownIcon
+          sx={{
+            ml: 0.5,
+            transition: "transform 0.25s",
+            transform:
+              orderBy === column
+                ? orderAsc
+                  ? "rotate(0deg)"
+                  : "rotate(180deg)"
+                : "rotate(0deg)",
+            opacity: orderBy === column ? 1 : 0.35,
+          }}
+        />
+      </Box>
+    </TableCell>
+  );
 
   return (
     <Paper elevation={0} sx={{ p: 3, border: "none" }}>
@@ -109,18 +186,12 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
         <Table sx={{ borderSpacing: "0 12px", borderCollapse: "separate" }}>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: "bold" }} align="center">
-                Empreendimentos
-              </TableCell>
-              <TableCell sx={{ fontWeight: "bold" }} align="center">
-                Última alteração
-              </TableCell>
+              <SortableHeader label="Empreendimentos" column="nome" />
+              <SortableHeader label="Última alteração" column="ultimaAlteracao" />
               <TableCell sx={{ fontWeight: "bold" }} align="center">
                 Versão
               </TableCell>
-              <TableCell sx={{ fontWeight: "bold" }} align="center">
-                Usuário
-              </TableCell>
+              <SortableHeader label="Usuário" column="usuario" />
               <TableCell sx={{ fontWeight: "bold" }} align="center">
                 Status
               </TableCell>
@@ -153,9 +224,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                 }}
               >
                 <TableCell align="center">{empreendimento.nome}</TableCell>
-                <TableCell align="center">
-                  {empreendimento.ultimaAlteracao}
-                </TableCell>
+                <TableCell align="center">{empreendimento.ultimaAlteracao}</TableCell>
                 <TableCell align="center">{empreendimento.versao}</TableCell>
                 <TableCell align="center">{empreendimento.usuario}</TableCell>
                 <TableCell align="center">
@@ -183,7 +252,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                 </TableCell>
                 <TableCell align="center">
                   <IconButton>
-                    <EditIcon />
+                    <i className="pi pi-pen-to-square" style={{ fontSize: "1.2rem" }}></i>
                   </IconButton>
                 </TableCell>
               </TableRow>
@@ -194,9 +263,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
 
       {/* sem dados */}
       {empreendimentosFiltrados.length === 0 && (
-        <Typography
-          sx={{ textAlign: "center", py: 4, color: "text.secondary" }}
-        >
+        <Typography sx={{ textAlign: "center", py: 4, color: "text.secondary" }}>
           Nenhum empreendimento encontrado
         </Typography>
       )}
@@ -212,7 +279,6 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
             <FirstPageIcon />
           </IconButton>
 
-          {/* indicador da página */}
           <Typography variant="body2" sx={{ fontWeight: "bold" }}>
             Página {page + 1} de {totalPages}
           </Typography>
@@ -226,7 +292,6 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
           </IconButton>
         </Box>
       )}
-
     </Paper>
   );
 };
