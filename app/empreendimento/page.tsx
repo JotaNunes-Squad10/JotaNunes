@@ -1,229 +1,108 @@
 "use client";
 
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+// Componentes importados
 import Sidebar from "@/components/sections/Sidebar";
-import Button from "@/components/sections/Button";
-import DropDown from "@/components/sections/DropBox";
-import DropBoxSubSelect from "@/components/sections/DropBoxSubSelect";
-import CustomTable from "@/components/tableInfo/page";
-import ObserverComponent from "@/components/ObserverComponent/page";
-import FilterDemo from "@/components/sections/SelectedEdit";
-
-import UnidadePrivativaPage from "@/components/unidadePrivativa/page";
-import ActionBar from "@/components/componentHeader/page";
+// import CustomTable from "@/components/tableInfo/page"; // Manter só para tipagem se necessário, mas está em ItemAdditionSection
 import FormEmpreendimento from "@/components/formEditPage/page";
+import ActionBar from "@/components/componentHeader/page";
 import Header from "@/components/teste/header/page";
-import axios from "axios";
-import {
-  Material,
-  Topico,
-  ItemsTopico,
-  Documento,
-  Categories,
-} from "@/app/features/docs/docsTypes";
+// Novo componente de adição de itens
+import ItemAdditionSection from "@/components/sections/ItemAdditionSection";
 
-// Configuração do documento pelo toolkit
+// Tipagem de dados e Redux
 import { useAppSelector, useAppDispatch } from "../hooks";
 import { addMaterials } from "../features/docs/docsSlice";
+// Custom Hook
+import {
+  useEmpreendimentoData,
+  ItemOption,
+} from "../hooks/useEmpreendimentoData";
 
-interface Items {
+// Reutilizar a interface de Items para o estado da tabela
+interface TableItem {
   name: string;
   code: string;
 }
 
-interface Item {
-  id: number;
-  nome: string;
-}
-
-interface Ambiente {
-  id: number;
-  nome: string;
-}
-
 const EmpreendimentoPage: React.FC = () => {
-  // Inicializando estados da página
-  const [item, setItem] = useState<Item[]>([]);
+  // --- 1. Lógica de Dados (Custom Hook) ---
+  const { categories, availableItemOptions, refetchTopicos } =
+    useEmpreendimentoData();
 
-  useEffect(() => {
-    axios
-      .get("https://jotanunesservice.onrender.com/api/v1/items/GetAllItems")
-      .then((res) => setItem(res.data.data));
-  }, []);
-
-  const [selectedItemsTemp, setSelectedItemsTemp] = useState<Items[] | null>(
-    null
-  );
-  const [tableItems, setTableItems] = useState<Items[]>([]);
-
+  // --- 2. Lógica de Estado Local ---
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [selectedItemsTemp, setSelectedItemsTemp] = useState<
+    TableItem[] | null
+  >(null);
+  const [tableItems, setTableItems] = useState<TableItem[]>([]);
 
-  const items: Items[] = item?.map((item) => ({
-    name: item.nome,
-    code: item.nome,
-  }));
+  // Filtra itens disponíveis removendo aqueles já na tabela
+  const availableItems = useMemo(() => {
+    return availableItemOptions.filter(
+      (item) => !tableItems.some((t) => t.code === item.code)
+    );
+  }, [availableItemOptions, tableItems]);
 
-  const availableItems = items.filter(
-    (item) => !tableItems.some((t) => t.code === item.code)
-  );
-
-  const [ambiente, setAmbiente] = useState<Ambiente[] | []>([]);
-
-  useEffect(() => {
-    axios
-      .get(
-        "https://jotanunesservice.onrender.com/api/v1/ambiente/GetAllAmbientes"
-      )
-      .then((res) => setAmbiente(res.data.data));
-  }, []);
-
-  // Adicionando configuração do documento
+  // --- 3. Lógica de Redux ---
   const DocumentoEmpreendimento = useAppSelector((state) => state.docs);
   const dispatch = useAppDispatch();
 
-  // Funções da página
-  const itemsUnidadesPrivativas: ItemsTopico[] = [
-    { id: 1, nome: "Área Técnica", materiais: [] },
-    { id: 2, nome: "Circulação", materiais: [] },
-    { id: 3, nome: "Cozinha/Área de Serviço", materiais: [] },
-    { id: 4, nome: "Garden", materiais: [] },
-    { id: 5, nome: "Quarto e Suíte", materiais: [] },
-    { id: 6, nome: "Sanitário/Lavabo", materiais: [] },
-    { id: 7, nome: "Sala de Estar/Jantar", materiais: [] },
-    { id: 8, nome: "Varanda", materiais: [] },
-  ];
-
-  //   Exemplo de um mapeamento de items já integrado
-  const AmbientesItems: ItemsTopico[] = [];
-
-  ambiente.forEach((a) => {
-    AmbientesItems.push({
-      id: a.id,
-      nome: a.nome,
-      materiais: [],
-    });
-  });
-
-  const DescricaoMarcaItems: ItemsTopico[] = [
-    {
-      id: 1,
-      nome: "Drescrição da Marca",
-      materiais: [],
-    },
-  ];
-
-  const Topic: Topico[] = [
-    {
-      title: "1. Unidades Privativas",
-      items: itemsUnidadesPrivativas,
-    },
-    {
-      title: "2. Área Comum",
-      items: AmbientesItems,
-    },
-    {
-      title: "3. Marcas",
-      items: DescricaoMarcaItems,
-    },
-  ];
-
-  const Docs: Documento = {
-    id: 1,
-    empreendimento: "Pérolas do mar",
-    localizacao: "Coroa do meio",
-    descricaoEmpreendimento: "Empreendimento na coroa do meio",
-    observacao: "Nenhuma observação",
-    topicos: Topic,
-  };
-
-  const [topic, setTopic] = useState<Categories | null>(null);
-  useEffect(() => {
-    axios
-      .get("https://jotanunesservice.onrender.com/api/v1/topico/GetAllTopicos")
-      .then((res) => setTopic(res.data.data));
-  });
-
-  const categories: Categories[] = [];
-
-  Topic.forEach((t) => {
-    categories.push({
-      title: t.title,
-      items: t.items.map((i) => i.nome),
-    });
-  });
-
-  const currentOptions =
-    categories.find((c) => c.title === selectedCategory)?.items || [];
+  // --- 4. Funções de Manipulação ---
 
   const handleAddItems = () => {
-    if (selectedItemsTemp && selectedItemsTemp.length > 0) {
-      let newItems = selectedItemsTemp.filter(
+    if (
+      selectedItemsTemp &&
+      selectedItemsTemp.length > 0 &&
+      selectedCategory &&
+      selectedItem
+    ) {
+      // Filtra itens para garantir que apenas novos itens sejam adicionados
+      const newItemsToAdd = selectedItemsTemp.filter(
         (item) => !tableItems.some((t) => t.code === item.code)
       );
 
-      if (newItems.length === 0) return;
+      if (newItemsToAdd.length === 0) return;
 
-      setTableItems((prev) => [...prev, ...newItems]);
-      setSelectedItemsTemp(null);
+      // Atualiza o estado da tabela (visível na UI)
+      setTableItems((prev) => [...prev, ...newItemsToAdd]);
 
-      console.log(`Tópico selecionado: ${selectedCategory}`);
-      console.log(`Item tópico selecionado: ${selectedItem}`);
-      console.log(`Items adicionados: ${newItems.map((items) => items.name)}`);
-      // console.log(
-      //   selectedItemsTemp.filter(
-      //     (item) => !tableItems.some((t) => t.code === item.code)
-      //   )
-      // );
-
+      // Dispara a ação do Redux Toolkit
       dispatch(
         addMaterials({
           topicSelected: selectedCategory,
           itemSelected: selectedItem,
-          itemsAdded: newItems.map((ni) => ({
+          itemsAdded: newItemsToAdd.map((ni) => ({
             id: ni.code,
             nome: ni.name,
           })),
         })
       );
 
-      newItems = [];
+      // Limpa a seleção temporária
+      setSelectedItemsTemp(null);
 
-      // dispatch(addMaterials({
-      //   topicSelected: selectedCategory,
-      //   itemSelected: selectedItem,
-      //   itemsAdded: newItems.
-      // }))
-
-      // Docs.topicos.forEach((topic) => {
-      //   if (topic.title === selectedCategory) {
-      //     topic.items.forEach((items) => {
-      //       if (items.nome === selectedItem) {
-      //         newItems.forEach((item) => {
-      //           items.materiais.push({
-      //             id: item.code,
-      //             nome: item.name,
-      //             descricao: "",
-      //           });
-      //         });
-      //       }
-      //     });
-      //   }
-      // });
-
-      // console.log(Docs);
+      // Logica de console (opcional, manter apenas para debug)
+      console.log(`Tópico selecionado: ${selectedCategory}`);
+      console.log(`Item tópico selecionado: ${selectedItem}`);
+      console.log(
+        `Items adicionados: ${newItemsToAdd.map((items) => items.name)}`
+      );
     }
   };
 
-  console.log(DocumentoEmpreendimento);
+  // Log do Redux (opcional, manter apenas para debug)
+  // console.log(DocumentoEmpreendimento);
 
+  // --- 5. Renderização (UI) ---
   return (
     <div>
       <div>
         <Header />
       </div>
       <div className="flex h-screen">
+        {/* Sidebar */}
         <Sidebar
           sections={categories}
           selectedCategory={selectedCategory}
@@ -232,7 +111,10 @@ const EmpreendimentoPage: React.FC = () => {
             setSelectedCategory(category);
             setSelectedItem(item);
           }}
+          onTopicCreated={refetchTopicos}
         />
+
+        {/* Conteúdo Principal */}
         <div className="flex-1 bg-white p-6 shadow-md overflow-auto">
           <div>
             <ActionBar />
@@ -241,49 +123,19 @@ const EmpreendimentoPage: React.FC = () => {
             <FormEmpreendimento />
           </div>
 
-          <h2 className="text-black font-semibold mb-4 py-5">
-            Adicionar Itens
-          </h2>
-          <div>
-            <div>
-              <DropDown
-                options={categories.map((c) => c.title)}
-                defaultLabel="Selecione a categoria"
-                onSelect={(category) => {
-                  setSelectedCategory(category);
-                  setSelectedItem(null);
-                }}
-              />
-              <DropBoxSubSelect
-                options={currentOptions}
-                defaultLabel="Selecione o item"
-                onSelect={(item) => {
-                  setSelectedItem(item);
-                }}
-              />
-            </div>
-
-            <div>
-              <label className="text-black">Item</label>
-              <div className="flex flex-col items-center space-y4 md:items-start">
-                <FilterDemo
-                  items={availableItems}
-                  selectedItems={selectedItemsTemp}
-                  onSelectionChange={setSelectedItemsTemp}
-                />
-
-                <Button color="green" onClick={() => handleAddItems()}>
-                  Adicionar Item
-                </Button>
-              </div>
-            </div>
-            <div className="flex justify-center">
-              <CustomTable data={tableItems || []} />
-            </div>
-            <div>
-              <ObserverComponent />
-            </div>
-          </div>
+          {/* Seção de Adição de Itens (Componente Filho) */}
+          <ItemAdditionSection
+            categories={categories}
+            availableItems={availableItems as ItemOption[]} // Usamos o availableItems filtrado
+            tableItems={tableItems}
+            selectedCategory={selectedCategory}
+            selectedItem={selectedItem}
+            selectedItemsTemp={selectedItemsTemp}
+            onCategorySelect={setSelectedCategory}
+            onItemSelect={setSelectedItem}
+            onSelectionChange={setSelectedItemsTemp}
+            onAddItems={handleAddItems}
+          />
         </div>
       </div>
     </div>

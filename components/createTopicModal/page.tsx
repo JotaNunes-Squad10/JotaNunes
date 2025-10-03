@@ -10,9 +10,14 @@ import { InputText } from "primereact/inputtext";
 interface CreateTopicProps {
   visible: boolean;
   onHide: () => void;
+  onTopicCreated: () => void;
 }
 
-export default function CreateTopic({ visible, onHide }: CreateTopicProps) {
+export default function CreateTopic({
+  visible,
+  onHide,
+  onTopicCreated,
+}: CreateTopicProps) {
   const [nome, setNome] = useState<string>("");
 
   //   Configgurações do Toast
@@ -56,6 +61,13 @@ export default function CreateTopic({ visible, onHide }: CreateTopicProps) {
         }
       );
       showSuccess();
+
+      // 1. CHAMA O REFECTH
+      onTopicCreated();
+
+      // 2. LIMPA O ESTADO: Reseta o input e esconde o modal
+      setNome("");
+      onHide();
     } catch (error: any) {
       showError(error);
       if (error.response) {

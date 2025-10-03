@@ -70,6 +70,7 @@ interface SideBarProps {
   selectedCategory: string | null;
   selectedItem: string | null;
   onSelect: (category: string, item: string) => void;
+  onTopicCreated: () => void;
 }
 
 const Sidebar: React.FC<SideBarProps> = ({
@@ -77,9 +78,16 @@ const Sidebar: React.FC<SideBarProps> = ({
   selectedCategory,
   selectedItem,
   onSelect,
+  onTopicCreated,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [viewModal, setViewModal] = useState(false);
+
+  // Função auxiliar para esconder o moal e adicionar o refetch
+  const handleTopicCreated = () => {
+    setViewModal(false);
+    onTopicCreated();
+  };
 
   return (
     <div
@@ -148,7 +156,11 @@ const Sidebar: React.FC<SideBarProps> = ({
           </div>
         )}
       </div>
-      <CreateTopic visible={viewModal} onHide={() => setViewModal(false)} />
+      <CreateTopic
+        visible={viewModal}
+        onHide={() => setViewModal(false)}
+        onTopicCreated={handleTopicCreated}
+      />
     </div>
   );
 };

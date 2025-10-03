@@ -1,3 +1,13 @@
+export interface Item {
+  id: number;
+  nome: string;
+}
+
+export interface Ambiente {
+  id: number;
+  nome: string;
+}
+
 export type Material = {
   id: string | number;
   nome: string;
