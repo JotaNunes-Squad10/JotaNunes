@@ -27,14 +27,15 @@ export default function Button({
     : colorClasses[color]; // Classes base do botão
 
   const baseClasses =
-    "px-6 py-1 rounded-lg font-bold text-white shadow-md transition-colors min-w-[12rem] "; // Combine as classes base com as classes de cor/disabled
+    "px-6 py-1 rounded-lg font-bold text-white shadow-md transition-colors min-w-[12rem] cursor-pointer "; // Combine as classes base com as classes de cor/disabled
 
   const finalClasses = `${baseClasses} ${disabledClasses}`;
 
   return (
     // 4. Passe a prop disabled para o elemento HTML nativo
     <button className={finalClasses} onClick={onClick} disabled={disabled}>
-            {children}   {" "}
+      {children}
+      {""}
     </button>
   );
 }

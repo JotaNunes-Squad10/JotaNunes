@@ -166,6 +166,7 @@ export function useEmpreendimentoData() {
     const topicsWithIems: Topico[] = topicosData.map((apiTopic) => {
       let itemsForTopic: ItemsTopico[] = [];
 
+      // Todo: Fazer uma lógica para que os itemsForTopic seja relacionado ao seu respectivo tópico
       // 1. Tópicos conhecidos que têm itens estáticos/dinâmicos
       if (apiTopic.nome.includes("UNIDADES PRIVATIVAS")) {
         itemsForTopic = itemsUnidadesPrivativas;
