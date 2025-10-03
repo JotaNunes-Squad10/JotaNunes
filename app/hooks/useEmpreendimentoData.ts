@@ -6,7 +6,7 @@ import {
   ItemsTopico,
   Topico,
   Categories,
-} from "@/app/features/docs/docsTypes"; // Assumindo que essas interfaces estão em docsTypes
+} from "@/app/features/docs/docsTypes";
 
 // Interfaces locais para o hook
 interface FetchedItem {
@@ -46,7 +46,7 @@ export function useEmpreendimentoData() {
     setRefetchTrigger((prev) => prev + 1);
   }, []);
 
-  // 1. Fetch de Itens
+  // 1. Fetch de Itens --> Materiais
   useEffect(() => {
     axios
       .get("https://jotanunesservice.onrender.com/api/v1/items/GetAllItems")
@@ -54,7 +54,7 @@ export function useEmpreendimentoData() {
       .catch((error) => console.error("Erro ao buscar items:", error));
   }, []);
 
-  // 2. Fetch de Ambientes
+  // 2. Fetch de Ambientes da Área Comum
   useEffect(() => {
     axios
       .get(
@@ -117,6 +117,7 @@ export function useEmpreendimentoData() {
     });
 
     // --- Definir os Itens (Componentes do Tópico) ---
+    // Ambientes e definindo os itens/materiais de Univades Privativas
     const itemsUnidadesPrivativas: ItemsTopico[] = [
       { id: 1, nome: "Área Técnica", materiais: [] },
       { id: 2, nome: "Circulação", materiais: [] },
