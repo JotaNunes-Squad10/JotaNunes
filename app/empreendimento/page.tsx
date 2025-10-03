@@ -12,7 +12,7 @@ import ItemAdditionSection from "@/components/sections/ItemAdditionSection";
 
 // Tipagem de dados e Redux
 import { useAppSelector, useAppDispatch } from "../hooks";
-import { addMaterials } from "../features/docs/docsSlice";
+import { addMaterials, setInitialTopics } from "../features/docs/docsSlice";
 // Custom Hook
 import {
   useEmpreendimentoData,
@@ -27,7 +27,7 @@ interface TableItem {
 
 const EmpreendimentoPage: React.FC = () => {
   // --- 1. Lógica de Dados (Custom Hook) ---
-  const { categories, availableItemOptions, refetchTopicos } =
+  const { categories, availableItemOptions, refetchTopicos, Topic } =
     useEmpreendimentoData();
 
   // --- 2. Lógica de Estado Local ---
@@ -48,6 +48,14 @@ const EmpreendimentoPage: React.FC = () => {
   // --- 3. Lógica de Redux ---
   const DocumentoEmpreendimento = useAppSelector((state) => state.docs);
   const dispatch = useAppDispatch();
+
+  // Inicializa o estado do documento no Reduz com os tópicos da API
+  useEffect(() => {
+    if (Topic.length > 0 && DocumentoEmpreendimento.topicos.length === 0) {
+      dispatch(setInitialTopics(Topic));
+      console.log("Tópicos da API injetados no Redux.");
+    }
+  }, [Topic, DocumentoEmpreendimento.topicos.length, dispatch]);
 
   // --- 4. Funções de Manipulação ---
 
@@ -93,7 +101,7 @@ const EmpreendimentoPage: React.FC = () => {
   };
 
   // Log do Redux (opcional, manter apenas para debug)
-  // console.log(DocumentoEmpreendimento);
+  console.log(DocumentoEmpreendimento);
 
   // --- 5. Renderização (UI) ---
   return (
