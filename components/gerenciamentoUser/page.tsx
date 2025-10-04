@@ -8,6 +8,29 @@ import DeleteUserModal from './deleteUser/page';
 import { Sidebar } from "primereact/sidebar";
 import { Button } from "primereact/button";
 
+const API_BASE = 'https://jotanunesservice.onrender.com/api/v1/authentication';
+
+// Dispatch seguro de events - evita throws silenciosos
+const safeDispatch = (name: string, detail?: unknown) => {
+  try {
+    window.dispatchEvent(new CustomEvent(name, { detail }));
+  } catch (e) {
+    console.warn('dispatchEvent failed', e);
+  }
+};
+
+const notify = (severity: 'success'|'error'|'info'|'warn', summary?: string, detail?: string) => {
+  safeDispatch('gerenciamentoUser:notify', { severity, summary, detail });
+};
+
+const logoutAndRedirect = (delayMs = 0) => {
+  if (typeof window !== 'undefined') {
+    document.cookie = "accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    if (delayMs > 0) setTimeout(() => { window.location.href = '/login'; }, delayMs);
+    else window.location.href = '/login';
+  }
+};
+
 export default function GerenciamentoUser() {
   type LocalToast = { id: string; severity: 'success'|'error'|'info'|'warn'; summary?: string; detail?: string };
   const [localToasts, setLocalToasts] = useState<LocalToast[]>([]);
@@ -54,7 +77,7 @@ export default function GerenciamentoUser() {
   const [deleting, setDeleting] = useState(false);
   // Buscar usuários na API
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
     let didTimeout = false;
     async function fetchUsers() {
       setLoadingUsers(true);
@@ -64,8 +87,8 @@ export default function GerenciamentoUser() {
         setUsers([]);
       }, 10000);
       try {
-        const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
-        const response = await fetch("https://jotanunesservice.onrender.com/api/v1/authentication/GetAllUsers", {
+                const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
+                const response = await fetch(`${API_BASE}/GetAllUsers`, {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
         });
         if (didTimeout) return;
@@ -76,8 +99,8 @@ export default function GerenciamentoUser() {
               // Limpar cookie de auth e redirecionar para login
               if (typeof window !== 'undefined') {
                 document.cookie = "accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                try { window.dispatchEvent(new CustomEvent('gerenciamentoUser:notify', { detail: { severity: 'info', summary: 'Sessão', detail: 'Sessão expirada. Redirecionando para login...' } })); } catch {}
-                setTimeout(() => { window.location.href = '/login'; }, 900);
+                notify('info', 'Sessão', 'Sessão expirada. Redirecionando para login...');
+                setTimeout(() => { logoutAndRedirect(); }, 900);
               }
             } catch {
               // falha ao tentar limpar cookie/redirect
@@ -116,8 +139,8 @@ export default function GerenciamentoUser() {
         return;
       }
       if (action === 'confirm' && ids && ids.length > 0) {
-        const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
-        const baseUrl = `https://jotanunesservice.onrender.com/api/v1/authentication`;
+  const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
+  const baseUrl = API_BASE;
         const results: { id: string|number; ok: boolean; status?: number; error?: string }[] = [];
         if (deleting) return; 
         setDeleting(true);
@@ -151,23 +174,21 @@ export default function GerenciamentoUser() {
             setSelectedUsers([]);
             setRemovingIds(prev => prev.filter(i => !ids.includes(i)));
           }, ROW_ANIM_MS);
-          try { window.dispatchEvent(new CustomEvent('gerenciamentoUser:notify', { detail: { severity: 'success', summary: 'Sucesso', detail: 'Usuário(s) deletado(s) com sucesso!' } })); } catch { }
+          notify('success', 'Sucesso', 'Usuário(s) deletado(s) com sucesso!');
         } else {
-          try { window.dispatchEvent(new CustomEvent('gerenciamentoUser:notify', { detail: { severity: 'error', summary: 'Erro', detail: `Falha ao deletar ${failed.length} usuário(s).` } })); } catch { }
+          notify('error', 'Erro', `Falha ao deletar ${failed.length} usuário(s).`);
           console.error('[GerenciamentoUser] Erros ao deletar:', failed);
         }
         setShowDeleteModal(false);
         setDeleting(false);
-        try { window.dispatchEvent(new CustomEvent('gerenciamentoUser:delete:finished', { detail: { results } })); } catch {}
+  safeDispatch('gerenciamentoUser:delete:finished', { results });
       }
     };
     window.addEventListener('gerenciamentoUser:delete', handler as EventListener);
     return () => window.removeEventListener('gerenciamentoUser:delete', handler as EventListener);
   }, [users, selectedUsers, deleting]);
 
-  // Listener para notificações vindas do modal ou outros componentes (ex.: delete modal)
-  useEffect(() => {
-  }, []);
+  // (listener removido) não havia conteúdo aqui
 
   const handleMenuClick = () => {
     setVisible(true);
@@ -386,14 +407,8 @@ export default function GerenciamentoUser() {
                             }}
                           >
                             <i
-                              className="pi pi-pen-to-square text-gray-800 hover:text-blue-500 text-lg sm:text-xl transition-transform duration-300"
+                              className="pi pi-pen-to-square text-gray-800 hover:text-blue-500 text-lg sm:text-xl transition-transform duration-300 hover:scale-110"
                               style={{ cursor: 'pointer' }}
-                              onMouseEnter={e => {
-                                e.currentTarget.classList.add('scale-110');
-                              }}
-                              onMouseLeave={e => {
-                                e.currentTarget.classList.remove('scale-110');
-                              }}
                             />
                           </button>
                         </td>
@@ -416,13 +431,10 @@ export default function GerenciamentoUser() {
           actions={{
             onClose: () => setShowEditModal(false),
             onSave: async (updatedUser: User) => {
-              const tryFetch = async (url: string, options: RequestInit) => {
-                const res = await fetch(url, options);
-                return res;
-              };
+              // fetch direto será usado (wrapper removido)
 
               try {
-                if (!updatedUser || !updatedUser.id) {
+                if (!updatedUser?.id) {
                   throw new Error('ID do usuário ausente ao tentar atualizar');
                 }
                 const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
@@ -438,16 +450,13 @@ export default function GerenciamentoUser() {
                   profile: updatedUser.profile
                 };
                 // Validação básica
-                if (!updatedUser.id) {
-                  throw new Error('ID do usuário é obrigatório');
-                }
                 if (!updatedUser.username || !updatedUser.firstName || !updatedUser.lastName || !updatedUser.email) {
                   throw new Error('Campos obrigatórios não preenchidos');
                 }
 
                 // PATCH /UpdateUser (sem ID na URL, ID vai no payload)
                 const url = `https://jotanunesservice.onrender.com/api/v1/authentication/UpdateUser`;
-                const response = await tryFetch(url, {
+                const response = await fetch(url, {
                   method: 'PATCH',
                   headers: {
                     'Content-Type': 'application/json',
@@ -509,7 +518,7 @@ export default function GerenciamentoUser() {
                 };
 
                 const tempPassword = generateTempPassword(8);
-                const payload = { userId: String(userId), password: tempPassword };
+                const payload = { userId: String(userId), newPassword: tempPassword };
 
                 const response = await fetch(url, {
                   method: 'PATCH',
@@ -533,14 +542,14 @@ export default function GerenciamentoUser() {
                     }
                   }
                   console.error(`[GerenciamentoUser] ResetPassword falhou: status=${response.status} body=${bodyText}`);
-                  try { window.dispatchEvent(new CustomEvent('gerenciamentoUser:notify', { detail: { severity: 'error', summary: 'Erro', detail: 'Falha ao resetar senha.' } })); } catch {}
+                  try { window.dispatchEvent(new CustomEvent('gerenciamentoUser:notify', { detail: { severity: 'error', summary: 'Erro', detail: 'Falha ao resetar senha.' } })); } catch (e) { console.warn('dispatchEvent failed', e); }
                   throw new Error(bodyText || `Erro ao resetar senha (status=${response.status})`);
                 }
 
                 // Sucesso: notificar com a senha temporária (aviso: sensível)
                 try {
                   window.dispatchEvent(new CustomEvent('gerenciamentoUser:notify', { detail: { severity: 'success', summary: 'Senha resetada', detail: `Senha temporária: ${tempPassword}` } }));
-                } catch {}
+                } catch (e) { console.warn('dispatchEvent failed', e); }
 
                 // Também retornar a senha para quem chamou a função
                 return tempPassword;

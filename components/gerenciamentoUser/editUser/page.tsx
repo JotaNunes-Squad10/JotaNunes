@@ -69,7 +69,6 @@ export default function EditUserModal({ user, visible, actions }: EditUserModalP
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (saving) return;
-    // Bloquear submit se tentar alterar username (campo já é readonly, mas por segurança)
     if (form.username !== user.username) {
       toast.error("O nome de usuário não pode ser alterado.");
       return;
@@ -79,7 +78,6 @@ export default function EditUserModal({ user, visible, actions }: EditUserModalP
       toast.error("Selecione um perfil válido (Administrador, Gestor ou Operador).");
       return;
     }
-    // Validação do formato do telefone (igual ao createUser)
     const phonePattern = /^\(\d{2}\)\s\d{5}-\d{4}$/;
     if (!phonePattern.test(form.phone || '')) {
       toast.error("Digite um telefone válido no formato (xx) xxxxx-xxxx!");
@@ -87,7 +85,6 @@ export default function EditUserModal({ user, visible, actions }: EditUserModalP
     }
 
     // Converter telefone para formato de 14 dígitos (+55xxxxxxxxxx)
-    // Exemplo: "(79) 98765-4321" -> "+5579987654321"
     const phoneDigitsOnly = form.phone?.replace(/\D/g, '') || '';
     const formattedPhone = `+55${phoneDigitsOnly}`;
     try {

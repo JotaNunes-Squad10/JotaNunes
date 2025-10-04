@@ -8,6 +8,13 @@ import "react-toastify/dist/ReactToastify.css";
 import { setCookie } from "cookies-next";
 import { jwtDecode } from "jwt-decode";
 
+// Instância axios reutilizável para evitar recriação a cada submit
+
+const api = axios.create({
+  baseURL: process.env.NODE_ENV === "production" ? "https://jotanunesservice.onrender.com" : "http://host.docker.internal:8000",
+  timeout: 10000,
+});
+
 const BG_VIDEO_1 = "/img/videobackground.mp4";   
 const BG_VIDEO_2 = "/img/videobackground2.mp4";  
 const BG_IMAGE = "/img/background.png";
@@ -39,13 +46,8 @@ export default function JotanunesLogin() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const _axios = axios.create({
-      baseURL: "https://jotanunesservice.onrender.com",
-      timeout: 10000,
-    });
-
     setLoading(true);
-    const promise = _axios.post("/api/v1/authentication/Authenticate", { username, password: senha })
+    const promise = api.post("/api/v1/authentication/Authenticate", { username, password: senha })
       .then((response) => {
         const token = response?.data?.data?.accessToken;
         const trimmed = typeof token === "string" ? token.trim() : undefined;
@@ -67,23 +69,30 @@ export default function JotanunesLogin() {
         return response;
       });
 
-    toast.promise(promise, {
-      pending: {
-        render() {
-          return "Autenticando...";
+    try {
+      await toast.promise(promise, {
+        pending: {
+          render() {
+            return "Autenticando...";
+          },
         },
-      },
-      success: {
-        render() {
-          return "Login realizado com sucesso!";
+        success: {
+          render() {
+            return "Login realizado com sucesso!";
+          },
         },
-      },
-      error: {
-        render() {
-          return "Usuário ou senha inválidos!";
+        error: {
+          render() {
+            return "Usuário ou senha inválidos!";
+          },
         },
-      },
-    }).finally(() => setLoading(false));
+      });
+    } catch (err) {
+      // Já tratado pelo toast, mas loga para debugging
+      console.error("Erro ao autenticar:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
