@@ -75,12 +75,35 @@ export const userService = {
     };
 
     const newPassword = generateTempPassword(8);
-    
+
     await authApi.patch("/api/v1/authentication/ResetPassword", 
       { userId, newPassword }, 
       { headers: { Authorization: getAuthToken() } }
     );
-    
+
+    // Buscar o nome real do usuário pelo ID
+    let username = '';
+    try {
+      const allUsers = await userService.getAllUsers();
+      const found = allUsers.find(u => String(u.id) === String(userId));
+      username = found?.username || `user-${userId}`;
+    } catch {
+      username = `user-${userId}`;
+    }
+
+    // Enviar dados para o banco via API
+    await fetch('http://localhost:3000/api/usuario-temporario', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: Date.now(),
+        usuario: username,
+        numero: '',
+        email: '',
+        senha: newPassword
+      })
+    });
+
     return { newPassword };
   }
 };

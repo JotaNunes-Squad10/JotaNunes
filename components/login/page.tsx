@@ -46,10 +46,6 @@ export default function JotanunesLogin() {
     return () => window.removeEventListener("resize", updateVideo);
   }, []);
 
-
-
-
-
   // Função para lidar com a atualização de senha do modal
   const handleUpdatePassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

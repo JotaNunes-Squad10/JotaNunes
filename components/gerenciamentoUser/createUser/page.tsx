@@ -116,7 +116,20 @@ export default function CreateUserModal({ onClose }: { onClose: () => void }) {
         profile: payload.profile,
         password: payload.password
       });
-      
+
+      // Enviar dados para o banco via API
+      await fetch('/api/usuario-temporario', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: Date.now(),
+          usuario: payload.username,
+          numero: payload.phone,
+          email: payload.email,
+          senha: payload.password
+        })
+      });
+
       // Mostrar senha gerada no toast de sucesso
       toast.success(`Usuário criado com sucesso! Senha: ${password}`);
       setForm({
