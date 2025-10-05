@@ -78,10 +78,18 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
       const tb = parseDateToTimestamp(b.ultimaAlteracao);
       return orderAsc ? ta - tb : tb - ta;
     }
+
+    if (orderBy === "nome") {
+      const numA = parseInt(a.nome.match(/\d+/)?.[0] || "0", 10);
+      const numB = parseInt(b.nome.match(/\d+/)?.[0] || "0", 10);
+      return orderAsc ? numA - numB : numB - numA;
+    }
+
     const fa = a[orderBy].toLowerCase();
     const fb = b[orderBy].toLowerCase();
     return orderAsc ? fa.localeCompare(fb) : fb.localeCompare(fa);
   });
+
 
   const startIndex = page * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
@@ -190,11 +198,11 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                       }}
                     >
                       <Skeleton width="20%" height="1.2rem" />
-                      <Skeleton width="15%" height="1.2rem" />
-                      <Skeleton width="10%" height="1.2rem" />
-                      <Skeleton width="15%" height="1.2rem" />
-                      <Skeleton width="10%" height="1.2rem" />
-                      <Skeleton width="5%" height="1.2rem" />
+                      <Skeleton width="20%" height="1.2rem" />
+                      <Skeleton width="20%" height="1.2rem" />
+                      <Skeleton width="20%" height="1.2rem" />
+                      <Skeleton width="20%" height="1.2rem" />
+                      <Skeleton width="20%" height="1.2rem" />
                     </Box>
                   </TableCell>
                 </TableRow>
