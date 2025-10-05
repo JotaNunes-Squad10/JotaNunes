@@ -1,12 +1,11 @@
 "use client";
 
-import React, {useState} from "react";
+import React, { useState, useEffect } from "react";
 import { Box } from "@mui/material";
 
 import Header from "../../components/headerUser/page";
 import StatusSummary from "../../components/home/status/page";
 import EmpreendimentosTable, { Empreendimento } from "../../components/listaStatus/page";
-
 
 // Dados mockados
 const mockEmpreendimentos: Empreendimento[] = [
@@ -45,13 +44,20 @@ const mockEmpreendimentos: Empreendimento[] = [
   { id: 9, nome: "Construção 9", ultimaAlteracao: "09/01/2025", versao: "1.0", usuario: "Ana", status: "Cancelados" }
 ];
 
-
 const StatusTabela: React.FC = () => {
+  const [filtroAtivo, setFiltroAtivo] = useState<string>("Editando");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
 
-    const [filtroAtivo, setFiltroAtivo] = useState<string>("Editando");
-    const [searchTerm, setSearchTerm] = useState<string>("");
+  useEffect(() => {
+    // Simula o tempo de carregamento da API (2 segundos)
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
-    const handleFiltroChange = (filtro: string) => {
+  const handleFiltroChange = (filtro: string) => {
     setFiltroAtivo(filtro);
     setSearchTerm(""); // Limpa a busca quando muda o filtro
   };
@@ -72,9 +78,9 @@ const StatusTabela: React.FC = () => {
             filtroAtivo={filtroAtivo}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
+            loading={loading} // 👈 Passa o estado de carregamento
           />
         </Box>
-
       </Box>
     </>
   );
