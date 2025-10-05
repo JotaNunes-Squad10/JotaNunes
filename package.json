@@ -17,7 +17,7 @@
     "cookies-next": "^6.1.0",
     "jwt-decode": "^4.0.0",
     "mysql2": "^3.15.1",
-    "next": "15.4.6",
+    "next": "^15.5.4",
     "primeicons": "^7.0.0",
     "primereact": "^10.9.7",
     "react": "19.1.0",
