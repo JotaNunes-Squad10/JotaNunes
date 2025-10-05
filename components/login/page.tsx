@@ -2,22 +2,11 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { setCookie } from "cookies-next";
 import { jwtDecode } from "jwt-decode";
-
-const api = axios.create({
-  baseURL: process.env.NODE_ENV === "production" ? "https://jotanunesservice.onrender.com" : "http://host.docker.internal:8000",
-  timeout: 10000,
-});
-
-// API para endpoints de autenticação (sempre produção)
-const authApi = axios.create({
-  baseURL: "https://jotanunesservice.onrender.com",
-  timeout: 10000,
-});
+import { authService } from "../../lib/api";
 
 const BG_VIDEO_1 = "/img/videobackground.mp4";   
 const BG_VIDEO_2 = "/img/videobackground2.mp4";  
@@ -59,36 +48,7 @@ export default function JotanunesLogin() {
 
 
 
-  // Função para buscar usuário por username
-  const getUserByUsername = async (username: string) => {
-    try {
-      const response = await authApi.get(`/api/v1/authentication/GetUserByUsername/${username}`);
-      return response.data;
-    } catch (error: any) {
-      // Retorna um mock para permitir que o modal abra mesmo com erro
-      return {
-        data: {
-          requiredActions: ["UPDATE_PASSWORD"]
-        }
-      };
-    }
-  };
 
-  // Função para atualizar senha
-  const updatePasswordApi = async (username: string, currentPassword: string, newPassword: string) => {
-    const payload = {
-      username,
-      currentPassword,
-      newPassword
-    };
-
-    try {
-      const response = await authApi.patch("/api/v1/authentication/UpdatePassword", payload);
-      return response.data;
-    } catch (error: any) {
-      throw error;
-    }
-  };
 
   // Função para lidar com a atualização de senha do modal
   const handleUpdatePassword = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -107,20 +67,25 @@ export default function JotanunesLogin() {
     setUpdatingPassword(true);
 
     try {
-      await updatePasswordApi(username, currentPassword, newPassword);
+      await authService.updatePassword({ username, currentPassword, newPassword });
       toast.success("Senha atualizada com sucesso! Faça login com a nova senha.");
       closeUpdatePasswordModal();
       setSenha(""); // Limpa a senha do login
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       let errorMessage = "Erro ao atualizar senha. Verifique se a senha atual está correta.";
       
-      if (error?.response?.status === 400) {
-        errorMessage = "Dados inválidos. Verifique se a nova senha atende aos critérios.";
-      } else if (error?.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error?.response?.data?.errors?.messages?.[0]) {
-        errorMessage = error.response.data.errors.messages[0];
+      // Type guard para verificar se é um erro de axios
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: { message?: string; errors?: { messages?: string[] } } } };
+        
+        if (axiosError.response?.status === 400) {
+          errorMessage = "Dados inválidos. Verifique se a nova senha atende aos critérios.";
+        } else if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        } else if (axiosError.response?.data?.errors?.messages?.[0]) {
+          errorMessage = axiosError.response.data.errors.messages[0];
+        }
       }
       
       toast.error(errorMessage);
@@ -143,9 +108,9 @@ export default function JotanunesLogin() {
     setLoading(true);
 
     try {
-      const response = await api.post("/api/v1/authentication/Authenticate", { username, password: senha });
+      const response = await authService.authenticate({ username, password: senha });
       
-      const token = response?.data?.data?.accessToken;
+      const token = response?.data?.accessToken;
       const trimmed = typeof token === "string" ? token.trim() : undefined;
       if (!trimmed) throw new Error("Token inválido");
 
@@ -164,15 +129,28 @@ export default function JotanunesLogin() {
       if (groups.includes("Administrador")) router.push("/adm");
       else router.push("/dashboard");
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Extrai a mensagem de erro
       let errorMessage = "";
-      if (err?.response?.data?.errors?.messages?.[0]) {
-        errorMessage = err.response.data.errors.messages[0];
-      } else if (err?.response?.data?.error_description) {
-        errorMessage = err.response.data.error_description;
-      } else if (err?.message) {
-        errorMessage = err.message;
+      
+      // Type guard para verificar se é um erro de axios
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { 
+          response?: { 
+            data?: { 
+              errors?: { messages?: string[] }; 
+              error_description?: string; 
+            } 
+          } 
+        };
+        
+        if (axiosError.response?.data?.errors?.messages?.[0]) {
+          errorMessage = axiosError.response.data.errors.messages[0];
+        } else if (axiosError.response?.data?.error_description) {
+          errorMessage = axiosError.response.data.error_description;
+        }
+      } else if (err && typeof err === 'object' && 'message' in err) {
+        errorMessage = (err as Error).message;
       }
       
       // Verifica se a conta precisa de configuração
@@ -182,7 +160,7 @@ export default function JotanunesLogin() {
       
       if (isAccountNotSetup) {
         try {
-          const userInfo = await getUserByUsername(username);
+          const userInfo = await authService.getUserByUsername(username);
           if (userInfo?.data?.requiredActions?.includes("UPDATE_PASSWORD")) {
             toast.info("Necessário atualizar a senha para continuar.");
             setShowUpdatePasswordModal(true);

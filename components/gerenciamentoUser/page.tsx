@@ -1,14 +1,12 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { getCookie } from "cookies-next";
 import Header from "./headerUser/page";
 import CreateUserModal from "./createUser/page";
 import EditUserModal from "./editUser/page";
 import DeleteUserModal from './deleteUser/page';
 import { Sidebar } from "primereact/sidebar";
 import { Button } from "primereact/button";
-
-const API_BASE = 'https://jotanunesservice.onrender.com/api/v1/authentication';
+import { userService, type User } from "../../lib/services";
 
 // Dispatch seguro de events - evita throws silenciosos
 const safeDispatch = (name: string, detail?: unknown) => {
@@ -60,16 +58,6 @@ export default function GerenciamentoUser() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  type User = {
-    id?: string | number;
-    username: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    profile?: number;
-    phone?: string;
-    profiles?: Array<{ id: number; name: string }>;
-  };
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [removingIds, setRemovingIds] = useState<(string|number)[]>([]);
@@ -87,14 +75,17 @@ export default function GerenciamentoUser() {
         setUsers([]);
       }, 10000);
       try {
-                const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
-                const response = await fetch(`${API_BASE}/GetAllUsers`, {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
-        });
+        const users = await userService.getAllUsers();
         if (didTimeout) return;
         clearTimeout(timeoutId);
-        if (!response.ok) {
-          if (response.status === 401) {
+        setUsers(users);
+      } catch (error: unknown) {
+        console.error('[GerenciamentoUser] Erro na requisição GetAllUsers:', error);
+        
+        // Verificar se é erro de autorização
+        if (error && typeof error === 'object' && 'response' in error) {
+          const axiosError = error as { response?: { status?: number } };
+          if (axiosError.response?.status === 401) {
             try {
               // Limpar cookie de auth e redirecionar para login
               if (typeof window !== 'undefined') {
@@ -105,17 +96,10 @@ export default function GerenciamentoUser() {
             } catch {
               // falha ao tentar limpar cookie/redirect
             }
+            return;
           }
-          throw new Error(`HTTP ${response.status}`);
         }
-        const data = await response.json();
-        if (Array.isArray(data.data)) setUsers(data.data);
-        else {
-          setUsers([]);
-          console.error("Formato inesperado da resposta de usuários", data);
-        }
-      } catch (error) {
-        console.error('[GerenciamentoUser] Erro na requisição GetAllUsers:', error);
+        
         if (!didTimeout) {
           setUsers([]);
         }
@@ -139,30 +123,26 @@ export default function GerenciamentoUser() {
         return;
       }
       if (action === 'confirm' && ids && ids.length > 0) {
-  const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
-  const baseUrl = API_BASE;
         const results: { id: string|number; ok: boolean; status?: number; error?: string }[] = [];
         if (deleting) return; 
         setDeleting(true);
         for (const id of ids) {
           try {
-            const url = `${baseUrl}/DeleteUser/${id}`;
-            const res = await fetch(url, {
-              method: 'DELETE',
-              headers: {
-                Authorization: token ? `Bearer ${token}` : '',
-              },
-            });
-            if (!res.ok) {
-              let body = '';
-              try { body = await res.text(); } catch { body = '<no body>'; }
-              results.push({ id, ok: false, status: res.status, error: body });
-            } else {
-              results.push({ id, ok: true });
+            await userService.deleteUser(String(id));
+            results.push({ id, ok: true });
+          } catch (error: unknown) {
+            let message = 'Erro desconhecido';
+            let status: number | undefined = undefined;
+            
+            if (error && typeof error === 'object' && 'response' in error) {
+              const axiosError = error as { response?: { status?: number; data?: unknown } };
+              status = axiosError.response?.status;
+              message = `HTTP ${status}`;
+            } else if (error instanceof Error) {
+              message = error.message;
             }
-          } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err);
-            results.push({ id, ok: false, error: message });
+            
+            results.push({ id, ok: false, status, error: message });
           }
         }
 
@@ -431,13 +411,11 @@ export default function GerenciamentoUser() {
           actions={{
             onClose: () => setShowEditModal(false),
             onSave: async (updatedUser: User) => {
-              // fetch direto será usado (wrapper removido)
 
               try {
                 if (!updatedUser?.id) {
                   throw new Error('ID do usuário ausente ao tentar atualizar');
                 }
-                const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
 
                 // Construir payload simples conforme esquema da API
                 const updatePayload = {
@@ -454,44 +432,8 @@ export default function GerenciamentoUser() {
                   throw new Error('Campos obrigatórios não preenchidos');
                 }
 
-                // PATCH /UpdateUser (sem ID na URL, ID vai no payload)
-                const url = `https://jotanunesservice.onrender.com/api/v1/authentication/UpdateUser`;
-                const response = await fetch(url, {
-                  method: 'PATCH',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: token ? `Bearer ${token}` : '',
-                  },
-                  body: JSON.stringify(updatePayload),
-                });
-
-                if (!response.ok) {
-                  let bodyText = '';
-                  try {
-                    const json = await response.json();
-                    bodyText = JSON.stringify(json);
-                  } catch {
-                    try {
-                      bodyText = await response.text();
-                    } catch {
-                      bodyText = '<não disponível>';
-                    }
-                  }
-                  
-                  console.error(`[GerenciamentoUser] PATCH UpdateUser falhou:`, {
-                    status: response.status,
-                    statusText: response.statusText,
-                    url: url,
-                    body: bodyText
-                  });
-
-                  // Se for 404, talvez o endpoint seja diferente
-                  if (response.status === 404) {
-                    throw new Error(`Endpoint não encontrado: ${url}. Verifique se o endpoint de atualização está correto.`);
-                  }
-                  
-                  throw new Error(`Erro ao atualizar usuário: ${response.status} - ${bodyText}`);
-                }
+                // Usar serviço centralizado para atualizar usuário
+                await userService.updateUser(updatePayload);
 
                 // usuário atualizado com sucesso
                 setUsers((prev) => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
@@ -504,47 +446,9 @@ export default function GerenciamentoUser() {
                 if (!userId) {
                   throw new Error('ID do usuário ausente ao tentar resetar senha');
                 }
-                const token = typeof window !== "undefined" ? getCookie("accessToken") : "";
-
-                const url = `https://jotanunesservice.onrender.com/api/v1/authentication/ResetPassword`;
-
-                const generateTempPassword = (length = 8) => {
-                  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-                  let pass = "";
-                  for (let i = 0; i < length; i++) {
-                    pass += chars.charAt(Math.floor(Math.random() * chars.length));
-                  }
-                  return pass;
-                };
-
-                const tempPassword = generateTempPassword(8);
-                const payload = { userId: String(userId), newPassword: tempPassword };
-
-                const response = await fetch(url, {
-                  method: 'PATCH',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: token ? `Bearer ${token}` : '',
-                  },
-                  body: JSON.stringify(payload),
-                });
-
-                if (!response.ok) {
-                  let bodyText = '';
-                  try {
-                    const json = await response.json();
-                    bodyText = JSON.stringify(json);
-                  } catch {
-                    try {
-                      bodyText = await response.text();
-                    } catch {
-                      bodyText = '<não disponível>';
-                    }
-                  }
-                  console.error(`[GerenciamentoUser] ResetPassword falhou: status=${response.status} body=${bodyText}`);
-                  try { window.dispatchEvent(new CustomEvent('gerenciamentoUser:notify', { detail: { severity: 'error', summary: 'Erro', detail: 'Falha ao resetar senha.' } })); } catch (e) { console.warn('dispatchEvent failed', e); }
-                  throw new Error(bodyText || `Erro ao resetar senha (status=${response.status})`);
-                }
+                // Usar serviço centralizado para resetar senha
+                const result = await userService.resetPassword(String(userId));
+                const tempPassword = result.newPassword;
 
                 // Sucesso: notificar com a senha temporária (aviso: sensível)
                 try {

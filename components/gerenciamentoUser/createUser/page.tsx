@@ -1,12 +1,10 @@
 import React, { useState } from "react";
 import { jwtDecode } from "jwt-decode";
-import axios from "axios";
 import { getCookie } from "cookies-next";
 import { InputMask } from "primereact/inputmask";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
-const BASE_URL = "https://jotanunesservice.onrender.com";
+import { userService } from "../../../lib/services";
 
 export default function CreateUserModal({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState({
@@ -108,43 +106,48 @@ export default function CreateUserModal({ onClose }: { onClose: () => void }) {
     };
 
     setLoading(true);
-    const token = getCookie("accessToken");
     try {
-      const response = await axios.post(
-        `${BASE_URL}/api/v1/authentication/CreateUser`,
-        payload,
-        {
-          timeout: 10000,
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      if (response.status === 200 || response.status === 201) {
-        // Mostrar senha gerada no toast de sucesso
-        toast.success(`Usuário criado com sucesso! Senha: ${password}`);
-        setForm({
-          username: "",
-          email: "",
-          firstName: "",
-          lastName: "",
-          phone: "",
-          role: "",
-        });
-        setTimeout(() => {
-          onClose();
-        }, 3800);
-      } else {
-        toast.error("Não foi possível criar o usuário. Tente novamente.");
+      await userService.createUser({
+        username: payload.username,
+        email: payload.email,
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        phone: payload.phone,
+        profile: payload.profile,
+        password: payload.password
+      });
+      
+      // Mostrar senha gerada no toast de sucesso
+      toast.success(`Usuário criado com sucesso! Senha: ${password}`);
+      setForm({
+        username: "",
+        email: "",
+        firstName: "",
+        lastName: "",
+        phone: "",
+        role: "",
+      });
+      setTimeout(() => {
+        onClose();
+      }, 3800);
+    } catch (error: unknown) {
+      let errorMessage = "Erro ao criar usuário!";
+      
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { 
+          response?: { 
+            data?: { message?: string; error?: string }; 
+            status?: number; 
+            statusText?: string; 
+          } 
+        };
+        errorMessage = axiosError.response?.data?.message || 
+                     axiosError.response?.data?.error || 
+                     `Erro ${axiosError.response?.status}: ${axiosError.response?.statusText}` || 
+                     errorMessage;
       }
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-          const errorMessage = err.response?.data?.message || err.response?.data?.error || `Erro ${err.response?.status}: ${err.response?.statusText}` || "Erro ao criar usuário!";
-          toast.error(errorMessage);
-        } else {
-          toast.error("Erro inesperado ao criar usuário!");
-        }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
