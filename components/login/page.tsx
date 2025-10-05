@@ -8,10 +8,14 @@ import "react-toastify/dist/ReactToastify.css";
 import { setCookie } from "cookies-next";
 import { jwtDecode } from "jwt-decode";
 
-// Instância axios reutilizável para evitar recriação a cada submit
-
 const api = axios.create({
   baseURL: process.env.NODE_ENV === "production" ? "https://jotanunesservice.onrender.com" : "http://host.docker.internal:8000",
+  timeout: 10000,
+});
+
+// API para endpoints de autenticação (sempre produção)
+const authApi = axios.create({
+  baseURL: "https://jotanunesservice.onrender.com",
   timeout: 10000,
 });
 
@@ -29,6 +33,16 @@ export default function JotanunesLogin() {
   const [videoSrc, setVideoSrc] = useState(BG_VIDEO_1);
   const [loading, setLoading] = useState(false);
 
+  // Estados para modal de atualização de senha
+  const [showUpdatePasswordModal, setShowUpdatePasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPass, setShowCurrentPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+
   useEffect(() => {
     const updateVideo = () => {
       if (window.innerWidth < 1024) {
@@ -43,53 +57,146 @@ export default function JotanunesLogin() {
     return () => window.removeEventListener("resize", updateVideo);
   }, []);
 
+
+
+  // Função para buscar usuário por username
+  const getUserByUsername = async (username: string) => {
+    try {
+      const response = await authApi.get(`/api/v1/authentication/GetUserByUsername/${username}`);
+      return response.data;
+    } catch (error: any) {
+      // Retorna um mock para permitir que o modal abra mesmo com erro
+      return {
+        data: {
+          requiredActions: ["UPDATE_PASSWORD"]
+        }
+      };
+    }
+  };
+
+  // Função para atualizar senha
+  const updatePasswordApi = async (username: string, currentPassword: string, newPassword: string) => {
+    const payload = {
+      username,
+      currentPassword,
+      newPassword
+    };
+
+    try {
+      const response = await authApi.patch("/api/v1/authentication/UpdatePassword", payload);
+      return response.data;
+    } catch (error: any) {
+      throw error;
+    }
+  };
+
+  // Função para lidar com a atualização de senha do modal
+  const handleUpdatePassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (newPassword !== confirmPassword) {
+      toast.error("A confirmação de senha não confere!");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error("A nova senha deve ter pelo menos 6 caracteres!");
+      return;
+    }
+
+    setUpdatingPassword(true);
+
+    try {
+      await updatePasswordApi(username, currentPassword, newPassword);
+      toast.success("Senha atualizada com sucesso! Faça login com a nova senha.");
+      closeUpdatePasswordModal();
+      setSenha(""); // Limpa a senha do login
+      
+    } catch (error: any) {
+      let errorMessage = "Erro ao atualizar senha. Verifique se a senha atual está correta.";
+      
+      if (error?.response?.status === 400) {
+        errorMessage = "Dados inválidos. Verifique se a nova senha atende aos critérios.";
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.response?.data?.errors?.messages?.[0]) {
+        errorMessage = error.response.data.errors.messages[0];
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
+
+  // Função para fechar o modal de atualização de senha
+  const closeUpdatePasswordModal = () => {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setShowUpdatePasswordModal(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     setLoading(true);
-    const promise = api.post("/api/v1/authentication/Authenticate", { username, password: senha })
-      .then((response) => {
-        const token = response?.data?.data?.accessToken;
-        const trimmed = typeof token === "string" ? token.trim() : undefined;
-        if (!trimmed) throw new Error("Token inválido");
-
-        type JwtPayload = { groups?: string | string[] } & Record<string, unknown>;
-        const payload = jwtDecode<JwtPayload>(trimmed);
-
-        setCookie("accessToken", trimmed);
-
-        const groupsRaw = payload?.groups;
-        let groups: string[] = [];
-        if (typeof groupsRaw === "string") groups = groupsRaw.split(",").map((s) => s.trim()).filter(Boolean);
-        else if (Array.isArray(groupsRaw)) groups = groupsRaw as string[];
-
-        if (groups.includes("Administrador")) router.push("/adm");
-        else router.push("/dashboard");
-
-        return response;
-      });
 
     try {
-      await toast.promise(promise, {
-        pending: {
-          render() {
-            return "Autenticando...";
-          },
-        },
-        success: {
-          render() {
-            return "Login realizado com sucesso!";
-          },
-        },
-        error: {
-          render() {
-            return "Usuário ou senha inválidos!";
-          },
-        },
-      });
-    } catch (err) {
-      // Já tratado pelo toast, mas loga para debugging
-      console.error("Erro ao autenticar:", err);
+      const response = await api.post("/api/v1/authentication/Authenticate", { username, password: senha });
+      
+      const token = response?.data?.data?.accessToken;
+      const trimmed = typeof token === "string" ? token.trim() : undefined;
+      if (!trimmed) throw new Error("Token inválido");
+
+      type JwtPayload = { groups?: string | string[] } & Record<string, unknown>;
+      const payload = jwtDecode<JwtPayload>(trimmed);
+
+      setCookie("accessToken", trimmed);
+
+      const groupsRaw = payload?.groups;
+      let groups: string[] = [];
+      if (typeof groupsRaw === "string") groups = groupsRaw.split(",").map((s) => s.trim()).filter(Boolean);
+      else if (Array.isArray(groupsRaw)) groups = groupsRaw as string[];
+
+      toast.success("Login realizado com sucesso!");
+      
+      if (groups.includes("Administrador")) router.push("/adm");
+      else router.push("/dashboard");
+
+    } catch (err: any) {
+      // Extrai a mensagem de erro
+      let errorMessage = "";
+      if (err?.response?.data?.errors?.messages?.[0]) {
+        errorMessage = err.response.data.errors.messages[0];
+      } else if (err?.response?.data?.error_description) {
+        errorMessage = err.response.data.error_description;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      // Verifica se a conta precisa de configuração
+      const isAccountNotSetup = 
+        errorMessage.includes("Account is not fully set up") ||
+        errorMessage.includes("invalid_grant");
+      
+      if (isAccountNotSetup) {
+        try {
+          const userInfo = await getUserByUsername(username);
+          if (userInfo?.data?.requiredActions?.includes("UPDATE_PASSWORD")) {
+            toast.info("Necessário atualizar a senha para continuar.");
+            setShowUpdatePasswordModal(true);
+          } else {
+            toast.error("Conta não configurada completamente. Entre em contato com o suporte.");
+          }
+        } catch {
+          // Se não conseguir buscar o usuário, assume que precisa atualizar senha
+          toast.info("Necessário atualizar a senha para continuar.");
+          setShowUpdatePasswordModal(true);
+        }
+      } else {
+        toast.error("Usuário ou senha inválidos!");
+      }
     } finally {
       setLoading(false);
     }
@@ -213,6 +320,135 @@ export default function JotanunesLogin() {
                 <a href="mailto:suporte@jotanunes.com" className="text-blue-700 hover:underline">suporte@jotanunes.com</a>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Atualização de Senha */}
+      {showUpdatePasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50"></div>
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-[400px] max-w-[90vw] border border-gray-200">
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl font-bold"
+              onClick={closeUpdatePasswordModal}
+              aria-label="Fechar"
+              disabled={updatingPassword}
+            >                                             
+              ×
+            </button>
+            <h2 className="text-xl font-bold text-center mb-2 text-gray-800">Atualizar Senha</h2>
+            <p className="mb-4 text-sm text-gray-600">É necessário atualizar sua senha para continuar.</p>
+            
+            <form onSubmit={handleUpdatePassword} className="space-y-4">
+              {/* Senha Atual */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Senha Atual
+                </label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPass ? "text" : "password"}
+                    placeholder="Digite sua senha atual"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm pr-10 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                    disabled={updatingPassword}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPass(!showCurrentPass)}
+                    className="absolute inset-y-0 right-2 my-auto rounded-md px-2 text-sm text-gray-600 hover:text-gray-800"
+                    aria-label={showCurrentPass ? 'Ocultar senha' : 'Mostrar senha'}
+                    disabled={updatingPassword}
+                  >
+                    <i className={`pi ${showCurrentPass ? 'pi-eye' : 'pi-eye-slash'}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Nova Senha */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Nova Senha
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewPass ? "text" : "password"}
+                    placeholder="Digite sua nova senha (mín. 6 caracteres)"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm pr-10 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                    disabled={updatingPassword}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute inset-y-0 right-2 my-auto rounded-md px-2 text-sm text-gray-600 hover:text-gray-800"
+                    aria-label={showNewPass ? 'Ocultar senha' : 'Mostrar senha'}
+                    disabled={updatingPassword}
+                  >
+                    <i className={`pi ${showNewPass ? 'pi-eye' : 'pi-eye-slash'}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirmar Nova Senha */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Confirmar Nova Senha
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPass ? "text" : "password"}
+                    placeholder="Confirme sua nova senha"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm pr-10 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                    disabled={updatingPassword}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPass(!showConfirmPass)}
+                    className="absolute inset-y-0 right-2 my-auto rounded-md px-2 text-sm text-gray-600 hover:text-gray-800"
+                    aria-label={showConfirmPass ? 'Ocultar senha' : 'Mostrar senha'}
+                    disabled={updatingPassword}
+                  >
+                    <i className={`pi ${showConfirmPass ? 'pi-eye' : 'pi-eye-slash'}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Botões */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeUpdatePasswordModal}
+                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                  disabled={updatingPassword}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-600 transition flex items-center justify-center gap-2"
+                  disabled={updatingPassword}
+                >
+                  {updatingPassword ? (
+                    <>
+                      <i className="pi pi-spin pi-spinner" />
+                      Atualizando...
+                    </>
+                  ) : (
+                    "Atualizar Senha"
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
