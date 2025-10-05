@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Box } from "@mui/material";
 
 import Header from "../../components/headerUser/page";
@@ -45,40 +46,43 @@ const mockEmpreendimentos: Empreendimento[] = [
 ];
 
 const StatusTabela: React.FC = () => {
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get("status");
+
   const [filtroAtivo, setFiltroAtivo] = useState<string>("Editando");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Simula o tempo de carregamento da API (2 segundos)
+    if (statusParam) {
+      setFiltroAtivo(statusParam);
+    }
+  }, [statusParam]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 2000);
+    }, 1000);
     return () => clearTimeout(timer);
   }, []);
-
-  const handleFiltroChange = (filtro: string) => {
-    setFiltroAtivo(filtro);
-    setSearchTerm(""); // Limpa a busca quando muda o filtro
-  };
 
   return (
     <>
       <Header />
       <Box sx={{ px: 4, py: 2 }}>
-        {/* Status */}
+        {/* Cards de Status */}
         <Box mb={3}>
           <StatusSummary />
         </Box>
 
-        {/* Tabela de Empreendimentos */}
+        {/* Tabela */}
         <Box>
           <EmpreendimentosTable
             empreendimentos={mockEmpreendimentos}
             filtroAtivo={filtroAtivo}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
-            loading={loading} // 👈 Passa o estado de carregamento
+            loading={loading}
           />
         </Box>
       </Box>
