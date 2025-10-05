@@ -31,9 +31,7 @@ export interface AuthenticatePayload {
 
 // Configuração da API principal
 export const api = axios.create({
-  baseURL: process.env.NODE_ENV === "production" 
-    ? "https://jotanunesservice.onrender.com" 
-    : "http://host.docker.internal:8000",
+  baseURL: "https://jotanunesservice.onrender.com",
   timeout: 10000,
 });
 
