@@ -4,6 +4,7 @@ import Header from "./headerUser/page";
 import CreateUserModal from "./createUser/page";
 import EditUserModal from "./editUser/page";
 import DeleteUserModal from './deleteUser/page';
+import Pagination from '../pagination/page';
 import { Sidebar } from "primereact/sidebar";
 import { Button } from "primereact/button";
 import { userService, type User } from "../../lib/services";
@@ -63,6 +64,109 @@ export default function GerenciamentoUser() {
   const [removingIds, setRemovingIds] = useState<(string|number)[]>([]);
   const ROW_ANIM_MS = 350;
   const [deleting, setDeleting] = useState(false);
+  
+  // Estados para ordenação
+  const [sortField, setSortField] = useState<string>('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  
+  // Estados para paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Função para ordenar os dados
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      // Se é o mesmo campo, inverte a ordem
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Se é um campo diferente, ordena crescente
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  // Função para ordenar os usuários
+  const getSortedUsers = () => {
+    if (!sortField) return users;
+
+    return [...users].sort((a, b) => {
+      let aValue: string | number = '';
+      let bValue: string | number = '';
+
+      switch (sortField) {
+        case 'username':
+          aValue = a.username || '';
+          bValue = b.username || '';
+          break;
+        case 'email':
+          aValue = a.email || '';
+          bValue = b.email || '';
+          break;
+        case 'name':
+          aValue = `${a.firstName} ${a.lastName}`;
+          bValue = `${b.firstName} ${b.lastName}`;
+          break;
+        case 'phone':
+          aValue = a.phone || '';
+          bValue = b.phone || '';
+          break;
+        case 'profile':
+          const aProfileName = a.profiles && a.profiles.length > 0 
+            ? a.profiles[0].name 
+            : (a.profile === 1 ? "Administrador" : a.profile === 2 ? "Gestor" : a.profile === 3 ? "Operador" : "Sem perfil");
+          const bProfileName = b.profiles && b.profiles.length > 0 
+            ? b.profiles[0].name 
+            : (b.profile === 1 ? "Administrador" : b.profile === 2 ? "Gestor" : b.profile === 3 ? "Operador" : "Sem perfil");
+          aValue = aProfileName;
+          bValue = bProfileName;
+          break;
+        default:
+          return 0;
+      }
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      }
+    });
+  };
+
+  // Função para filtrar e paginar usuários
+  const getFilteredAndPaginatedUsers = () => {
+    const sortedUsers = getSortedUsers();
+    const filteredUsers = sortedUsers.filter(user => {
+      const term = searchTerm.toLowerCase();
+      return (
+        user.username.toLowerCase().includes(term) ||
+        user.firstName.toLowerCase().includes(term) ||
+        user.lastName.toLowerCase().includes(term) ||
+        (user.email && user.email.toLowerCase().includes(term))
+      );
+    });
+
+    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
+    return {
+      users: paginatedUsers,
+      totalUsers: filteredUsers.length,
+      totalPages: totalPages,
+      currentPage: currentPage
+    };
+  };
+
+  // Reset da página quando o termo de busca muda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
   // Buscar usuários na API
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
@@ -294,11 +398,36 @@ export default function GerenciamentoUser() {
                 <thead>
                     <tr className="bg-gray-700 text-white text-left">
                     <th className="px-2 sm:px-4 py-1 sm:py-2 font-semibold"></th>
-                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold">Usuário</th>
-                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold">E-mail</th>
-                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold">Nome</th>
-                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold">Telefone</th>
-                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold">Perfil</th>
+                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold cursor-pointer hover:bg-gray-600 transition-colors" onClick={() => handleSort('username')}>
+                      <div className="flex items-center gap-2">
+                        Usuário
+                        <i className={`pi pi-sort ${sortField === 'username' ? (sortOrder === 'asc' ? 'pi-sort-up' : 'pi-sort-down') : ''}`} />
+                      </div>
+                    </th>
+                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold cursor-pointer hover:bg-gray-600 transition-colors" onClick={() => handleSort('email')}>
+                      <div className="flex items-center gap-2">
+                        E-mail
+                        <i className={`pi pi-sort ${sortField === 'email' ? (sortOrder === 'asc' ? 'pi-sort-up' : 'pi-sort-down') : ''}`} />
+                      </div>
+                    </th>
+                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold cursor-pointer hover:bg-gray-600 transition-colors" onClick={() => handleSort('name')}>
+                      <div className="flex items-center gap-2">
+                        Nome
+                        <i className={`pi pi-sort ${sortField === 'name' ? (sortOrder === 'asc' ? 'pi-sort-up' : 'pi-sort-down') : ''}`} />
+                      </div>
+                    </th>
+                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold cursor-pointer hover:bg-gray-600 transition-colors" onClick={() => handleSort('phone')}>
+                      <div className="flex items-center gap-2">
+                        Telefone
+                        <i className={`pi pi-sort ${sortField === 'phone' ? (sortOrder === 'asc' ? 'pi-sort-up' : 'pi-sort-down') : ''}`} />
+                      </div>
+                    </th>
+                    <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold cursor-pointer hover:bg-gray-600 transition-colors" onClick={() => handleSort('profile')}>
+                      <div className="flex items-center gap-2">
+                        Perfil
+                        <i className={`pi pi-sort ${sortField === 'profile' ? (sortOrder === 'asc' ? 'pi-sort-up' : 'pi-sort-down') : ''}`} />
+                      </div>
+                    </th>
                     <th className="px-2 sm:px-6 py-1 sm:py-2 font-semibold">Editar</th>
                   </tr>
                 </thead>
@@ -319,17 +448,7 @@ export default function GerenciamentoUser() {
                   ) : users.length === 0 ? (
                     <tr><td colSpan={7} className="text-center py-4">Nenhum usuário encontrado.</td></tr>
                   ) : (
-                    users
-                      .filter(user => {
-                        const term = searchTerm.toLowerCase();
-                        return (
-                          user.username.toLowerCase().includes(term) ||
-                          user.firstName.toLowerCase().includes(term) ||
-                          user.lastName.toLowerCase().includes(term) ||
-                          (user.email && user.email.toLowerCase().includes(term))
-                        );
-                      })
-                      .map((user, idx) => (
+                    getFilteredAndPaginatedUsers().users.map((user, idx) => (
                       <tr
                         key={user.id || idx}
                         className={`transition-all duration-300 ease-in-out ${idx % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'} hover:bg-gray-300 ${removingIds.includes(user.id ?? idx) ? 'opacity-0 -translate-y-2' : 'opacity-100'}`}
@@ -398,6 +517,15 @@ export default function GerenciamentoUser() {
                 </tbody>
               </table>
             </div>
+
+            {/* Controles de Paginação */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={getFilteredAndPaginatedUsers().totalPages}
+              totalItems={getFilteredAndPaginatedUsers().totalUsers}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
           </div>
         </div>
       </div>
