@@ -53,18 +53,17 @@ const StatusTabela: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    if (statusParam) {
-      setFiltroAtivo(statusParam);
-    }
-  }, [statusParam]);
+    useEffect(() => {
+      const status = statusParam || "Editando";
+      setFiltroAtivo(status);
+      setLoading(true);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }, [statusParam]);
 
   return (
     <>
