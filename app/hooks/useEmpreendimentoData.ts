@@ -31,6 +31,11 @@ interface FetchedTopico {
   nome: string;
 }
 
+interface FetchedMarca {
+  id: number;
+  nome: string;
+}
+
 /**
  * Hook para buscar dados da API e estruturar tópicos e categorias.
  * @returns {object} Dados e funções necessários para a página.
@@ -39,6 +44,7 @@ export function useEmpreendimentoData() {
   const [itemsData, setItemsData] = useState<FetchedItem[]>([]);
   const [ambientesData, setAmbientesData] = useState<FetchedAmbiente[]>([]);
   const [topicosData, setTopicosData] = useState<FetchedTopico[]>([]);
+  const [marcasData, setMarcasData] = useState<FetchedMarca[]>([]);
   const [refetchTrigger, setRefetchTrigger] = useState(0);
 
   // Função de recarregamento
@@ -79,6 +85,13 @@ export function useEmpreendimentoData() {
     fetchTopicos();
   }, [refetchTrigger]);
 
+  useEffect(() => {
+    axios
+      .get("https://jotanunesservice.onrender.com/api/v1/marca/GetAllMarcas")
+      .then((res) => setMarcasData(res.data.data))
+      .catch((error) => console.error("Erro ao buscar as marcas", error));
+  }, []);
+
   // 4. Estruturação dos Tópicos (useMemo para evitar recálculo desnecessário)
   const Topic: Topico[] = useMemo(() => {
     if (topicosData.length === 0 || ambientesData.length === 0) return [];
@@ -113,7 +126,7 @@ export function useEmpreendimentoData() {
     }));
 
     const DescricaoMarcaItems: ItemsTopico[] = [
-      { id: 1, nome: "Drescrição da Marca", materiais: [] },
+      { id: 1, nome: "Descrição da Marca", materiais: [] },
     ];
 
     // --- Injetar os Items nos Tópicos Baseados no Título ---
@@ -175,17 +188,25 @@ export function useEmpreendimentoData() {
   }, [Topic]);
 
   // 5. Mapeamento dos Itens disponíveis para o FilterDemo (useMemo)
-  const availableItemOptions: ItemOption[] = useMemo(() => {
+  const availableMaterialOptions: ItemOption[] = useMemo(() => {
     return itemsData.map((item) => ({
       name: item.nome,
       code: item.nome, // Usando nome como código para o exemplo
     }));
   }, [itemsData]);
 
+  const availableMarcaOptions: ItemOption[] = useMemo(() => {
+    return marcasData.map((marca) => ({
+      name: marca.nome,
+      code: String(marca.id),
+    }));
+  }, [marcasData]);
+
   return {
     Topic,
     categories,
-    availableItemOptions,
+    availableMaterialOptions,
+    availableMarcaOptions,
     refetchTopicos,
     // Documento é estático no seu código, mas em um cenário real viria de uma API.
     // Por enquanto, mantemos ele como um objeto "mock" ou o movemos para onde será usado.

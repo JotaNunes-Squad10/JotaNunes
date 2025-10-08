@@ -31,8 +31,13 @@ interface TableItem {
 
 const EmpreendimentoPage: React.FC = () => {
   // --- 1. Lógica de Dados (Custom Hook) ---
-  const { categories, availableItemOptions, refetchTopicos, Topic } =
-    useEmpreendimentoData();
+  const {
+    categories,
+    availableMaterialOptions,
+    availableMarcaOptions,
+    refetchTopicos,
+    Topic,
+  } = useEmpreendimentoData();
 
   // --- 3. Lógica de Redux ---
   const DocumentoEmpreendimento = useAppSelector((state) => state.docs);
@@ -76,12 +81,28 @@ const EmpreendimentoPage: React.FC = () => {
     }));
   }, [DocumentoEmpreendimento.topicos, selectedCategory, selectedItem]);
 
+  const currentAvailableOptions = useMemo(() => {
+    const isMarcaTopic = selectedCategory?.trim() === "Marcas";
+
+    const isMarcaItem = selectedItem?.trim() === "Descrição da Marca";
+
+    if (selectedCategory && selectedItem && isMarcaTopic && isMarcaItem) {
+      return availableMarcaOptions;
+    }
+    return availableMaterialOptions;
+  }, [
+    selectedCategory,
+    selectedItem,
+    availableMaterialOptions,
+    availableMarcaOptions,
+  ]);
+
   // Filtra itens disponíveis removendo aqueles já na tabela
   const availableItems = useMemo(() => {
-    return availableItemOptions.filter(
+    return currentAvailableOptions.filter(
       (item) => !tableItems.some((t) => t.code === item.code)
     );
-  }, [availableItemOptions, tableItems]);
+  }, [currentAvailableOptions, tableItems]);
 
   // --- 4. Funções de Manipulação ---
 
