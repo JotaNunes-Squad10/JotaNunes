@@ -49,6 +49,12 @@ export interface LoadDocumentPayload {
   id: number;
 }
 
+interface RemoveMaterialPayload {
+  topicSelected: string;
+  itemSelected: string;
+  materialCode: string;
+}
+
 export const docsSlide = createSlice({
   name: "docs",
   initialState: Docs,
@@ -80,9 +86,23 @@ export const docsSlide = createSlice({
         });
       });
     },
+
+    removeMaterial: (state, action: PayloadAction<RemoveMaterialPayload>) => {
+      const { topicSelected, itemSelected, materialCode } = action.payload;
+
+      const topic = state.topicos.find((t) => t.title === topicSelected);
+      if (!topic) return;
+
+      const item = topic.items.find((i) => i.nome === itemSelected);
+      if (!item) return;
+
+      item.materiais = item.materiais.filter(
+        (mat) => String(mat.id) !== materialCode
+      );
+    },
   },
 });
 
-export const { loadDocument, addMaterials, setInitialTopics } =
+export const { loadDocument, addMaterials, setInitialTopics, removeMaterial } =
   docsSlide.actions;
 export default docsSlide.reducer;

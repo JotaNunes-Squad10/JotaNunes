@@ -81,40 +81,17 @@ export function useEmpreendimentoData() {
 
   // 4. Estruturação dos Tópicos (useMemo para evitar recálculo desnecessário)
   const Topic: Topico[] = useMemo(() => {
-    // Tópicos Estáticos (Unidades Privativas)
-    // const itemsUnidadesPrivativas: ItemsTopico[] = [
-    //   { id: 1, nome: "Área Técnica", materiais: [] },
-    //   { id: 2, nome: "Circulação", materiais: [] },
-    //   { id: 3, nome: "Cozinha/Área de Serviço", materiais: [] },
-    //   { id: 4, nome: "Garden", materiais: [] },
-    //   { id: 5, nome: "Quarto e Suíte", materiais: [] },
-    //   { id: 6, nome: "Sanitário/Lavabo", materiais: [] },
-    //   { id: 7, nome: "Sala de Estar/Jantar", materiais: [] },
-    //   { id: 8, nome: "Varanda", materiais: [] },
-    // ];
+    if (topicosData.length === 0 || ambientesData.length === 0) return [];
 
-    // // Tópicos Dinâmicos (Área Comum/Ambientes)
-    // const AmbientesItems: ItemsTopico[] = ambientesData.map((a) => ({
-    //   id: a.id,
-    //   nome: a.nome,
-    //   materiais: [],
-    // }));
+    // const apiTopicoMap = new Map<string, Topico>();
 
-    // // Tópicos Estáticos (Marcas)
-    // const DescricaoMarcaItems: ItemsTopico[] = [
-    //   { id: 1, nome: "Drescrição da Marca", materiais: [] },
-    // ];
-
-    if (topicosData.length === 0) return [];
-    const apiTopicoMap = new Map<string, Topico>();
-
-    topicosData.forEach((t) => {
-      // Inicializa o tópico com os dados da API e uma lista vazia de items
-      apiTopicoMap.set(t.nome, {
-        title: t.nome,
-        items: [],
-      });
-    });
+    // topicosData.forEach((t) => {
+    //   // Inicializa o tópico com os dados da API e uma lista vazia de items
+    //   apiTopicoMap.set(t.nome, {
+    //     title: t.nome,
+    //     items: [],
+    //   });
+    // });
 
     // --- Definir os Itens (Componentes do Tópico) ---
     // Ambientes e definindo os itens/materiais de Univades Privativas

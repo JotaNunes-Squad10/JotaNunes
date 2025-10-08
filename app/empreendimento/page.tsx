@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 // Componentes importados
 import Sidebar from "@/components/sections/Sidebar";
 // import CustomTable from "@/components/tableInfo/page"; // Manter só para tipagem se necessário, mas está em ItemAdditionSection
@@ -12,7 +12,11 @@ import ItemAdditionSection from "@/components/sections/ItemAdditionSection";
 
 // Tipagem de dados e Redux
 import { useAppSelector, useAppDispatch } from "../hooks";
-import { addMaterials, setInitialTopics } from "../features/docs/docsSlice";
+import {
+  addMaterials,
+  setInitialTopics,
+  removeMaterial,
+} from "../features/docs/docsSlice";
 // Custom Hook
 import {
   useEmpreendimentoData,
@@ -30,21 +34,6 @@ const EmpreendimentoPage: React.FC = () => {
   const { categories, availableItemOptions, refetchTopicos, Topic } =
     useEmpreendimentoData();
 
-  // --- 2. Lógica de Estado Local ---
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedItem, setSelectedItem] = useState<string | null>(null);
-  const [selectedItemsTemp, setSelectedItemsTemp] = useState<
-    TableItem[] | null
-  >(null);
-  const [tableItems, setTableItems] = useState<TableItem[]>([]);
-
-  // Filtra itens disponíveis removendo aqueles já na tabela
-  const availableItems = useMemo(() => {
-    return availableItemOptions.filter(
-      (item) => !tableItems.some((t) => t.code === item.code)
-    );
-  }, [availableItemOptions, tableItems]);
-
   // --- 3. Lógica de Redux ---
   const DocumentoEmpreendimento = useAppSelector((state) => state.docs);
   const dispatch = useAppDispatch();
@@ -57,9 +46,46 @@ const EmpreendimentoPage: React.FC = () => {
     }
   }, [Topic, DocumentoEmpreendimento.topicos.length, dispatch]);
 
+  // --- 2. Lógica de Estado Local ---
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [selectedItemsTemp, setSelectedItemsTemp] = useState<
+    TableItem[] | null
+  >(null);
+
+  const tableItems = useMemo<TableItem[]>(() => {
+    if (
+      !selectedCategory ||
+      !selectedItem ||
+      !DocumentoEmpreendimento.topicos
+    ) {
+      return [];
+    }
+
+    const topic = DocumentoEmpreendimento.topicos.find(
+      (t) => t.title === selectedCategory
+    );
+    if (!topic) return [];
+
+    const item = topic.items.find((i) => i.nome === selectedItem);
+    if (!item) return [];
+
+    return item.materiais.map((mat) => ({
+      name: mat.nome,
+      code: String(mat.id),
+    }));
+  }, [DocumentoEmpreendimento.topicos, selectedCategory, selectedItem]);
+
+  // Filtra itens disponíveis removendo aqueles já na tabela
+  const availableItems = useMemo(() => {
+    return availableItemOptions.filter(
+      (item) => !tableItems.some((t) => t.code === item.code)
+    );
+  }, [availableItemOptions, tableItems]);
+
   // --- 4. Funções de Manipulação ---
 
-  const handleAddItems = () => {
+  const handleAddItems = useCallback(() => {
     if (
       selectedItemsTemp &&
       selectedItemsTemp.length > 0 &&
@@ -72,9 +98,6 @@ const EmpreendimentoPage: React.FC = () => {
       );
 
       if (newItemsToAdd.length === 0) return;
-
-      // Atualiza o estado da tabela (visível na UI)
-      setTableItems((prev) => [...prev, ...newItemsToAdd]);
 
       // Dispara a ação do Redux Toolkit
       dispatch(
@@ -98,7 +121,25 @@ const EmpreendimentoPage: React.FC = () => {
         `Items adicionados: ${newItemsToAdd.map((items) => items.name)}`
       );
     }
-  };
+  }, [selectedItemsTemp, selectedCategory, tableItems, dispatch]);
+
+  const handleRemoveItem = useCallback(
+    (materialCode: string) => {
+      if (!selectedCategory || !selectedItem) {
+        console.error("Ctegoria ou item não selecionados para remoção");
+        return;
+      }
+
+      dispatch(
+        removeMaterial({
+          topicSelected: selectedCategory,
+          itemSelected: selectedItem,
+          materialCode: materialCode,
+        })
+      );
+    },
+    [selectedCategory, selectedItem, dispatch]
+  );
 
   // Log do Redux (opcional, manter apenas para debug)
   console.log(DocumentoEmpreendimento);
@@ -143,6 +184,7 @@ const EmpreendimentoPage: React.FC = () => {
             onItemSelect={setSelectedItem}
             onSelectionChange={setSelectedItemsTemp}
             onAddItems={handleAddItems}
+            onRemoveItem={handleRemoveItem}
           />
         </div>
       </div>

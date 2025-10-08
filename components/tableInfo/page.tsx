@@ -9,9 +9,10 @@ interface Items {
 
 interface CustomTableProps {
   data: Items[];
+  onRemoveItem: (itemCode: string) => void;
 }
 
-export default function CustomTable({ data }: CustomTableProps) {
+export default function CustomTable({ data, onRemoveItem }: CustomTableProps) {
   if (data.length === 0) {
     return <p className="text-gray-500">Nenhum item selecionado</p>;
   }
@@ -44,7 +45,10 @@ export default function CustomTable({ data }: CustomTableProps) {
                   className="mb-2 w-[100%]"
                 />
               </td>
-              <td className="px-2 py-2 text-red-500 cursor-pointer w-10">
+              <td
+                onClick={() => onRemoveItem(item.code)}
+                className="px-2 py-2 text-red-500 cursor-pointer w-10"
+              >
                 <X
                   size={18}
                   className="hover:bg-red-200 hover:bg-opacity-30 rounded"

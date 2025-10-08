@@ -25,6 +25,7 @@ interface ItemAdditionSectionProps {
   onItemSelect: (item: string | null) => void;
   onSelectionChange: (items: TableItem[] | null) => void;
   onAddItems: () => void;
+  onRemoveItem: (itemCode: string) => void;
 }
 
 const ItemAdditionSection: React.FC<ItemAdditionSectionProps> = ({
@@ -38,6 +39,7 @@ const ItemAdditionSection: React.FC<ItemAdditionSectionProps> = ({
   onItemSelect,
   onSelectionChange,
   onAddItems,
+  onRemoveItem,
 }) => {
   // Encontra as opções do sub-dropdown com base na categoria selecionada
   const currentOptions =
@@ -93,7 +95,7 @@ const ItemAdditionSection: React.FC<ItemAdditionSectionProps> = ({
 
       {/* Tabela e Observer */}
       <div className="flex justify-center">
-        <CustomTable data={tableItems || []} />
+        <CustomTable data={tableItems || []} onRemoveItem={onRemoveItem} />
       </div>
       <div>
         <ObserverComponent />
