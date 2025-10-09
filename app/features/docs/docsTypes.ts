@@ -31,6 +31,10 @@ export type Documento = {
   localizacao: string;
   descricaoEmpreendimento: string;
   observacao: string;
+  tamanhoArea: number;
+  padrao: string;
+  status: string;
+  versao: number;
   topicos: Topico[];
 };
 

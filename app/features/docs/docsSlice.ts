@@ -28,11 +28,15 @@ import { Topico, ItemsTopico, Documento } from "./docsTypes";
 // ];
 
 const Docs: Documento = {
-  id: 1,
-  empreendimento: "Pérolas do mar",
-  localizacao: "Coroa do meio",
-  descricaoEmpreendimento: "Empreendimento na coroa do meio",
-  observacao: "Nenhuma observação",
+  id: 0,
+  empreendimento: "",
+  localizacao: "",
+  descricaoEmpreendimento: "",
+  observacao: "",
+  tamanhoArea: 0,
+  padrao: "",
+  status: "",
+  versao: 0,
   topicos: [],
 };
 
@@ -47,6 +51,13 @@ interface MaterialPayload {
 
 export interface LoadDocumentPayload {
   id: number;
+  nome: string;
+  descricao: string;
+  localizacao: string;
+  tamanhoArea: number;
+  padrao: string;
+  status: string;
+  versao: number;
 }
 
 interface RemoveMaterialPayload {
@@ -61,6 +72,13 @@ export const docsSlide = createSlice({
   reducers: {
     loadDocument: (state, action: PayloadAction<LoadDocumentPayload>) => {
       state.id = action.payload.id;
+      state.empreendimento = action.payload.nome;
+      state.descricaoEmpreendimento = action.payload.descricao;
+      state.localizacao = action.payload.localizacao;
+      state.tamanhoArea = action.payload.tamanhoArea;
+      state.padrao = action.payload.padrao;
+      state.status = action.payload.status;
+      state.versao = action.payload.versao;
     },
 
     setInitialTopics: (state, action: PayloadAction<Topico[]>) => {
