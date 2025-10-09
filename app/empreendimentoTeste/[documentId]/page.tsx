@@ -43,11 +43,25 @@ const EmpreendimentoPage: React.FC = () => {
   const params = useParams();
   const documentId = Number(params.documentId);
 
-  if (documentId > 0) console.log(documentId);
-
   const [document, setDocument] = useState<any>();
 
+  const DocumentoVazio = {
+    id: 0,
+    nome: "",
+    descricao: "",
+    localizacao: "",
+    tamanhoArea: 0,
+    padrao: "",
+    status: "",
+    versao: 0,
+  };
+
   useEffect(() => {
+    if (documentId === 0) {
+      dispatch(loadDocument(DocumentoVazio));
+      setDocument(DocumentoVazio);
+    }
+
     axios
       .get(
         `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${documentId}`

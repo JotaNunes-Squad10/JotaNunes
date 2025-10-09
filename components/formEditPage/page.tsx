@@ -5,10 +5,41 @@ import { Card } from "primereact/card";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 
+import { useAppSelector, useAppDispatch } from "@/app/hooks";
+import { loadDocument } from "@/app/features/docs/docsSlice";
+
+import { useEffect } from "react";
+
 export default function FormEmpreendimento() {
-  const [empreendimento, setEmpreendimento] = useState("");
-  const [localizacao, setLocalizacao] = useState("");
-  const [descricao, setDescricao] = useState("");
+  const dispatch = useAppDispatch();
+  const documento = useAppSelector((state) => state.docs);
+
+  const [empreendimento, setEmpreendimento] = useState(
+    documento.empreendimento
+  );
+  const [localizacao, setLocalizacao] = useState(documento.localizacao);
+  const [descricao, setDescricao] = useState(documento.descricaoEmpreendimento);
+
+  useEffect(() => {
+    setEmpreendimento(documento.empreendimento);
+    setLocalizacao(documento.localizacao);
+    setDescricao(documento.descricaoEmpreendimento);
+  }, [documento]);
+
+  useEffect(() => {
+    dispatch(
+      loadDocument({
+        ...documento,
+        nome: empreendimento,
+        localizacao,
+        descricao: descricao,
+        tamanhoArea: documento.tamanhoArea,
+        padrao: documento.padrao,
+        status: documento.status,
+        versao: documento.versao,
+      })
+    );
+  }, [empreendimento, localizacao, descricao]);
 
   return (
     <Card className="shadow-md p-6 w-full ">
