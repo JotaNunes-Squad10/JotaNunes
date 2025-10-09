@@ -9,6 +9,7 @@ import AcoesRapidas from "../../components/home/acoesRapidas/page";
 const Dashboard: React.FC = () => {
   return (
     <>
+    {/* A função SideBarAdm so deve aparecer quando a página for acessada por um adm */}
       <Header />
       <Box sx={{ px: 4, py: 2 }}>
         {/* Status */}

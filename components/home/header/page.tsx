@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import Menu_usuario from "../menu_usuario/page";
+import Menu_usuario from "../../menu_usuario/page";
 
 const Header: React.FC = () => {
   return (
