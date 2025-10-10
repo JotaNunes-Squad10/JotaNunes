@@ -1,6 +1,7 @@
 import Header from "@/components/gerenciamentoUser/headerUser/page";
 import CustomSidebarComponent from "./SideBar/page";
 import FormEmpreendimento from "./FormEditPage/page";
+import AddedItemsInDocument from "./AddedItemsInDocument/page";
 
 interface EmpreendimentoEditorProps {
   documentId?: number;
@@ -18,8 +19,13 @@ export default function EmpreendimentoEditor({
       <CustomSidebarComponent />
 
       <div className="flex justify-center">
-        <div>
-          <FormEmpreendimento />
+        <div className="flex flex-col">
+          <div>
+            <FormEmpreendimento />
+          </div>
+          <div>
+            <AddedItemsInDocument />
+          </div>
         </div>
       </div>
     </div>
