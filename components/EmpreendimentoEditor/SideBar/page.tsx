@@ -7,36 +7,10 @@ import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import PainelMenu from "./PainelMenu/page";
+import { menuData } from "../getTopicos/getTopicos";
+import CriarNovoAmbiente from "./createAmbiente/page";
 
 // Dados para preencher a sidebar, como na imagem
-const menuData = [
-  {
-    title: "1. Unidades privativas",
-    items: [
-      "Sala de Estar/Jantar",
-      "Circulação",
-      "Quarto e Suíte",
-      "Sanitário/ Lavabo",
-      "Cozinha/ Área de Serviço",
-      "Área Técnica",
-      "Varanda",
-      "Gardem",
-    ],
-  },
-  {
-    title: "2. Área comum",
-    items: [
-      "Guarita",
-      "Gourmets",
-      "Quiosques",
-      "Copa Funcionários",
-      "Petplay",
-      "Parque Infantil",
-      "Brinquedoteca",
-      "Salão de Festas",
-    ],
-  },
-];
 
 export default function CustomSidebarComponent() {
   const [visible, setVisible] = useState(false);
@@ -79,6 +53,7 @@ export default function CustomSidebarComponent() {
         {/* Conteúdo (Estrutura da Imagem) */}
         <div className="p-4 flex flex-col h-[calc(100vh-4rem)] overflow-y-auto">
           <PainelMenu menuData={menuData} />
+          <CriarNovoAmbiente />
         </div>
       </div>
     </div>
