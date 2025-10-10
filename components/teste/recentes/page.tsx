@@ -34,7 +34,14 @@ const Recentes: React.FC = () => {
         <button className="flex items-center gap-1 bg-red-600 text-white px-4 py-2 rounded font-medium text-sm hover:bg-red-700 transition">
           Ver Todos
           {/* Ícone seta (SVG) */}
-          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg
+            width="18"
+            height="18"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
             <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>
         </button>
@@ -57,7 +64,14 @@ const Recentes: React.FC = () => {
               strokeWidth="2"
               viewBox="0 0 24 24"
             >
-              <rect x="6" y="4" width="12" height="16" rx="2" stroke="currentColor" />
+              <rect
+                x="6"
+                y="4"
+                width="12"
+                height="16"
+                rx="2"
+                stroke="currentColor"
+              />
               <path d="M9 8h6" stroke="currentColor" />
               <path d="M9 12h6" stroke="currentColor" />
               <path d="M9 16h6" stroke="currentColor" />
@@ -67,7 +81,7 @@ const Recentes: React.FC = () => {
               <div className="text-sm text-gray-400">{r.description}</div>
             </div>
           </div>
-        ))}  
+        ))}
       </div>
     </>
   );
