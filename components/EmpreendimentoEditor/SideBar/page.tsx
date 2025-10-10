@@ -16,7 +16,7 @@ export default function CustomSidebarComponent() {
   const [visible, setVisible] = useState(false);
 
   return (
-    <div className="relative">
+    <div className={`relative ${visible ? "mt-12" : ""}`}>
       {/* BOTÃO QUADRADO para ABRIR a Sidebar (Seta para a direita)
           Fica no canto superior esquerdo e só aparece quando a sidebar está fechada
       */}
