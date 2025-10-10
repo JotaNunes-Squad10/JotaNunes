@@ -6,6 +6,7 @@ import { Button } from "primereact/button"; // Usamos apenas o Button do PrimeRe
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
+import PainelMenu from "./PainelMenu/page";
 
 // Dados para preencher a sidebar, como na imagem
 const menuData = [
@@ -77,31 +78,7 @@ export default function CustomSidebarComponent() {
 
         {/* Conteúdo (Estrutura da Imagem) */}
         <div className="p-4 flex flex-col h-[calc(100vh-4rem)] overflow-y-auto">
-          {menuData.map((section, sectionIndex) => (
-            <div key={sectionIndex} className="mb-4">
-              {/* Título da Seção (com seta de recolher) */}
-              <div className="flex items-center justify-between text-lg font-bold text-gray-800 cursor-pointer py-1">
-                <h3 className="font-bold">{section.title}</h3>
-                {/* Seta para cima */}
-                <i className="pi pi-angle-up text-sm"></i>
-              </div>
-              <ul className="mt-1 space-y-0">
-                {section.items.map((item, itemIndex) => (
-                  <li
-                    key={itemIndex}
-                    className={
-                      // Estilo para o item selecionado ("Sala de Estar/Jantar")
-                      item === "Sala de Estar/Jantar"
-                        ? "bg-red-700 text-white font-semibold px-3 py-1.5 rounded-sm"
-                        : "text-gray-700 px-3 py-1.5 hover:bg-gray-100 cursor-pointer rounded-sm"
-                    }
-                  >
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <PainelMenu menuData={menuData} />
         </div>
       </div>
     </div>
