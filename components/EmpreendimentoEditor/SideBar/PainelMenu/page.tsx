@@ -39,7 +39,7 @@ export default function PainelMenu({
       if (topico.nome === "ÁREA COMUM") {
         childItems = subTopicos.map((sub) => ({
           label: sub.nome,
-          icon: "pi pi-tag",
+          icon: "",
           command: () => {
             setAmbienteSelecionado(topico.nome);
             setItemAmbienteSelecionado(sub.nome);
@@ -48,7 +48,7 @@ export default function PainelMenu({
       } else if (topico.nome === "UNIDADES PRIVATIVAS") {
         childItems = UnidadePrivativaPage.map((uni) => ({
           label: uni.nome,
-          icon: "pi pi-tag",
+          icon: "",
           command: () => {
             setAmbienteSelecionado(topico.nome);
             setItemAmbienteSelecionado(uni.nome);
@@ -58,7 +58,7 @@ export default function PainelMenu({
         childItems = [
           {
             label: "Subitem 1",
-            icon: "pi pi-tag",
+            icon: "",
             command: () => {
               console.log(`Selecionando o subitem do tópico ${topico.nome}`);
             },
@@ -68,7 +68,7 @@ export default function PainelMenu({
 
       return {
         label: `${index + 1}. ${topico.nome}`,
-        icon: "pi pi-folder",
+        icon: "",
         items: childItems,
       };
     });
