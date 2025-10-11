@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Dropdown, DropdownChangeEvent } from "primereact/dropdown";
+import AdicionarNovoAmbiente from "./AdicionarNovoAmbiente/page";
 
 // 1. DADOS MOCKADOS (Simulando o resultado da combinação de TODOS os sub-itens)
 interface Ambiente {
@@ -34,9 +35,7 @@ export default function SelecioneItemAmbiente() {
           className="w-full md:w-14rem"
         />
       </div>
-      <button className="p-4 border border-gray-300 rounded-lg text-[#0f582a] cursor-pointer hover:bg-gray-100">
-        <i className="pi pi-plus"></i>
-      </button>
+      <AdicionarNovoAmbiente />
     </div>
   );
 }
