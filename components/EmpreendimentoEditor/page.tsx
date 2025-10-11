@@ -20,7 +20,7 @@ export default function EmpreendimentoEditor({
 
       <CustomSidebarComponent />
 
-      <div className="flex justify-center">
+      <div className="pt-30 flex justify-center">
         <div className="flex flex-col">
           <div>
             <FormEmpreendimento />

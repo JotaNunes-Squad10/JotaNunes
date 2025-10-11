@@ -15,18 +15,23 @@ export default function CustomSidebarComponent() {
   const [visible, setVisible] = useState(false);
 
   return (
-    <div className={`relative ${visible ? "mt-12" : ""}`}>
+    <div className="relative">
       {/* BOTÃO QUADRADO para ABRIR a Sidebar (Seta para a direita)
           Fica no canto superior esquerdo e só aparece quando a sidebar está fechada
       */}
       {!visible && (
-        <Button
-          icon="pi pi-angle-right"
+        <button
+          className="fixed top-20 left-4 z-[100] 
+            p-button-rounded bg-blue-600 border-none
+            text-white font-bold shadow-lg cursor-pointer hover:bg-blue-700
+            text-xl
+            transition-all duration-300"
+          style={{ width: "45px", height: "45px", borderRadius: "4px" }}
           onClick={() => setVisible(true)}
-          className="fixed top-4 left-4 z-[100] p-button-text p-button-plain p-button-sm text-2xl text-gray-700 hover:bg-gray-200 transition-all duration-300"
-          style={{ width: "45px", height: "45px", borderRadius: "4px" }} // Define o botão como quadrado
           aria-label="Abrir sidebar"
-        />
+        >
+          <i className="pi pi-bars"></i>
+        </button>
       )}
 
       {/* SUBSTITUIÇÃO DO SIDEEBAR:
