@@ -39,6 +39,13 @@ export interface GetAllTopicResponse {
   data: Topico[];
 }
 
+// Interface dos subitems do tópico ambientes
+export type SubTopic = Topico;
+
+export interface GetAllSubTopicProps {
+  data: SubTopic[];
+}
+
 // Configuração da API principal
 export const api = axios.create({
   baseURL: "https://jotanunesservice.onrender.com",
@@ -114,6 +121,17 @@ export const topicoService = {
     const response = await axios.get<GetAllTopicResponse>(
       "https://jotanunesservice.onrender.com/api/v1/topico/GetAllTopicos"
     );
+    return response.data.data;
+  },
+};
+
+// Configuração da API de Items
+export const subTopicosAmbienteService = {
+  async getAllAmbiente(): Promise<SubTopic[]> {
+    const response = await axios.get<GetAllSubTopicProps>(
+      "https://jotanunesservice.onrender.com/api/v1/ambiente/GetAllAmbientes"
+    );
+
     return response.data.data;
   },
 };
