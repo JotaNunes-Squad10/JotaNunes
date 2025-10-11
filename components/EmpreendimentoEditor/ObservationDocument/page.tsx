@@ -24,7 +24,7 @@ export default function ObservationDocument() {
           onChange={handleChange} // Atualiza o estado
           maxLength={MAX_LENGTH} // CHAVE: Limita a entrada
           className="
-            resize-none p-3 border border-gray-300 h-50
+            resize-none p-3 border border-gray-300 h-30
             focus:outline-none 
             focus:border-blue-500
             transition-colors
