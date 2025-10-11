@@ -7,7 +7,6 @@ import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import PainelMenu from "./PainelMenu/page";
-import { menuData } from "../getTopicos/getTopicos";
 import CriarNovoAmbiente from "./createAmbiente/page";
 
 // Dados para preencher a sidebar, como na imagem
@@ -52,7 +51,7 @@ export default function CustomSidebarComponent() {
 
         {/* Conteúdo (Estrutura da Imagem) */}
         <div className="p-4 flex flex-col h-[calc(100vh-4rem)] overflow-y-auto">
-          <PainelMenu menuData={menuData} />
+          <PainelMenu />
           <CriarNovoAmbiente />
         </div>
       </div>

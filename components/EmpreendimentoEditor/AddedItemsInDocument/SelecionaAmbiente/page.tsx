@@ -1,41 +1,33 @@
-// components>EmpreendimentoEditor>AddedItemsInDocument>SelecionaAmbiente>page.tsx
+// components>EmpreendimentoEditor>AddedItemsInDocument>SelecionaAmbiente>page.tsx (Títulos)
 
 import React, { useState } from "react";
 import { Dropdown, DropdownChangeEvent } from "primereact/dropdown";
-// Importa os dados do menuData
-import { menuData } from "../../getTopicos/getTopicos";
 
-// 1. Definir a interface para os títulos
+// 1. DADOS MOCKADOS (Simulando o resultado da transformação de TÍTULOS)
 interface TituloAmbiente {
-  name: string; // O título da seção (o que será exibido)
-  code: string; // O código interno (pode ser o próprio título)
+  name: string;
+  code: string;
 }
 
-// Função para transformar apenas os títulos para o formato do Dropdown
-const transformTitulos = (data: typeof menuData): TituloAmbiente[] => {
-  // Mapeia o array, transformando cada seção em um objeto { name, code }
-  return data.map((section) => ({
-    name: section.title,
-    code: section.title.split(".")[0], // Usa apenas o número (ex: "1" ou "2") como código
-  }));
-};
+const mockTitulos: TituloAmbiente[] = [
+  { name: "1. Unidades privativas", code: "1" },
+  { name: "2. Área comum", code: "2" },
+  { name: "3. Marcas", code: "3" },
+];
 
 export default function SelecionaAmbiente() {
   const [selectedTitulo, setSelectedTitulo] = useState<TituloAmbiente | null>(
-    null
+    mockTitulos[0] // Seleciona o primeiro por padrão
   );
 
-  // 2. Transforma os dados para obter apenas os títulos
-  const titulosAmbiente: TituloAmbiente[] = transformTitulos(menuData);
-
   return (
-    <div className="card flex justify-content-center">
+    <div className="card flex justify-content-center mb-5 w-[50%]">
       <Dropdown
         value={selectedTitulo}
         onChange={(e: DropdownChangeEvent) => setSelectedTitulo(e.value)}
-        options={titulosAmbiente} // Passa o array de títulos
+        options={mockTitulos} // Usa os dados mockados diretamente
         optionLabel="name"
-        placeholder="Selecione a Categoria" // Placeholder mais adequado
+        placeholder="Selecione Ambiente"
         className="w-full md:w-14rem"
       />
     </div>
