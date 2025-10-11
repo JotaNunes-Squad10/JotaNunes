@@ -11,9 +11,6 @@ export default function AddedItemsInDocument() {
         <button className="bg-[#0f582a] p-1 w-full text-white  rounded-lg cursor-pointer hover:bg-[#0d4923]">
           Adicionar Item
         </button>
-        <button className="bg-[#bb0003] p-1 w-full text-white  rounded-lg cursor-pointer hover:bg-[#990104]">
-          Salvar
-        </button>
       </div>
     </div>
   );
