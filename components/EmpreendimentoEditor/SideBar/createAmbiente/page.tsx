@@ -15,7 +15,7 @@ export default function CriarNovoAmbiente() {
           w-full py-4 px-2 
           text-blue-600 font-semibold 
           bg-white transition duration-150
-          border-2 border-dotted border-blue-500 
+          border-2 border-dashed border-blue-500 
           rounded-xl 
           hover:bg-blue-50/70
           cursor-pointer
@@ -23,7 +23,7 @@ export default function CriarNovoAmbiente() {
       >
         {/* Ícone do PrimeIcons */}
         <i className="pi pi-plus mr-3 text-lg" />
-        Criar Novo
+        Criar novo ambiente
       </button>
       <Dialog
         header="Criar novo ambiente"
