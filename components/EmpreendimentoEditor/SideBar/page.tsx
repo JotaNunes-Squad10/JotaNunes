@@ -11,7 +11,19 @@ import CriarNovoAmbiente from "./createAmbiente/page";
 
 // Dados para preencher a sidebar, como na imagem
 
-export default function CustomSidebarComponent() {
+interface CustomSideBarProps {
+  ambienteSelecionado: any;
+  setAmbienteSelecionado: any;
+  itemAmbienteSelecionado: any;
+  setItemAmbienteSelecionado: any;
+}
+
+export default function CustomSidebarComponent({
+  ambienteSelecionado,
+  setAmbienteSelecionado,
+  itemAmbienteSelecionado,
+  setItemAmbienteSelecionado,
+}: CustomSideBarProps) {
   const [visible, setVisible] = useState(false);
 
   return (
@@ -56,7 +68,12 @@ export default function CustomSidebarComponent() {
 
         {/* Conteúdo (Estrutura da Imagem) */}
         <div className="p-4 flex flex-col h-[calc(100vh-4rem)] overflow-y-auto">
-          <PainelMenu />
+          <PainelMenu
+            ambienteSelecionado={ambienteSelecionado}
+            setAmbienteSelecionado={setAmbienteSelecionado}
+            itemAmbienteSelecionado={itemAmbienteSelecionado}
+            setItemAmbienteSelecionado={setItemAmbienteSelecionado}
+          />
           <CriarNovoAmbiente />
         </div>
       </div>
