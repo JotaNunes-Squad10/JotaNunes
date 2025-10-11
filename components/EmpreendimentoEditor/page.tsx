@@ -1,3 +1,5 @@
+"use client";
+
 import Header from "@/components/gerenciamentoUser/headerUser/page";
 import CustomSidebarComponent from "./SideBar/page";
 import FormEmpreendimento from "./FormEditPage/page";

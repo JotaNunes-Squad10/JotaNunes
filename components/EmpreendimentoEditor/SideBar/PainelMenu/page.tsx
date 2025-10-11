@@ -1,65 +1,57 @@
+"use client";
+
 import { PanelMenu } from "primereact/panelmenu";
 import { MenuItem } from "primereact/menuitem";
+
+import { Topico, topicoService } from "@/lib/api";
+import { useEffect, useState } from "react";
 
 export default function PainelMenu() {
   // Inicialização do Toast (mantida)
 
-  const mockMenuItems: MenuItem[] = [
-    {
-      label: "1. Unidades privativas",
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+
+  const mapTopicosToMenuItems = (topicos: Topico[]): MenuItem[] => {
+    return topicos.map((topico, index) => ({
+      label: `${index + 1}. ${topico.nome}`,
       icon: "pi pi-folder",
       items: [
         {
-          label: "Sala de Estar/Jantar",
+          label: "Sub item 1",
           icon: "pi pi-tag",
-          command: (event) => {
-            // A função command deve ser adaptada para usar o mock
-            // e o item específico.
+          command: () => {
+            console.log(`Selecionado: ${topico.nome} o Sub item 1`);
           },
         },
         {
-          label: "Circulação",
+          label: "Sub item 2",
           icon: "pi pi-tag",
-          command: () => {},
+          command: () => {
+            console.log(`Selecionado: ${topico.nome} o Sub item 2`);
+          },
         },
       ],
-    },
-    {
-      label: "2. Área comum",
-      icon: "pi pi-folder",
-      items: [
-        {
-          label: "Guarita",
-          icon: "pi pi-tag",
-          command: () => {},
-        },
-        {
-          label: "Gourmets",
-          icon: "pi pi-tag",
-          command: () => {},
-        },
-      ],
-    },
-    {
-      label: "3. Marcas",
-      icon: "pi pi-folder",
-      items: [
-        {
-          label: "Descrição Marcas",
-          icon: "pi pi-tag",
-          command: () => {},
-        },
-      ],
-    },
-  ];
+    }));
+  };
 
-  // O array 'items' agora usa os dados mockados diretamente
-  const items: MenuItem[] = mockMenuItems;
+  useEffect(() => {
+    async function fetchTopicos() {
+      try {
+        const topicos = await topicoService.getAllTopic();
+        const mappedItems = mapTopicosToMenuItems(topicos);
+        setMenuItems(mappedItems);
+      } catch (error) {
+        console.error("Erro ao carregar tópicos", error);
+      }
+    }
+
+    fetchTopicos();
+  }, []);
 
   return (
     // O div 'card' foi mantido, mas o w-full foi removido do PanelMenu
     <div className="card flex justify-content-center">
-      <PanelMenu model={items} className="w-full md:w-20rem" />
+      <PanelMenu model={menuItems} className="w-full md:w-20rem" />
     </div>
   );
 }

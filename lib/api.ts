@@ -29,6 +29,16 @@ export interface AuthenticatePayload {
   password: string;
 }
 
+// Interface para API de tópicos
+export interface Topico {
+  id: number;
+  nome: string;
+}
+
+export interface GetAllTopicResponse {
+  data: Topico[];
+}
+
 // Configuração da API principal
 export const api = axios.create({
   baseURL: "https://jotanunesservice.onrender.com",
@@ -45,37 +55,47 @@ export const authApi = axios.create({
 export const authService = {
   // Função para autenticar usuário
   async authenticate(payload: AuthenticatePayload): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>("/api/v1/authentication/Authenticate", payload);
+    const response = await api.post<LoginResponse>(
+      "/api/v1/authentication/Authenticate",
+      payload
+    );
     return response.data;
   },
 
   // Função para buscar usuário por username
   async getUserByUsername(username: string): Promise<UserInfo> {
     try {
-      const response = await authApi.get<UserInfo>(`/api/v1/authentication/GetUserByUsername/${username}`);
+      const response = await authApi.get<UserInfo>(
+        `/api/v1/authentication/GetUserByUsername/${username}`
+      );
       return response.data;
     } catch {
       // Retorna um mock para permitir que o modal abra mesmo com erro
       return {
         data: {
-          requiredActions: ["UPDATE_PASSWORD"]
-        }
+          requiredActions: ["UPDATE_PASSWORD"],
+        },
       };
     }
   },
 
   // Função para atualizar senha
-  async updatePassword(payload: UpdatePasswordPayload): Promise<UpdatePasswordResponse> {
-    const response = await authApi.patch("/api/v1/authentication/UpdatePassword", payload);
+  async updatePassword(
+    payload: UpdatePasswordPayload
+  ): Promise<UpdatePasswordResponse> {
+    const response = await authApi.patch(
+      "/api/v1/authentication/UpdatePassword",
+      payload
+    );
     return response.data;
-  }
+  },
 };
 
 // Interceptors para tratamento global de erros (opcional)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('Erro na API:', error);
+    console.error("Erro na API:", error);
     return Promise.reject(error);
   }
 );
@@ -83,7 +103,17 @@ api.interceptors.response.use(
 authApi.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('Erro na Auth API:', error);
+    console.error("Erro na Auth API:", error);
     return Promise.reject(error);
   }
 );
+
+// Configurações da API Tópicos
+export const topicoService = {
+  async getAllTopic(): Promise<Topico[]> {
+    const response = await axios.get<GetAllTopicResponse>(
+      "https://jotanunesservice.onrender.com/api/v1/topico/GetAllTopicos"
+    );
+    return response.data.data;
+  },
+};
