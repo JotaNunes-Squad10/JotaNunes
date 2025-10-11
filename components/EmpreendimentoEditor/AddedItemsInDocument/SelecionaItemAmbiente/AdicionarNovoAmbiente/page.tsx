@@ -9,7 +9,7 @@ export default function AdicionarNovoAmbiente() {
     <div className="card flex justify-content-center">
       <button
         onClick={() => setVisible(true)}
-        className="p-4 border border-gray-300 rounded-lg text-[#0f582a] cursor-pointer hover:bg-gray-100"
+        className="px-4 py-3 border border-gray-300 rounded-lg text-[#0f582a] cursor-pointer hover:bg-gray-100"
       >
         <i className="pi pi-plus"></i>
       </button>
