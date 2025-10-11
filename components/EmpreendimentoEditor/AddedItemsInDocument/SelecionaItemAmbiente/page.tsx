@@ -23,17 +23,19 @@ export default function SelecioneItemAmbiente() {
   );
 
   return (
-    <div className="card flex justify-content-center w-[50%]">
-      <Dropdown
-        value={selectedAmbiente}
-        onChange={(e: DropdownChangeEvent) => setSelectedAmbiente(e.value)}
-        options={mockItensAmbiente} // Usa os dados mockados diretamente
-        optionLabel="name"
-        placeholder="Selecione um Item de Ambiente"
-        className="w-full md:w-14rem"
-      />
-      <button>
-        <p>Something</p>
+    <div className="flex gap-5">
+      <div className="card flex justify-center w-[50%]">
+        <Dropdown
+          value={selectedAmbiente}
+          onChange={(e: DropdownChangeEvent) => setSelectedAmbiente(e.value)}
+          options={mockItensAmbiente} // Usa os dados mockados diretamente
+          optionLabel="name"
+          placeholder="Selecione um Item de Ambiente"
+          className="w-full md:w-14rem"
+        />
+      </div>
+      <button className="p-4 border border-gray-300 rounded-lg text-[#0f582a] cursor-pointer hover:bg-gray-100">
+        <i className="pi pi-plus"></i>
       </button>
     </div>
   );
