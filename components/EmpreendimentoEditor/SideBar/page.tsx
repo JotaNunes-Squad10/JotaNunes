@@ -40,7 +40,7 @@ export default function CustomSidebarComponent() {
         - transform e translate-x: Controla a transição de entrada e saída.
       */}
       <div
-        className={`fixed top-0 left-0 w-[280px] h-screen bg-white shadow-2xl z-[90] 
+        className={`fixed top-17 left-0 w-[280px] h-screen bg-white shadow-2xl z-[90] 
                     transform transition-transform duration-300
                     ${visible ? "translate-x-0" : "-translate-x-full"}`}
       >
