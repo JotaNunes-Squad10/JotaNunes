@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Dropdown, DropdownChangeEvent } from "primereact/dropdown";
+import AdicionarNovoAmbiente from "./AdicionarNovoAmbiente/page";
 
 // 1. DADOS MOCKADOS (Simulando o resultado da transformação de TÍTULOS)
 interface SubTituloAmbiente {
@@ -29,15 +30,18 @@ export default function SubSelectAmbiente() {
     );
 
   return (
-    <div className="card flex justify-content-center mb-5 w-[50%]">
-      <Dropdown
-        value={selectedTitulo}
-        onChange={(e: DropdownChangeEvent) => setSelectedTitulo(e.value)}
-        options={mockTitulos} // Usa os dados mockados diretamente
-        optionLabel="name"
-        placeholder="Selecione Ambiente"
-        className="w-full md:w-14rem"
-      />
+    <div className="flex gap-3 mb-5">
+      <div className="card flex justify-content-center  w-[50%]">
+        <Dropdown
+          value={selectedTitulo}
+          onChange={(e: DropdownChangeEvent) => setSelectedTitulo(e.value)}
+          options={mockTitulos} // Usa os dados mockados diretamente
+          optionLabel="name"
+          placeholder="Selecione Ambiente"
+          className="w-full md:w-14rem"
+        />
+      </div>
+      <AdicionarNovoAmbiente />
     </div>
   );
 }

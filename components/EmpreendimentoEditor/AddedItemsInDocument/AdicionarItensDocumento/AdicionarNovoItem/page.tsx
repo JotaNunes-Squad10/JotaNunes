@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Dialog } from "primereact/dialog";
 
-export default function AdicionarNovoAmbiente() {
+export default function AdicionarNovoItem() {
   const [visible, setVisible] = useState<boolean>(false);
 
   return (
@@ -14,7 +14,7 @@ export default function AdicionarNovoAmbiente() {
       </button>
 
       <Dialog
-        header="Título do Ambiente"
+        header="Novo Item"
         visible={visible}
         modal={false}
         style={{ width: "50vw" }}

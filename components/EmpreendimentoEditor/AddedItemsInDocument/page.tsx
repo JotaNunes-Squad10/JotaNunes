@@ -1,5 +1,6 @@
 import SelecionaAmbiente from "./SelecionaAmbiente/page";
 import SelecioneItemAmbiente from "./SelecionaItemAmbiente/page";
+import AdicionarItensDocumento from "./AdicionarItensDocumento/page";
 
 export default function AddedItemsInDocument() {
   return (
@@ -7,6 +8,8 @@ export default function AddedItemsInDocument() {
       <h3 className="mb-3 font-bold">Adicionar Itens</h3>
       <SelecionaAmbiente />
       <SelecioneItemAmbiente />
+      <h3 className="mb-3 font-bold">Itens</h3>
+      <AdicionarItensDocumento />
       <div className="flex mt-3 w-[50%] gap-5">
         <button className="bg-[#0f582a] p-1 w-full text-white  rounded-lg cursor-pointer hover:bg-[#0d4923]">
           Adicionar Item
