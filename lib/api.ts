@@ -46,6 +46,22 @@ export interface GetAllSubTopicProps {
   data: SubTopic[];
 }
 
+// Interface do documento
+export interface DocumentoEmpreendimento {
+  id: number;
+  nome: string;
+  descricao: string;
+  localizacao: string;
+  tamanhoArea: number;
+  padrao: string;
+  status: string;
+  versao: number;
+}
+
+export interface DocumentoEmpreendimentoProps {
+  data: DocumentoEmpreendimento[];
+}
+
 // Configuração da API principal
 export const api = axios.create({
   baseURL: "https://jotanunesservice.onrender.com",
@@ -132,6 +148,16 @@ export const subTopicosAmbienteService = {
       "https://jotanunesservice.onrender.com/api/v1/ambiente/GetAllAmbientes"
     );
 
+    return response.data.data;
+  },
+};
+
+// Configuração da API de documentos
+export const documentService = {
+  async getSingleDocument(id: number): Promise<DocumentoEmpreendimento> {
+    const response = await axios.get(
+      `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${id}`
+    );
     return response.data.data;
   },
 };

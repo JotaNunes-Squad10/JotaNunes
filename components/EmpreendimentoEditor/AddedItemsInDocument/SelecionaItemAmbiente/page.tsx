@@ -1,15 +1,15 @@
-import React, { useState } from "react";
-// Trocamos o Dropdown pelo MultiSelect
-import { MultiSelect, MultiSelectChangeEvent } from "primereact/multiselect";
-import AdicionarNovoAmbiente from "./AdicionarNovoAmbiente/page";
+// components>EmpreendimentoEditor>AddedItemsInDocument>SelecionaAmbiente>page.tsx (Títulos)
 
-// 1. DADOS MOCKADOS (Simulando os itens selecionáveis)
-interface Ambiente {
+import React, { useState } from "react";
+import { Dropdown, DropdownChangeEvent } from "primereact/dropdown";
+
+// 1. DADOS MOCKADOS (Simulando o resultado da transformação de TÍTULOS)
+interface SubTituloAmbiente {
   name: string;
   code: string;
 }
 
-const mockItensAmbiente: Ambiente[] = [
+const mockTitulos: SubTituloAmbiente[] = [
   { name: "Sala de Estar/Jantar", code: "UP-7" },
   { name: "Área Técnica", code: "UP-1" },
   { name: "Academia", code: "AC-1" },
@@ -22,37 +22,22 @@ const mockItensAmbiente: Ambiente[] = [
   { name: "Ar Condicionado", code: "MA-4" },
 ];
 
-export default function SelecioneItemAmbiente() {
-  // O estado agora armazena um ARRAY de objetos, pois é MultiSelect
-  const [selectedAmbientes, setSelectedAmbientes] = useState<Ambiente[]>([]);
-
-  // Inicializa o estado com alguns itens para simular o visual da imagem
-  // useEffect(() => {
-  //   setSelectedAmbientes([mockItensAmbiente[7], mockItensAmbiente[8], mockItensAmbiente[9]]);
-  // }, []);
+export default function SubSelectAmbiente() {
+  const [selectedTitulo, setSelectedTitulo] =
+    useState<SubTituloAmbiente | null>(
+      mockTitulos[0] // Seleciona o primeiro por padrão
+    );
 
   return (
-    <div className="flex gap-5 items-end w-full">
-      {/* Container do MultiSelect, ocupando 50% ou o necessário */}
-      <div className="card flex justify-center w-[50%]">
-        <MultiSelect
-          value={selectedAmbientes} // Passa o array de itens selecionados
-          onChange={(e: MultiSelectChangeEvent) =>
-            setSelectedAmbientes(e.value)
-          } // Atualiza o array
-          options={mockItensAmbiente} // Usa os dados mockados
-          optionLabel="name"
-          placeholder="Selecione um ou mais Itens de Ambiente"
-          className="w-full"
-          // Classes para estilização parecida com a imagem (PrimeReact já faz a maior parte)
-          style={{ minWidth: "350px" }}
-          display="chip" // Mostra os itens selecionados como chips/tags
-          showClear={selectedAmbientes.length > 0} // Permite limpar todos os itens
-        />
-      </div>
-
-      {/* Componente AdicionarNovoAmbiente (mantido ao lado) */}
-      <AdicionarNovoAmbiente />
+    <div className="card flex justify-content-center mb-5 w-[50%]">
+      <Dropdown
+        value={selectedTitulo}
+        onChange={(e: DropdownChangeEvent) => setSelectedTitulo(e.value)}
+        options={mockTitulos} // Usa os dados mockados diretamente
+        optionLabel="name"
+        placeholder="Selecione Ambiente"
+        className="w-full md:w-14rem"
+      />
     </div>
   );
 }
