@@ -3,6 +3,7 @@ import CustomSidebarComponent from "./SideBar/page";
 import FormEmpreendimento from "./FormEditPage/page";
 import AddedItemsInDocument from "./AddedItemsInDocument/page";
 import TabelaItens from "./ViewMateralsDocument/page";
+import ObservationDocument from "./ObservationDocument/page";
 
 interface EmpreendimentoEditorProps {
   documentId?: number;
@@ -29,6 +30,9 @@ export default function EmpreendimentoEditor({
           </div>
           <div>
             <TabelaItens />
+          </div>
+          <div>
+            <ObservationDocument />
           </div>
         </div>
       </div>
