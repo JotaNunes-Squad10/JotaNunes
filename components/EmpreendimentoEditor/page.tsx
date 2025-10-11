@@ -8,7 +8,6 @@ import TabelaItens from "./ViewMateralsDocument/page";
 import ObservationDocument from "./ObservationDocument/page";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { documentService } from "@/lib/api";
 
 interface EmpreendimentoEditorProps {
   documentId: number;
@@ -26,25 +25,34 @@ export default function EmpreendimentoEditor({
   const [localizacaoDocumento, setLocalizacaoDocumento] = useState<string>("");
   const [tamanhoAreaDocumento, setTamanhoAreaDocumento] = useState<number>();
   const [padraoDocumento, setPadraoDocumento] = useState<string>("");
-  const [statusDocumento, setStatusDocumento] = useState<string>("");
+  const [statusDocumento, setStatusDocumento] = useState<number>();
   const [versaoDocumento, setVersaoDocumento] = useState<number>();
 
   // Verificando se é documento existe e adicionando seus valores
 
   useEffect(() => {
     if (documentId > 0) {
-      const document = documentService.getSingleDocument(documentId);
-
-      document.then((res) => {
-        setNomeDocumento(res.nome);
-        setDescricaoDocumento(res.descricao);
-        setLocalizacaoDocumento(res.localizacao);
-        setTamanhoAreaDocumento(res.tamanhoArea);
-        setPadraoDocumento(res.padrao);
-        setStatusDocumento(res.status);
-        setVersaoDocumento(res.versao);
-      });
+      axios
+        .get(
+          `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${documentId}`
+        )
+        .then((res) => {
+          setNomeDocumento(res.data.data.nome);
+          setDescricaoDocumento(res.data.data.descricao);
+          setLocalizacaoDocumento(res.data.data.localizacao);
+          setTamanhoAreaDocumento(res.data.data.tamanhoArea);
+          setPadraoDocumento(res.data.data.padrao);
+          setStatusDocumento(res.data.data.status);
+          setVersaoDocumento(res.data.data.versao);
+        });
     }
+    console.log(nomeDocumento);
+    console.log(descricaoDocumento);
+    console.log(localizacaoDocumento);
+    console.log(tamanhoAreaDocumento);
+    console.log(padraoDocumento);
+    console.log(statusDocumento);
+    console.log(versaoDocumento);
   });
 
   return (
