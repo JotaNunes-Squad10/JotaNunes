@@ -7,9 +7,10 @@ import AddedItemsInDocument from "./AddedItemsInDocument/page";
 import TabelaItens from "./ViewMateralsDocument/page";
 import ObservationDocument from "./ObservationDocument/page";
 import { useEffect, useState } from "react";
+import axios from "axios";
 
 interface EmpreendimentoEditorProps {
-  documentId?: number;
+  documentId: number;
 }
 
 export default function EmpreendimentoEditor({
@@ -17,6 +18,35 @@ export default function EmpreendimentoEditor({
 }: EmpreendimentoEditorProps) {
   const [ambienteSelecionado, setAmbienteSelecionado] = useState();
   const [itemAmbienteSelecionado, setItemAmbienteSelecionado] = useState();
+
+  // Gerenciamento do documento
+  const [nomeDocumento, setNomeDocumento] = useState<string>("");
+  const [descricaoDocumento, setDescricaoDocumento] = useState<string>("");
+  const [localizacaoDocumento, setLocalizacaoDocumento] = useState<string>("");
+  const [tamanhoAreaDocumento, setTamanhoAreaDocumento] = useState<number>();
+  const [padraoDocumento, setPadraoDocumento] = useState<string>("");
+  const [statusDocumento, setStatusDocumento] = useState<number>();
+  const [versaoDocumento, setVersaoDocumento] = useState<number>();
+
+  // Verificando se é documento existe e adicionando seus valores
+
+  useEffect(() => {
+    if (documentId > 0) {
+      axios
+        .get(
+          `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${documentId}`
+        )
+        .then((res) => {
+          setNomeDocumento(res.data.data.nome);
+          setDescricaoDocumento(res.data.data.descricao);
+          setLocalizacaoDocumento(res.data.data.localizacao);
+          setTamanhoAreaDocumento(res.data.data.tamanhoArea);
+          setPadraoDocumento(res.data.data.padrao);
+          setStatusDocumento(res.data.data.status);
+          setVersaoDocumento(res.data.data.versao);
+        });
+    }
+  });
 
   return (
     <div className="min-h-screen">
