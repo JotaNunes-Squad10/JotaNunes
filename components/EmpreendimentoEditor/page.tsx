@@ -92,7 +92,12 @@ export default function EmpreendimentoEditor({
             />
           </div>
           <div>
-            <AddedItemsInDocument />
+            <AddedItemsInDocument
+              ambienteSelecionado={ambienteSelecionado}
+              setAmbienteSelecionado={setAmbienteSelecionado}
+              itemAmbienteSelecionado={itemAmbienteSelecionado}
+              setItemAmbienteSelecionado={setItemAmbienteSelecionado}
+            />
           </div>
           <div>
             <TabelaItens />

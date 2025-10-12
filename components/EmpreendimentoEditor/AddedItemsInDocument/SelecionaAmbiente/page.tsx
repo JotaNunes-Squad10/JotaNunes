@@ -10,9 +10,16 @@ interface TituloAmbiente {
   code: string;
 }
 
-export default function SelecionaAmbiente() {
+interface Props {
+  ambienteSelecionado: any;
+  setAmbienteSelecionado: (value: any) => void;
+}
+
+export default function SelecionaAmbiente({
+  ambienteSelecionado,
+  setAmbienteSelecionado,
+}: Props) {
   const [titulos, setTitulos] = useState<TituloAmbiente[]>([]);
-  const [selectedTitulo, setSelectedTitulo] = useState<TituloAmbiente | null>();
 
   useEffect(() => {
     async function fetchTopicos() {
@@ -22,7 +29,7 @@ export default function SelecionaAmbiente() {
         const titulosFormatados: TituloAmbiente[] = allTopicos.map(
           (topico, index) => ({
             name: `${index + 1}. ${topico.nome}`,
-            code: topico.id.toString(),
+            code: topico.nome,
           })
         );
 
@@ -38,8 +45,8 @@ export default function SelecionaAmbiente() {
   return (
     <div className="card flex justify-content-center mb-5 w-[50%]">
       <Dropdown
-        value={selectedTitulo}
-        onChange={(e: DropdownChangeEvent) => setSelectedTitulo(e.value)}
+        value={titulos.find((t) => t.code === ambienteSelecionado) || null}
+        onChange={(e: DropdownChangeEvent) => setAmbienteSelecionado(e.value)}
         options={titulos} // Usa os dados mockados diretamente
         optionLabel="name"
         placeholder="Selecione Ambiente"

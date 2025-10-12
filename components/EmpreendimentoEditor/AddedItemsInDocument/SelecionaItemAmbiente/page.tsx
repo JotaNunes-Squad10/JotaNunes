@@ -1,43 +1,87 @@
-// components>EmpreendimentoEditor>AddedItemsInDocument>SelecionaAmbiente>page.tsx (Títulos)
+"use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Dropdown, DropdownChangeEvent } from "primereact/dropdown";
+import { subTopicosAmbienteService, SubTopic } from "@/lib/api";
 import AdicionarNovoAmbiente from "./AdicionarNovoAmbiente/page";
 
-// 1. DADOS MOCKADOS (Simulando o resultado da transformação de TÍTULOS)
-interface SubTituloAmbiente {
+interface Props {
+  itemAmbienteSelecionado: any;
+  setItemAmbienteSelecionado: (value: any) => void;
+  ambienteSelecionado: string; // ex: "ÁREA COMUM"
+}
+
+interface DropdownOption {
   name: string;
   code: string;
 }
 
-const mockTitulos: SubTituloAmbiente[] = [
-  { name: "Sala de Estar/Jantar", code: "UP-7" },
-  { name: "Área Técnica", code: "UP-1" },
-  { name: "Academia", code: "AC-1" },
-  { name: "Brinquedoteca", code: "AC-4" },
-  { name: "Descrição Marcas", code: "MA-1" },
-  { name: "Piscina", code: "AC-5" },
-  { name: "Garagem", code: "AC-6" },
-  { name: "Acabamento Externo", code: "MA-2" },
-  { name: "Acabamento Interno", code: "MA-3" },
-  { name: "Ar Condicionado", code: "MA-4" },
-];
+export default function SelecioneItemAmbiente({
+  itemAmbienteSelecionado,
+  setItemAmbienteSelecionado,
+  ambienteSelecionado,
+}: Props) {
+  const [opcoesFiltradas, setOpcoesFiltradas] = useState<DropdownOption[]>([]);
 
-export default function SubSelectAmbiente() {
-  const [selectedTitulo, setSelectedTitulo] =
-    useState<SubTituloAmbiente | null>(
-      mockTitulos[0] // Seleciona o primeiro por padrão
-    );
+  useEffect(() => {
+    async function fetchSubTopicos() {
+      try {
+        const allSubTopicos = await subTopicosAmbienteService.getAllAmbiente();
+
+        let opcoes: DropdownOption[] = [];
+
+        if (ambienteSelecionado === "ÁREA COMUM") {
+          opcoes = allSubTopicos.map((item) => ({
+            name: item.nome,
+            code: item.id.toString(),
+          }));
+        } else if (ambienteSelecionado === "UNIDADES PRIVATIVAS") {
+          // Se quiser usar o mesmo mock do PainelMenu
+          const { UnidadePrivativaPage } = await import(
+            "@/components/unidadePrivativa/page"
+          );
+
+          opcoes = UnidadePrivativaPage.map((uni) => ({
+            name: uni.nome,
+            code: uni.nome,
+          }));
+        } else if (ambienteSelecionado) {
+          // Caso padrão, se quiser adicionar outros ambientes com apenas 1 subitem
+          opcoes = [
+            {
+              name: "Subitem 1",
+              code: "subitem1",
+            },
+          ];
+        }
+
+        setOpcoesFiltradas(opcoes);
+      } catch (error) {
+        console.error("Erro ao buscar subitens", error);
+      }
+    }
+
+    if (ambienteSelecionado) {
+      fetchSubTopicos();
+    } else {
+      setOpcoesFiltradas([]);
+    }
+  }, [ambienteSelecionado]);
 
   return (
     <div className="flex gap-3 mb-5">
-      <div className="card flex justify-content-center  w-[50%]">
+      <div className="card flex justify-content-center w-[50%]">
         <Dropdown
-          value={selectedTitulo}
-          onChange={(e: DropdownChangeEvent) => setSelectedTitulo(e.value)}
-          options={mockTitulos} // Usa os dados mockados diretamente
+          value={
+            opcoesFiltradas.find((i) => i.name === itemAmbienteSelecionado) ||
+            null
+          }
+          onChange={(e: DropdownChangeEvent) =>
+            setItemAmbienteSelecionado(e.value.name)
+          }
+          options={opcoesFiltradas}
           optionLabel="name"
-          placeholder="Selecione Ambiente"
+          placeholder="Selecione Item do Ambiente"
           className="w-full md:w-14rem"
         />
       </div>
