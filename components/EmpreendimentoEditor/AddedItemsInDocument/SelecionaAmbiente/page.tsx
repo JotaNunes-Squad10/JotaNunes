@@ -1,7 +1,8 @@
 // components>EmpreendimentoEditor>AddedItemsInDocument>SelecionaAmbiente>page.tsx (Títulos)
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Dropdown, DropdownChangeEvent } from "primereact/dropdown";
+import { topicoService, Topico } from "@/lib/api";
 
 // 1. DADOS MOCKADOS (Simulando o resultado da transformação de TÍTULOS)
 interface TituloAmbiente {
@@ -9,23 +10,37 @@ interface TituloAmbiente {
   code: string;
 }
 
-const mockTitulos: TituloAmbiente[] = [
-  { name: "1. Unidades privativas", code: "1" },
-  { name: "2. Área comum", code: "2" },
-  { name: "3. Marcas", code: "3" },
-];
-
 export default function SelecionaAmbiente() {
-  const [selectedTitulo, setSelectedTitulo] = useState<TituloAmbiente | null>(
-    mockTitulos[0] // Seleciona o primeiro por padrão
-  );
+  const [titulos, setTitulos] = useState<TituloAmbiente[]>([]);
+  const [selectedTitulo, setSelectedTitulo] = useState<TituloAmbiente | null>();
+
+  useEffect(() => {
+    async function fetchTopicos() {
+      try {
+        const allTopicos: Topico[] = await topicoService.getAllTopic();
+
+        const titulosFormatados: TituloAmbiente[] = allTopicos.map(
+          (topico, index) => ({
+            name: `${index + 1}. ${topico.nome}`,
+            code: topico.id.toString(),
+          })
+        );
+
+        setTitulos(titulosFormatados);
+      } catch (error) {
+        console.error("Erro ao buscar tópicos", error);
+      }
+    }
+
+    fetchTopicos();
+  }, []);
 
   return (
     <div className="card flex justify-content-center mb-5 w-[50%]">
       <Dropdown
         value={selectedTitulo}
         onChange={(e: DropdownChangeEvent) => setSelectedTitulo(e.value)}
-        options={mockTitulos} // Usa os dados mockados diretamente
+        options={titulos} // Usa os dados mockados diretamente
         optionLabel="name"
         placeholder="Selecione Ambiente"
         className="w-full md:w-14rem"

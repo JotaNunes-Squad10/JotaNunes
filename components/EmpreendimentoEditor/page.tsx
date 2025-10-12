@@ -16,6 +16,7 @@ interface EmpreendimentoEditorProps {
 export default function EmpreendimentoEditor({
   documentId,
 }: EmpreendimentoEditorProps) {
+  // Gerenciamento dos ambientes e itens dos ambientes.
   const [ambienteSelecionado, setAmbienteSelecionado] = useState();
   const [itemAmbienteSelecionado, setItemAmbienteSelecionado] = useState();
 
