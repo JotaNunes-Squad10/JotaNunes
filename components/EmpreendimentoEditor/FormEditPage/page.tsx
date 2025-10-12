@@ -5,12 +5,32 @@ import { Card } from "primereact/card";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 import ActionBar from "./ActionBar/page";
+import { Dispatch, SetStateAction } from "react";
 
-export default function FormEmpreendimento() {
-  const [empreendimento, setEmpreendimento] = useState<string>();
-  const [localizacao, setLocalizacao] = useState<string>();
-  const [descricao, setDescricao] = useState<string>();
+interface InfosDocument {
+  nomeDocumento: string;
+  setNomeDocumento: Dispatch<SetStateAction<string>>;
+  descricaoDocumento: string;
+  setDescricaoDocumento: Dispatch<SetStateAction<string>>;
+  localizacaoDocumento: string;
+  setLocalizacaoDocumento: Dispatch<SetStateAction<string>>;
+  tamanhoAreaDocumento: number | undefined;
+  setTamanhoAreaDocumento: Dispatch<SetStateAction<number | undefined>>;
+  padraoDocumento: string;
+  setPadraoDocumento: Dispatch<SetStateAction<string>>;
+  statusDocumento: string;
+  setStatusDocumento: Dispatch<SetStateAction<string>>;
+  versaoDocumento: number | undefined;
+  setVersaoDocumento: Dispatch<SetStateAction<number | undefined>>;
+}
 
+interface FormEmpreendimentoProps {
+  params: InfosDocument;
+}
+
+export default function FormEmpreendimento({
+  params,
+}: FormEmpreendimentoProps) {
   return (
     <Card className="shadow-md p-6 w-full ">
       <ActionBar />
@@ -20,8 +40,8 @@ export default function FormEmpreendimento() {
           Empreendimento:
         </label>
         <InputText
-          value={empreendimento}
-          onChange={(e) => setEmpreendimento(e.target.value)}
+          value={params.nomeDocumento}
+          onChange={(e) => params.setNomeDocumento(e.target.value)}
           placeholder="Digite o nome do empreendimento"
           className="flex-1"
         />
@@ -33,8 +53,8 @@ export default function FormEmpreendimento() {
           Localização:
         </label>
         <InputText
-          value={localizacao}
-          onChange={(e) => setLocalizacao(e.target.value)}
+          value={params.localizacaoDocumento}
+          onChange={(e) => params.setLocalizacaoDocumento(e.target.value)}
           placeholder="Digite a localização"
           className="flex-1"
         />
@@ -46,8 +66,8 @@ export default function FormEmpreendimento() {
           Descrição do Empreendimento:
         </label>
         <InputTextarea
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
+          value={params.descricaoDocumento}
+          onChange={(e) => params.setDescricaoDocumento(e.target.value)}
           placeholder="Digite a descrição"
           rows={6}
           autoResize

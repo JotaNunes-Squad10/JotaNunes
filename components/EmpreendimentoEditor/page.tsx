@@ -25,7 +25,7 @@ export default function EmpreendimentoEditor({
   const [localizacaoDocumento, setLocalizacaoDocumento] = useState<string>("");
   const [tamanhoAreaDocumento, setTamanhoAreaDocumento] = useState<number>();
   const [padraoDocumento, setPadraoDocumento] = useState<string>("");
-  const [statusDocumento, setStatusDocumento] = useState<number>();
+  const [statusDocumento, setStatusDocumento] = useState<string>("");
   const [versaoDocumento, setVersaoDocumento] = useState<number>();
 
   // Verificando se é documento existe e adicionando seus valores
@@ -46,13 +46,13 @@ export default function EmpreendimentoEditor({
           setVersaoDocumento(res.data.data.versao);
         });
     }
-    console.log(nomeDocumento);
-    console.log(descricaoDocumento);
-    console.log(localizacaoDocumento);
-    console.log(tamanhoAreaDocumento);
-    console.log(padraoDocumento);
-    console.log(statusDocumento);
-    console.log(versaoDocumento);
+    // console.log(nomeDocumento);
+    // console.log(descricaoDocumento);
+    // console.log(localizacaoDocumento);
+    // console.log(tamanhoAreaDocumento);
+    // console.log(padraoDocumento);
+    // console.log(statusDocumento);
+    // console.log(versaoDocumento);
   });
 
   return (
@@ -71,7 +71,24 @@ export default function EmpreendimentoEditor({
       <div className="pt-30 flex justify-center">
         <div className="flex flex-col">
           <div>
-            <FormEmpreendimento />
+            <FormEmpreendimento
+              params={{
+                nomeDocumento,
+                setNomeDocumento,
+                descricaoDocumento,
+                setDescricaoDocumento,
+                localizacaoDocumento,
+                setLocalizacaoDocumento,
+                tamanhoAreaDocumento,
+                setTamanhoAreaDocumento,
+                padraoDocumento,
+                setPadraoDocumento,
+                statusDocumento,
+                setStatusDocumento,
+                versaoDocumento,
+                setVersaoDocumento,
+              }}
+            />
           </div>
           <div>
             <AddedItemsInDocument />
