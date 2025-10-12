@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import { Button } from "primereact/button";
 import { Dialog } from "primereact/dialog";
+import axios from "axios";
 
 export default function CriarNovoAmbiente() {
   const [visible, setVisible] = useState<boolean>(false);
+
+  const [novoAmbiente, setNovoAmbiente] = useState<string>("");
 
   return (
     <div className="card flex justify-content-center">
@@ -39,7 +42,8 @@ export default function CriarNovoAmbiente() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              window.alert("Enviado...");
+              window.alert(`Criando novo ambiente ${novoAmbiente}`);
+              setVisible(false);
             }}
           >
             <div className="flex flex-col">
@@ -49,6 +53,7 @@ export default function CriarNovoAmbiente() {
                 placeholder="Nome do ambiente"
                 className="p-2 border border-gray-300 rounded-lg mb-4"
                 required
+                onChange={(e) => setNovoAmbiente(e.target.value)}
               />
               <button
                 type="submit"
