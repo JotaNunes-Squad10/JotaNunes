@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { Newspaper } from 'lucide-react';
 
 type RecenteItem = {
   title: string;
@@ -47,21 +48,8 @@ const Recentes: React.FC = () => {
             key={i}
             className="bg-gray-50 flex flex-col items-start border border-gray-200 rounded-lg p-5 h-[200px] min-w-[200px] w-full"
           >
-            {/* Ícone de arquivo (SVG) */}
-            <svg
-              className="text-red-600 mb-2"
-              width="32"
-              height="32"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <rect x="6" y="4" width="12" height="16" rx="2" stroke="currentColor" />
-              <path d="M9 8h6" stroke="currentColor" />
-              <path d="M9 12h6" stroke="currentColor" />
-              <path d="M9 16h6" stroke="currentColor" />
-            </svg>
+            {/* Ícone de notícias (SVG) */}
+            <Newspaper color="red" size={30} strokeWidth={1} />
             <div>
               <div className="font-semibold text-base">{r.title}</div>
               <div className="text-sm text-gray-400">{r.description}</div>
