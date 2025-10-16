@@ -70,7 +70,7 @@ export default function EmpreendimentoEditor({
       />
 
       <div className="pt-30 flex justify-center w-full">
-        <div className="flex flex-col w-full max-screen-lg px-4">
+        <div className="flex flex-col w-full max-screen-lg px-4 lg:w-[60%]">
           <div>
             <FormEmpreendimento
               params={{
