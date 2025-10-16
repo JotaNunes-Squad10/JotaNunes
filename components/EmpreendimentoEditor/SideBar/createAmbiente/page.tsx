@@ -32,7 +32,7 @@ export default function CriarNovoAmbiente() {
         header="Criar novo ambiente"
         visible={visible}
         modal={false}
-        style={{ width: "50vw" }}
+        style={{ width: "35vw" }}
         onHide={() => {
           if (!visible) return;
           setVisible(false);
@@ -57,7 +57,7 @@ export default function CriarNovoAmbiente() {
               />
               <button
                 type="submit"
-                className="cursor-pointer bg-[#0f582a] p-3 text-white rounded-lg hover:opacity-95"
+                className="cursor-pointer bg-green-700 p-3 text-white rounded-lg hover:opacity-95"
               >
                 Enviar
               </button>

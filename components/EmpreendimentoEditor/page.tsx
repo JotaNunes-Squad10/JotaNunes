@@ -69,8 +69,8 @@ export default function EmpreendimentoEditor({
         setItemAmbienteSelecionado={setItemAmbienteSelecionado}
       />
 
-      <div className="pt-30 flex justify-center">
-        <div className="flex flex-col">
+      <div className="pt-30 flex justify-center w-full">
+        <div className="flex flex-col w-full max-screen-lg px-4">
           <div>
             <FormEmpreendimento
               params={{
@@ -99,7 +99,7 @@ export default function EmpreendimentoEditor({
               setItemAmbienteSelecionado={setItemAmbienteSelecionado}
             />
           </div>
-          <div>
+          <div className="w-full overflow-x-auto">
             <TabelaItens />
           </div>
           <div>

@@ -58,20 +58,24 @@ export default function TabelaItens() {
 
   return (
     <div className="card mt-10">
-      <DataTable value={itens} tableStyle={{ minWidth: "50rem" }}>
-        {/* Coluna 1: Itens */}
-        <Column field="item" header="Itens" style={{ width: "30%" }} />
-
-        {/* Coluna 2: Descrição */}
-        <Column field="descricao" header="Descrição" style={{ width: "55%" }} />
-
-        {/* Coluna 3: Ação (Remoção) */}
-        <Column
-          header="Remover"
-          body={actionBodyTemplate}
-          style={{ width: "15%", textAlign: "center" }}
-        />
-      </DataTable>
+      <div className="w-full overflow-x-auto">
+        <DataTable value={itens}>
+          {/* Coluna 1: Itens */}
+          <Column field="item" header="Itens" style={{ width: "30%" }} />
+          {/* Coluna 2: Descrição */}
+          <Column
+            field="descricao"
+            header="Descrição"
+            style={{ width: "55%" }}
+          />
+          {/* Coluna 3: Ação (Remoção) */}
+          <Column
+            header="Remover"
+            body={actionBodyTemplate}
+            style={{ width: "15%", textAlign: "center" }}
+          />
+        </DataTable>
+      </div>
     </div>
   );
 }
