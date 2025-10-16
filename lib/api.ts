@@ -35,8 +35,23 @@ export interface Topico {
   nome: string;
 }
 
+export interface Item {
+  id: number;
+  nome: string;
+  descricao: string;
+}
+
+export interface Marca {
+  id: number;
+  nome: string;
+}
+
 export interface GetAllTopicResponse {
   data: Topico[];
+}
+
+export interface GetAllItemResponse {
+  data: Item[];
 }
 
 // Interface dos subitems do tópico ambientes
@@ -44,6 +59,14 @@ export type SubTopic = Topico;
 
 export interface GetAllSubTopicProps {
   data: SubTopic[];
+}
+
+export interface GetAllItemProps {
+  data: Item[];
+}
+
+export interface GetAllMarcaProps {
+  data: Marca[];
 }
 
 // Configuração da API principal
@@ -130,6 +153,26 @@ export const subTopicosAmbienteService = {
   async getAllAmbiente(): Promise<SubTopic[]> {
     const response = await axios.get<GetAllSubTopicProps>(
       "https://jotanunesservice.onrender.com/api/v1/ambiente/GetAllAmbientes"
+    );
+
+    return response.data.data;
+  },
+};
+
+export const itemService = {
+  async getAllItem(): Promise<Item[]> {
+    const response = await axios.get<GetAllItemProps>(
+      "https://jotanunesservice.onrender.com/api/v1/items/GetAllItems"
+    );
+
+    return response.data.data;
+  },
+};
+
+export const marcaService = {
+  async getAllMarca(): Promise<Marca[]> {
+    const response = await axios.get<GetAllMarcaProps>(
+      "https://jotanunesservice.onrender.com/api/v1/marca/GetAllMarcas"
     );
 
     return response.data.data;

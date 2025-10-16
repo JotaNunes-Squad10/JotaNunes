@@ -28,7 +28,9 @@ export default function AddedItemsInDocument({
         ambienteSelecionado={ambienteSelecionado}
       />
       <h3 className="mb-3 font-bold">Itens</h3>
-      <AdicionarItensDocumento />
+      <AdicionarItensDocumento
+        itemAmbienteSelecionado={itemAmbienteSelecionado}
+      />
       <div className="flex mt-3 w-[50%] gap-5">
         <button className="bg-[#0f582a] p-1 w-full text-white  rounded-lg cursor-pointer hover:bg-[#0d4923]">
           Adicionar Item

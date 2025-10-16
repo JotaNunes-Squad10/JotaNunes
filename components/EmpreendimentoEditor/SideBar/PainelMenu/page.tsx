@@ -19,6 +19,8 @@ interface CustomSideBarProps {
   setItemAmbienteSelecionado: any;
 }
 
+const MarcasPage: any = [{ id: 1, nome: "Descrição Marcas" }];
+
 export default function PainelMenu({
   ambienteSelecionado,
   setAmbienteSelecionado,
@@ -122,16 +124,16 @@ export default function PainelMenu({
       } else {
         childItems = [
           {
-            label: "Subitem 1",
+            label: "Descrição Marcas",
             icon: "",
             command: () => {
               setAmbienteSelecionado(topico.nome);
-              setItemAmbienteSelecionado("Subitem 1");
+              setItemAmbienteSelecionado("Descrição Marcas");
             },
             template: (item, options) => {
               const isSelected =
                 ambienteSelecionado === topico.nome &&
-                itemAmbienteSelecionado === "Subitem 1";
+                itemAmbienteSelecionado === "Descrição Marcas";
 
               return (
                 <div
@@ -145,7 +147,7 @@ export default function PainelMenu({
                     cursor: "pointer",
                   }}
                 >
-                  Subitem 1
+                  Descrição Marcas
                 </div>
               );
             },
