@@ -61,12 +61,26 @@ export default function TabelaItens() {
       <div className="w-full overflow-x-auto">
         <DataTable value={itens}>
           {/* Coluna 1: Itens */}
-          <Column field="item" header="Itens" style={{ width: "30%" }} />
+          <Column
+            field="item"
+            header="Itens"
+            style={{
+              width: "30%",
+              // whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          />
           {/* Coluna 2: Descrição */}
           <Column
             field="descricao"
             header="Descrição"
-            style={{ width: "55%" }}
+            style={{
+              maxWidth: "50px",
+              // whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
           />
           {/* Coluna 3: Ação (Remoção) */}
           <Column
