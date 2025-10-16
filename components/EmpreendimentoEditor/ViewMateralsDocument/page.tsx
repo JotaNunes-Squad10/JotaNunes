@@ -66,7 +66,7 @@ export default function TabelaItens() {
             header="Itens"
             style={{
               width: "30%",
-              // whiteSpace: "nowrap",
+              whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
             }}
@@ -76,8 +76,8 @@ export default function TabelaItens() {
             field="descricao"
             header="Descrição"
             style={{
-              maxWidth: "50px",
-              // whiteSpace: "nowrap",
+              width: "50px",
+              whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
             }}
