@@ -25,6 +25,7 @@ export default function CustomSidebarComponent({
   setItemAmbienteSelecionado,
 }: CustomSideBarProps) {
   const [visible, setVisible] = useState(false);
+  const [novoTopicoLista, setNovoTopicoLista] = useState<string[]>([]);
 
   return (
     <div className="relative">
@@ -73,8 +74,9 @@ export default function CustomSidebarComponent({
             setAmbienteSelecionado={setAmbienteSelecionado}
             itemAmbienteSelecionado={itemAmbienteSelecionado}
             setItemAmbienteSelecionado={setItemAmbienteSelecionado}
+            listaNovoAmbiente={novoTopicoLista}
           />
-          <CriarNovoAmbiente />
+          <CriarNovoAmbiente setNovoTopico={setNovoTopicoLista} />
         </div>
       </div>
     </div>

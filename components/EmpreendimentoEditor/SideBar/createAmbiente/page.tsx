@@ -2,8 +2,15 @@ import React, { useState } from "react";
 import { Button } from "primereact/button";
 import { Dialog } from "primereact/dialog";
 import axios from "axios";
+import { CreateTopicPayload, topicoService } from "@/lib/api";
 
-export default function CriarNovoAmbiente() {
+interface CriarNovoAmbienteProp {
+  setNovoTopico: React.Dispatch<React.SetStateAction<string[]>>;
+}
+
+export default function CriarNovoAmbiente({
+  setNovoTopico,
+}: CriarNovoAmbienteProp) {
   const [visible, setVisible] = useState<boolean>(false);
 
   const [novoAmbiente, setNovoAmbiente] = useState<string>("");
@@ -42,7 +49,14 @@ export default function CriarNovoAmbiente() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              window.alert(`Criando novo ambiente ${novoAmbiente}`);
+
+              const novoTopicoCreate: CreateTopicPayload = {
+                nome: novoAmbiente,
+              };
+
+              topicoService.createTopic(novoTopicoCreate).then((res) => {
+                setNovoTopico((prev) => [...prev, novoAmbiente]);
+              });
               setVisible(false);
             }}
           >

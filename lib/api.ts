@@ -50,6 +50,10 @@ export interface GetAllTopicResponse {
   data: Topico[];
 }
 
+export interface CreateTopicPayload {
+  nome: string;
+}
+
 export interface GetAllItemResponse {
   data: Item[];
 }
@@ -84,8 +88,10 @@ export const authApi = axios.create({
 // Serviços de Autenticação
 export const authService = {
   // Função para autenticar usuário
-  async authenticate(payload: AuthenticatePayload): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>(
+  async authenticate(
+    payload: AuthenticatePayload
+  ): Promise<AuthenticatePayload> {
+    const response = await api.post<AuthenticatePayload>(
       "/api/v1/authentication/Authenticate",
       payload
     );
@@ -145,6 +151,14 @@ export const topicoService = {
       "https://jotanunesservice.onrender.com/api/v1/topico/GetAllTopicos"
     );
     return response.data.data;
+  },
+
+  async createTopic(payload: CreateTopicPayload): Promise<string> {
+    const response = await api.post<string>(
+      "https://jotanunesservice.onrender.com/api/v1/topico/CreateTopico",
+      payload
+    );
+    return response.data;
   },
 };
 

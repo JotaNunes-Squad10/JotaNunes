@@ -17,6 +17,7 @@ interface CustomSideBarProps {
   setAmbienteSelecionado: any;
   itemAmbienteSelecionado: any;
   setItemAmbienteSelecionado: any;
+  listaNovoAmbiente: string[];
 }
 
 const MarcasPage: any = [{ id: 1, nome: "Descrição Marcas" }];
@@ -26,6 +27,7 @@ export default function PainelMenu({
   setAmbienteSelecionado,
   itemAmbienteSelecionado,
   setItemAmbienteSelecionado,
+  listaNovoAmbiente,
 }: CustomSideBarProps) {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [topicos, setTopicos] = useState<Topico[]>([]);
@@ -46,6 +48,21 @@ export default function PainelMenu({
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const topicos = await topicoService.getAllTopic();
+        const subitems = await subTopicosAmbienteService.getAllAmbiente();
+        setTopicos(topicos);
+        setSubTopicos(subitems);
+      } catch (error) {
+        console.error("Erro ao carregar tópicos", error);
+      }
+    }
+
+    fetchData();
+  }, [listaNovoAmbiente]);
 
   // 2. Recriar os menuItems sempre que os dados OU o estado de seleção mudar
   useEffect(() => {
