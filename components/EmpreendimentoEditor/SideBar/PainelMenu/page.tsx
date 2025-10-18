@@ -9,6 +9,7 @@ import {
   topicoService,
   subTopicosAmbienteService,
   SubTopic,
+  DeleteTopicPayload,
 } from "@/lib/api";
 import { UnidadePrivativaPage } from "@/components/unidadePrivativa/page";
 
@@ -138,7 +139,7 @@ export default function PainelMenu({
             );
           },
         }));
-      } else {
+      } else if (topico.nome === "Marcas") {
         childItems = [
           {
             label: "Descrição Marcas",
@@ -165,6 +166,118 @@ export default function PainelMenu({
                   }}
                 >
                   Descrição Marcas
+                </div>
+              );
+            },
+          },
+        ];
+      } else {
+        childItems = [
+          {
+            label: "Item 1",
+            icon: "",
+            command: () => {
+              setAmbienteSelecionado(topico.nome);
+              setItemAmbienteSelecionado("Descrição Marcas");
+            },
+            template: (item, options) => {
+              const isSelected =
+                ambienteSelecionado === topico.nome &&
+                itemAmbienteSelecionado === "Descrição Marcas";
+
+              return (
+                <div
+                  onClick={options.onClick}
+                  style={{
+                    backgroundColor: isSelected ? "#dc2626" : "transparent",
+                    color: isSelected ? "#ffffff" : "inherit",
+                    fontWeight: isSelected ? "bold" : "normal",
+                    padding: "0.5rem 0.75rem",
+                    borderRadius: "0.375rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Item 1
+                </div>
+              );
+            },
+          },
+          {
+            label: "Item 2",
+            icon: "",
+            command: () => {
+              setAmbienteSelecionado(topico.nome);
+              setItemAmbienteSelecionado("Descrição Marcas");
+            },
+            template: (item, options) => {
+              const isSelected =
+                ambienteSelecionado === topico.nome &&
+                itemAmbienteSelecionado === "Descrição Marcas";
+
+              return (
+                <div
+                  onClick={options.onClick}
+                  style={{
+                    backgroundColor: isSelected ? "#dc2626" : "transparent",
+                    color: isSelected ? "#ffffff" : "inherit",
+                    fontWeight: isSelected ? "bold" : "normal",
+                    padding: "0.5rem 0.75rem",
+                    borderRadius: "0.375rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Item 2
+                </div>
+              );
+            },
+          },
+          // Deve ser sempre o ultimo item!
+          {
+            label: "Excluir Ambiente",
+            icon: "",
+            command: async () => {
+              try {
+                const idTopicoPayload: DeleteTopicPayload = {
+                  id: topico.id,
+                };
+                await topicoService.deleteTopic(idTopicoPayload);
+
+                // Realizando regarga dos tópicos
+                const novosTopicos = await topicoService.getAllTopic();
+                const novosSubTopicos =
+                  await subTopicosAmbienteService.getAllAmbiente();
+
+                setTopicos(novosTopicos);
+                setSubTopicos(novosSubTopicos);
+              } catch (error) {
+                console.error("Erro ao excluir o tópico:", error);
+              }
+            },
+            template: (item, options) => {
+              const isSelected =
+                ambienteSelecionado === topico.nome &&
+                itemAmbienteSelecionado === "Descrição Marcas";
+
+              return (
+                <div
+                  onClick={options.onClick}
+                  className={`
+                    flex items-center 
+                    px-3 py-2 
+                    rounded-md 
+                    cursor-pointer 
+                    text-red-700 
+                    hover:bg-red-600 
+                    hover:text-white 
+                    ${
+                      isSelected
+                        ? "bg-red-600 text-white font-bold"
+                        : "bg-red-100 text-red-700"
+                    }
+                  `}
+                >
+                  <i className="pi pi-times mr-3 text-lg" />
+                  Excluir Ambiente
                 </div>
               );
             },
