@@ -30,8 +30,6 @@ export default function AdicionarItensDocumento({
         setSelectedAmbientes([]); // limpa seleção anterior
         let data: any[] = [];
 
-        console.log("itemAmbienteSelecionado:", itemAmbienteSelecionado);
-
         if (itemAmbienteSelecionado === "Descrição Marcas") {
           data = await marcaService.getAllMarca();
         } else {
