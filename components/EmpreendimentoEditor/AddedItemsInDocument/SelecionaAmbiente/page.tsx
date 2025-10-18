@@ -46,7 +46,9 @@ export default function SelecionaAmbiente({
     <div className="card flex justify-content-center mb-5 w-[50%]">
       <Dropdown
         value={titulos.find((t) => t.code === ambienteSelecionado) || null}
-        onChange={(e: DropdownChangeEvent) => setAmbienteSelecionado(e.value)}
+        onChange={(e: DropdownChangeEvent) =>
+          setAmbienteSelecionado(e.value.code)
+        }
         options={titulos} // Usa os dados mockados diretamente
         optionLabel="name"
         placeholder="Selecione Ambiente"
