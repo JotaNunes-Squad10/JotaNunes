@@ -75,6 +75,8 @@ export default function AdicionarItensDocumento({
           display="chip"
           showClear={selectedAmbientes.length > 0}
           disabled={loading}
+          filter
+          filterDelay={400}
         />
       </div>
       <AdicionarNovoItem />
