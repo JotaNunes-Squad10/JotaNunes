@@ -139,7 +139,7 @@ export default function PainelMenu({
             );
           },
         }));
-      } else if (topico.nome === "Marcas") {
+      } else if (topico.nome === "MARCAS") {
         childItems = [
           {
             label: "Descrição Marcas",
