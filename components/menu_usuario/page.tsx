@@ -82,7 +82,8 @@ export default function Menu_usuario({ userName }: MenuUsuarioProps) {
   ];
 
   return (
-    <div className="flex items-center gap-1 sm:gap-2 flex-nowrap cursor-pointer">
+    <div className="flex items-center gap-1 sm:gap-2 flex-nowrap cursor-pointer p-2 transition hover:scale-105 rounded-lg
+    hover:bg-red-100 transition-colors duration-200 ">
       {/* Menu invisível, só aparece no clique */}
       <TieredMenu model={items} popup ref={menu} breakpoint="700px" />
 
@@ -93,7 +94,7 @@ export default function Menu_usuario({ userName }: MenuUsuarioProps) {
       >
         <UserRound size={22} className="text-gray-700" />
         <span className="text-xs sm:text-base truncate max-w-[120px] sm:max-w-xs">
-          Bem-vindo(a), <span className="font-semibold">{userName}</span>
+        <span className="font-semibold">{userName}</span>
         </span>
       </div>
       {showUpdtePasswordModal && (
