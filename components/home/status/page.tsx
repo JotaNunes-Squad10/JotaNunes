@@ -1,40 +1,68 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Paper, Typography } from "@mui/material";
 import { FilePen, FileCheck2, Eye, ThumbsUp, BookX } from "lucide-react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
-type StatusItem = {
-  key: string;
-  label: string;
-  value: number;
-  icon: React.ReactElement;
+type Empreendimento = {
+  id: number;
+  nome: string;
+  status: string;
 };
 
-const status: StatusItem[] = [
-  { key: "Editando", label: "Editando", value: 7, icon: <FilePen color="red" size={30}/> },
-  { key: "Pendente", label: "Pendente de aprovação", value: 3, icon: <FileCheck2 color="red" size={30}/> },
-  { key: "Revisao", label: "Em Revisão", value: 3, icon: <Eye color="red" size={30}/> },
-  { key: "Aprovados", label: "Aprovados", value: 5, icon: <ThumbsUp color="red" size={30}/> },
-  { key: "Cancelados", label: "Cancelados", value: 1, icon: <BookX color="red" size={30}/> },
-];
+type StatusSummaryProps = {
+  empreendimentos?: Empreendimento[];
+};
 
-const StatusSummary: React.FC = () => {
+const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos }) => {
   const router = useRouter();
+  const [data, setData] = useState<Empreendimento[]>([]);
+
+  useEffect(() => {
+    if (empreendimentos && empreendimentos.length > 0) {
+      setData(empreendimentos);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(
+          "https://jotanunesservice.onrender.com/api/v1/empreendimento/GetAllEmpreendimentos"
+        );
+        setData(response.data?.data || []);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      }
+    };
+
+    fetchData();
+  }, [empreendimentos]);
+
+  const counts: Record<string, number> = {};
+  data.forEach((item) => {
+    const status = (item.status || "Desconhecido").trim();
+    counts[status] = (counts[status] || 0) + 1;
+  });
+
+  const statusList = [
+    { key: "Editando", label: "Editando", icon: <FilePen color="red" size={30} /> },
+    { key: "Pendente", label: "Pendente de aprovação", icon: <FileCheck2 color="red" size={30} /> },
+    { key: "Revisão", label: "Em Revisão", icon: <Eye color="red" size={30} /> },
+    { key: "Aprovado", label: "Aprovados", icon: <ThumbsUp color="red" size={30} /> },
+    { key: "Cancelado", label: "Cancelados", icon: <BookX color="red" size={30} /> },
+  ];
 
   const handleClick = (key: string) => {
     router.push(`/statusTabela?status=${key}`);
   };
 
   return (
-    <Box display="flex" 
-    flexWrap="wrap" 
-    gap={2}
-    >
-      {status.map((stat) => (
+    <Box display="flex" flexWrap="wrap" gap={2}>
+      {statusList.map((stat) => (
         <Paper
-          key={stat.label}
+          key={stat.key}
           elevation={0}
           sx={{
             p: 3,
@@ -54,12 +82,22 @@ const StatusSummary: React.FC = () => {
           }}
           onClick={() => handleClick(stat.key)}
         >
-          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: "bold", mb: 1 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ fontWeight: "bold", mb: 1 }}
+          >
             {stat.label}
           </Typography>
-          <div style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-              {stat.value}
+              {counts[stat.key] || 0}
             </Typography>
             {stat.icon}
           </div>
