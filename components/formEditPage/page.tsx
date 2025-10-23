@@ -19,7 +19,7 @@ export default function FormEmpreendimento() {
       toast.current?.show({
         severity: "error",       
         summary: "Erro",
-        detail: "Os campos empreendimento e localização são obrigatórios",
+        detail: "Os campos empreendimento e localização são obrigatórios.",
         life: 3000,
       });
       return;
