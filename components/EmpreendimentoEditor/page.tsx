@@ -54,7 +54,7 @@ export default function EmpreendimentoEditor({
     // console.log(padraoDocumento);
     // console.log(statusDocumento);
     // console.log(versaoDocumento);
-  });
+  }, []);
 
   return (
     <div className="min-h-screen">
