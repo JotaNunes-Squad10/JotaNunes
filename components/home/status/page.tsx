@@ -5,6 +5,7 @@ import { Box, Paper, Typography } from "@mui/material";
 import { FilePen, FileCheck2, Eye, ThumbsUp, BookX } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { Skeleton } from "primereact/skeleton";
 
 type Empreendimento = {
   id: number;
@@ -19,10 +20,12 @@ type StatusSummaryProps = {
 const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos }) => {
   const router = useRouter();
   const [data, setData] = useState<Empreendimento[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (empreendimentos && empreendimentos.length > 0) {
       setData(empreendimentos);
+      setLoading(false);
       return;
     }
 
@@ -34,6 +37,8 @@ const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos }) => {
         setData(response.data?.data || []);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -47,11 +52,11 @@ const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos }) => {
   });
 
   const statusList = [
-    { key: "Editando", label: "Editando", icon: <FilePen color="red" size={30} /> },
-    { key: "Pendente", label: "Pendente de aprovação", icon: <FileCheck2 color="red" size={30} /> },
-    { key: "Revisão", label: "Em Revisão", icon: <Eye color="red" size={30} /> },
-    { key: "Aprovado", label: "Aprovados", icon: <ThumbsUp color="red" size={30} /> },
-    { key: "Cancelado", label: "Cancelados", icon: <BookX color="red" size={30} /> },
+    { key: "Editando", label: "Editando", icon: <FilePen color="red" size={30} strokeWidth={1} /> },
+    { key: "Pendente", label: "Pendente de aprovação", icon: <FileCheck2 color="red" size={30} strokeWidth={1} /> },
+    { key: "Revisão", label: "Em Revisão", icon: <Eye color="red" size={30} strokeWidth={1} /> },
+    { key: "Aprovado", label: "Aprovados", icon: <ThumbsUp color="red" size={30} strokeWidth={1} /> },
+    { key: "Cancelado", label: "Cancelados", icon: <BookX color="red" size={30} strokeWidth={1} /> },
   ];
 
   const handleClick = (key: string) => {
@@ -89,6 +94,7 @@ const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos }) => {
           >
             {stat.label}
           </Typography>
+
           <div
             style={{
               display: "flex",
@@ -96,9 +102,18 @@ const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos }) => {
               alignItems: "center",
             }}
           >
-            <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-              {counts[stat.key] || 0}
-            </Typography>
+            {loading ? (
+              <Skeleton
+                width="2.5rem"
+                height="1.8rem"
+                borderRadius="8px"
+                style={{ backgroundColor: "#e0e0e0" }}
+              />
+            ) : (
+              <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+                {counts[stat.key] || 0}
+              </Typography>
+            )}
             {stat.icon}
           </div>
         </Paper>
