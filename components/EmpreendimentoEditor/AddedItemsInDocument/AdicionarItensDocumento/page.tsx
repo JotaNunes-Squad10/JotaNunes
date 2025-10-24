@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-// Trocamos o Dropdown pelo MultiSelect
 import { MultiSelect, MultiSelectChangeEvent } from "primereact/multiselect";
 import AdicionarNovoItem from "./AdicionarNovoItem/page";
-import { Item, itemService, Marca, marcaService } from "@/lib/api";
+import { itemService, marcaService } from "@/lib/api";
 
 interface Props {
   itemAmbienteSelecionado: any;
@@ -22,6 +21,7 @@ export default function AdicionarItensDocumento({
     []
   );
   const [loading, setLoading] = useState(true);
+  const [reload, setReload] = useState(false);
 
   useEffect(() => {
     const fetchItens = async () => {
@@ -51,12 +51,16 @@ export default function AdicionarItensDocumento({
     };
 
     fetchItens();
-  }, [itemAmbienteSelecionado]);
+  }, [itemAmbienteSelecionado, reload]);
+
+  const handleReload = () => {
+    setReload((prev) => !prev);
+  };
 
   return (
-    <div className="flex gap-3 items-end w-full">
+    <div className="flex gap-3 w-full">
       {/* Container do MultiSelect, ocupando 50% ou o necessário */}
-      <div className="card flex justify-center w-[50%]">
+      <div className="card flex justify-content-center w-[50%]">
         <MultiSelect
           value={selectedAmbientes}
           onChange={(e: MultiSelectChangeEvent) =>
@@ -69,9 +73,7 @@ export default function AdicionarItensDocumento({
               ? "Carregando itens..."
               : "Selecione um ou mais Itens de Ambiente"
           }
-          className="w-full"
-          // Classes para estilização parecida com a imagem (PrimeReact já faz a maior parte)
-          style={{ minWidth: "350px" }}
+          className="w-full md:w-14rem"
           display="chip"
           showClear={selectedAmbientes.length > 0}
           disabled={loading}
@@ -79,7 +81,7 @@ export default function AdicionarItensDocumento({
           filterDelay={400}
         />
       </div>
-      <AdicionarNovoItem />
+      <AdicionarNovoItem onReload={handleReload} />
     </div>
   );
 }

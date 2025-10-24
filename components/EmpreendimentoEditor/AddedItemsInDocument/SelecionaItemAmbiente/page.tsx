@@ -22,6 +22,7 @@ export default function SelecioneItemAmbiente({
   ambienteSelecionado,
 }: Props) {
   const [opcoesFiltradas, setOpcoesFiltradas] = useState<DropdownOption[]>([]);
+  const [reloadFlag, setReloadFlag] = useState(false);
 
   useEffect(() => {
     async function fetchSubTopicos() {
@@ -74,7 +75,11 @@ export default function SelecioneItemAmbiente({
     } else {
       setOpcoesFiltradas([]);
     }
-  }, [ambienteSelecionado]);
+  }, [ambienteSelecionado, reloadFlag]);
+
+  const handleCreateNewSubItem = () => {
+    setReloadFlag((prev) => !prev);
+  };
 
   return (
     <div className="flex gap-3 mb-5">
@@ -93,7 +98,10 @@ export default function SelecioneItemAmbiente({
           className="w-full md:w-14rem"
         />
       </div>
-      <AdicionarNovoAmbiente />
+      <AdicionarNovoAmbiente
+        ambienteSelecionado={ambienteSelecionado}
+        onCreateNewSubItem={handleCreateNewSubItem}
+      />
     </div>
   );
 }

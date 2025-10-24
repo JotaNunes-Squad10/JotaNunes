@@ -36,7 +36,7 @@ export interface Topico {
 }
 
 export interface Item {
-  id: number;
+  id?: number;
   nome: string;
   descricao: string;
 }
@@ -75,6 +75,12 @@ export interface GetAllItemProps {
 
 export interface GetAllMarcaProps {
   data: Marca[];
+}
+
+// Interfaces do endpoint Ambiente
+export interface CreateAmbientePayload {
+  nome: string;
+  topicoId: number;
 }
 
 // Configuração da API principal
@@ -201,5 +207,30 @@ export const marcaService = {
     );
 
     return response.data.data;
+  },
+};
+
+export const AmbienteService = {
+  // A possibilidade de não estar funcionando
+  async createAmbiente(
+    payload: CreateAmbientePayload
+  ): Promise<CreateAmbientePayload> {
+    const response = await axios.post<CreateAmbientePayload>(
+      "https://jotanunesservice.onrender.com/api/v1/ambiente/CreateAmbiente",
+      payload
+    );
+
+    return response.data;
+  },
+};
+
+export const ItemsServie = {
+  async createItem(payload: Item): Promise<Item> {
+    const response = await axios.post<Item>(
+      "https://jotanunesservice.onrender.com/api/v1/items/CreateItem",
+      payload
+    );
+
+    return response.data;
   },
 };

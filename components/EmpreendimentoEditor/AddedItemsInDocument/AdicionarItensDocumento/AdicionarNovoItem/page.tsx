@@ -1,8 +1,31 @@
 import React, { useState } from "react";
 import { Dialog } from "primereact/dialog";
+import { Item, ItemsServie } from "@/lib/api";
+import { on } from "events";
 
-export default function AdicionarNovoItem() {
+interface Props {
+  onReload: () => void;
+}
+
+export default function AdicionarNovoItem({ onReload }: Props) {
   const [visible, setVisible] = useState<boolean>(false);
+  const [nomeItem, setNomeItem] = useState<string>("");
+  const [descricaoItem, setDescricaoItem] = useState<string>("");
+
+  const handleCreateNewItem = async () => {
+    try {
+      const newItem: Item = {
+        nome: nomeItem,
+        descricao: descricaoItem,
+      };
+      const createdItem = await ItemsServie.createItem(newItem);
+      console.log("Item criado com sucesso:", createdItem);
+      onReload();
+      setVisible(false);
+    } catch (error) {
+      console.error("Erro ao criar novo item:", error);
+    }
+  };
 
   return (
     <div className="card flex justify-content-center">
@@ -27,7 +50,6 @@ export default function AdicionarNovoItem() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              window.alert("Enviado...");
             }}
           >
             <div className="flex flex-col">
@@ -37,10 +59,20 @@ export default function AdicionarNovoItem() {
                 placeholder="Nome do item"
                 className="p-2 border border-gray-300 rounded-lg mb-4"
                 required
+                onChange={(e) => setNomeItem(e.target.value)}
+              />
+              <label className="mb-4">Digite a descrição do item</label>
+              <input
+                type="text"
+                placeholder="Descrição do item"
+                className="p-2 border border-gray-300 rounded-lg mb-4"
+                required
+                onChange={(e) => setDescricaoItem(e.target.value)}
               />
               <button
                 type="submit"
                 className="cursor-pointer bg-[#0f582a] p-3 text-white rounded-lg hover:opacity-95"
+                onClick={handleCreateNewItem}
               >
                 Enviar
               </button>

@@ -1,8 +1,39 @@
 import React, { useState } from "react";
 import { Dialog } from "primereact/dialog";
+import {
+  AmbienteService,
+  CreateAmbientePayload,
+  topicoService,
+} from "@/lib/api";
 
-export default function AdicionarNovoAmbiente() {
+interface AdicionarNovoAmbienteProps {
+  ambienteSelecionado: string;
+  onCreateNewSubItem?: () => void;
+}
+
+export default function AdicionarNovoAmbiente({
+  ambienteSelecionado,
+  onCreateNewSubItem,
+}: AdicionarNovoAmbienteProps) {
   const [visible, setVisible] = useState<boolean>(false);
+
+  const [novoAmbiente, setNovoAmbiente] = useState<string>("");
+
+  const handleCriarAmbiente = async () => {
+    const allTopic = await topicoService.getAllTopic();
+    await allTopic.forEach((topic) => {
+      if (ambienteSelecionado === topic.nome) {
+        const idTopic = topic.id;
+        const payloadNovoAmbiente: CreateAmbientePayload = {
+          nome: novoAmbiente,
+          topicoId: idTopic,
+        };
+        AmbienteService.createAmbiente(payloadNovoAmbiente);
+        setVisible(false);
+        onCreateNewSubItem && onCreateNewSubItem();
+      }
+    });
+  };
 
   return (
     <div className="card flex justify-content-center">
@@ -37,10 +68,12 @@ export default function AdicionarNovoAmbiente() {
                 placeholder="Nome do item"
                 className="p-2 border border-gray-300 rounded-lg mb-4"
                 required
+                onChange={(e) => setNovoAmbiente(e.target.value)}
               />
               <button
                 type="submit"
                 className="cursor-pointer bg-[#0f582a] p-3 text-white rounded-lg hover:opacity-95"
+                onClick={handleCriarAmbiente}
               >
                 Enviar
               </button>
