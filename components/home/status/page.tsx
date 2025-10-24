@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Box, Paper, Typography } from "@mui/material";
 import { FilePen, FileCheck2, Eye, ThumbsUp, BookX } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { Skeleton } from "primereact/skeleton";
 
@@ -19,8 +19,15 @@ type StatusSummaryProps = {
 
 const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [data, setData] = useState<Empreendimento[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<string | null>(null);
+
+  useEffect(() => {
+    const statusFromUrl = searchParams.get("status");
+    if (statusFromUrl) setSelected(statusFromUrl);
+  }, [searchParams]);
 
   useEffect(() => {
     if (empreendimentos && empreendimentos.length > 0) {
@@ -60,64 +67,68 @@ const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos }) => {
   ];
 
   const handleClick = (key: string) => {
+    setSelected(key);
     router.push(`/statusTabela?status=${key}`);
   };
 
   return (
     <Box display="flex" flexWrap="wrap" gap={2}>
-      {statusList.map((stat) => (
-        <Paper
-          key={stat.key}
-          elevation={0}
-          sx={{
-            p: 3,
-            minWidth: 260,
-            maxWidth: 400,
-            border: "1px solid #eee",
-            flex: "1 1 calc(20% - 16px)",
-            height: 120,
-            backgroundColor: "#f5f6f795",
-            cursor: "pointer",
-            transition: "0.2s",
-            "&:hover": {
-              backgroundColor: "#f0f0f0",
-              border: "1px solid #c7c7c7ff",
-              transform: "scale(1.02)",
-            },
-          }}
-          onClick={() => handleClick(stat.key)}
-        >
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ fontWeight: "bold", mb: 1 }}
-          >
-            {stat.label}
-          </Typography>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+      {statusList.map((stat) => {
+        const isSelected = selected === stat.key;
+        return (
+          <Paper
+            key={stat.key}
+            elevation={0}
+            sx={{
+              p: 3,
+              minWidth: 260,
+              maxWidth: 400,
+              border: isSelected ? "1px solid #c7c7c7ff" : "1px solid #eee",
+              flex: "1 1 calc(20% - 16px)",
+              height: 120,
+              backgroundColor: isSelected ? "#f0f0f0" : "#f5f6f795",
+              cursor: "pointer",
+              transition: "0.2s",
+              "&:hover": {
+                backgroundColor: "#f0f0f0",
+                border: "1px solid #c7c7c7ff",
+                transform: "scale(1.02)",
+              },
             }}
+            onClick={() => handleClick(stat.key)}
           >
-            {loading ? (
-              <Skeleton
-                width="2.5rem"
-                height="1.8rem"
-                borderRadius="8px"
-                style={{ backgroundColor: "#e0e0e0" }}
-              />
-            ) : (
-              <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                {counts[stat.key] || 0}
-              </Typography>
-            )}
-            {stat.icon}
-          </div>
-        </Paper>
-      ))}
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontWeight: "bold", mb: 1 }}
+            >
+              {stat.label}
+            </Typography>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              {loading ? (
+                <Skeleton
+                  width="2.5rem"
+                  height="1.8rem"
+                  borderRadius="8px"
+                  style={{ backgroundColor: "#e0e0e0" }}
+                />
+              ) : (
+                <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+                  {counts[stat.key] || 0}
+                </Typography>
+              )}
+              {stat.icon}
+            </div>
+          </Paper>
+        );
+      })}
     </Box>
   );
 };
