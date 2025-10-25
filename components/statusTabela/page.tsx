@@ -13,12 +13,12 @@ const StatusTabela: React.FC = () => {
   const statusParam = searchParams.get("status");
 
   const [empreendimentos, setEmpreendimentos] = useState<Empreendimento[]>([]);
-  const [filtroAtivo, setFiltroAtivo] = useState<string>("Editando");
+  const [filtroAtivo, setFiltroAtivo] = useState<string>("Todos");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const status = statusParam || "Editando";
+    const status = statusParam || "Todos";
     setFiltroAtivo(status);
 
     const fetchData = async () => {
@@ -34,9 +34,9 @@ const StatusTabela: React.FC = () => {
           id: item.id,
           nome: item.nome,
           ultimaAlteracao: "-",
-          versao: item.versao?.toString() || "1.0",
+          versao: item.versao,
           usuario: "-",
-          status: item.status || "Desconhecido",
+          status: item.status,
         }));
 
         setEmpreendimentos(parsedData);

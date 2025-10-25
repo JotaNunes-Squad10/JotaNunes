@@ -66,7 +66,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
 
   const empreendimentosFiltrados = empreendimentos.filter(
     (emp) =>
-      emp.status === filtroAtivo &&
+      (filtroAtivo === "Todos" || emp.status === filtroAtivo) &&
       (emp.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.usuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.ultimaAlteracao.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -89,7 +89,6 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
     const fb = b[orderBy].toLowerCase();
     return orderAsc ? fa.localeCompare(fb) : fb.localeCompare(fa);
   });
-
 
   const startIndex = page * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
@@ -126,7 +125,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
       {/* Cabeçalho */}
       <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
         <Typography variant="h6" sx={{ fontWeight: "bold", mr: 2 }}>
-          {filtroAtivo}
+          {filtroAtivo === "Todos" ? "Todos" : filtroAtivo}
         </Typography>
         <TextField
           placeholder="Pesquisar"
