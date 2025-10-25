@@ -26,7 +26,7 @@ const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos }) => {
 
   useEffect(() => {
     const statusFromUrl = searchParams.get("status");
-    if (statusFromUrl) setSelected(statusFromUrl);
+    setSelected(statusFromUrl);
   }, [searchParams]);
 
   useEffect(() => {
@@ -67,8 +67,13 @@ const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos }) => {
   ];
 
   const handleClick = (key: string) => {
-    setSelected(key);
-    router.push(`/statusTabela?status=${key}`);
+    if (selected === key) {
+      setSelected(null);
+      router.push("/statusTabela");
+    } else {
+      setSelected(key);
+      router.push(`/statusTabela?status=${key}`);
+    }
   };
 
   return (
