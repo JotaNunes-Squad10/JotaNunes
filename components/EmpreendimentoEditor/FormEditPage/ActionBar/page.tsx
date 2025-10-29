@@ -1,42 +1,72 @@
 "use client";
 
-import React from "react";
+import React, { useRef, useState } from "react";
 import { Button } from "primereact/button";
+import { Menu } from "primereact/menu";
+import { FileText } from "lucide-react";
 
 export default function ActionBar() {
-  const handleSalvar = () => {
-    alert("Salvando dados...");
-  };
-
-  const handleStatus = () => {
-    alert("Alterando status...");
-  };
-
   const handleExportar = () => {
     alert("Exportando arquivo...");
   };
 
+  const [status, setStatus] = useState("Editando");
+  const menuRef = useRef<Menu>(null);
+
+  const statusOpcoes = [
+    {
+      label: "Editando",
+      command: () => setStatus("Editando"),
+    },
+    {
+      label: "Pendente de aprovação",
+      command: () => setStatus("Pendente de aprovação"),
+    },
+    {
+      label: "Em revisão",
+      command: () => setStatus("Em revisão"),
+    },
+    {
+      label: "Aprovado",
+      command: () => setStatus("Aprovado"),
+    },
+    {
+      label: "Rejeitado",
+      command: () => setStatus("Rejeitado"),
+    },
+  ];
+
+  const getStatuscolor = () => {
+    switch (status) {
+      case "Editando":
+        return { backgroundColor: "#A8E6A1", color: "white", border: "none" };
+      case "Pendente de aprovação":
+        return { backgroundColor: "#FFD966", color: "white", border: "none" };
+      case "Em revisão":
+        return { backgroundColor: "#FF9800", color: "white", border: "none" };
+      case "Aprovado":
+        return { backgroundColor: "#4CAF50", color: "white", border: "none" };
+      case "Rejeitado":
+        return { backgroundColor: "#F44336", color: "white", border: "none" };
+    }
+  };
+
   return (
-    <div className="flex flex-col sm:flex-row sm:justify-between gap-3 mb-6">
-      {/* Botão à esquerda */}
+    <div className="flex sm:flex-row justify-end gap-3 mb-6">
+      <Menu model={statusOpcoes} popup ref={menuRef} />
       <Button
-        label="Salvar"
-        className="p-button-success w-full sm:w-48"
-        onClick={handleSalvar}
+        label={`Status: ${status}`}
+        style={{ ...getStatuscolor(), fontSize: "0.8rem" }}
+        className="h-11 w-40 sm:w-48 sm:h-12"
+        onClick={(e) => menuRef.current?.toggle(e)}
       />
-
-      {/* Botão central */}
       <Button
-        label="Status: Editando"
-        className="p-button-info w-full sm:w-48"
-        onClick={handleStatus}
-      />
-
-      {/* Botão à direita */}
-      <Button
-        label="Exportar"
-        className="p-button-danger w-full sm:w-48"
+        label="Exportar PDF"
+        className="h-11 w-40 sm:w-48 sm:h-12"
+        style={{ fontSize: "0.8rem" }}
+        severity="danger"
         onClick={handleExportar}
+        icon={<FileText className="mr-2" size={15} />}
       />
     </div>
   );

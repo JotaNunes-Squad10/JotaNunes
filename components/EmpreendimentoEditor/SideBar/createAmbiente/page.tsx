@@ -1,7 +1,5 @@
 import React, { useState } from "react";
-import { Button } from "primereact/button";
 import { Dialog } from "primereact/dialog";
-import axios from "axios";
 import { CreateTopicPayload, topicoService } from "@/lib/api";
 
 interface CriarNovoAmbienteProp {

@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Card } from "primereact/card";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 import ActionBar from "./ActionBar/page";
 import { Dispatch, SetStateAction } from "react";
+import { Toast } from "primereact/toast";
+import { Button } from "primereact/button";
 
 interface InfosDocument {
   nomeDocumento: string;
@@ -31,8 +33,22 @@ interface FormEmpreendimentoProps {
 export default function FormEmpreendimento({
   params,
 }: FormEmpreendimentoProps) {
+
+  const toast = useRef<Toast>(null);
+  const handleSave = () => {
+    if(!params.nomeDocumento.trim() || !params.localizacaoDocumento.trim() || !params.descricaoDocumento.trim()) {
+      toast.current?.show({
+        severity: "error",       
+        summary: "Erro",
+        detail: "Os campos empreendimento, localização e descrição são obrigatórios",
+        life: 3000,
+      });
+      return;
+    }};
+
   return (
     <div>
+      <Toast ref={toast} position="top-right"/>
       <ActionBar />
       <Card className="shadow-md p-6 w-full ">
         {/* Campo Empreendimento */}
@@ -68,10 +84,18 @@ export default function FormEmpreendimento({
             value={params.descricaoDocumento}
             onChange={(e) => params.setDescricaoDocumento(e.target.value)}
             placeholder="Digite a descrição"
-            rows={6}
+            rows={4}
             autoResize
             className="w-full"
           />
+        </div>
+        <div className="flex justify-end gap-2 mt-3">
+          <Button
+            label="Guardar"
+            icon="pi pi-check"
+            className="p-button-next px-4 py-2"
+            onClick={handleSave}
+          />  
         </div>
       </Card>
     </div>

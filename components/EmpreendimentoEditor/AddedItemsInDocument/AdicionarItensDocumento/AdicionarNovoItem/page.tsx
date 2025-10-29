@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Dialog } from "primereact/dialog";
 import { Item, ItemsServie } from "@/lib/api";
-import { on } from "events";
 
 interface Props {
   onReload: () => void;
