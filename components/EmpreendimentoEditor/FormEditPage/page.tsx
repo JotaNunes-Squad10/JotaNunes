@@ -33,22 +33,27 @@ interface FormEmpreendimentoProps {
 export default function FormEmpreendimento({
   params,
 }: FormEmpreendimentoProps) {
-
   const toast = useRef<Toast>(null);
   const handleSave = () => {
-    if(!params.nomeDocumento.trim() || !params.localizacaoDocumento.trim() || !params.descricaoDocumento.trim()) {
+    if (
+      !params.nomeDocumento.trim() ||
+      !params.localizacaoDocumento.trim() ||
+      !params.descricaoDocumento.trim()
+    ) {
       toast.current?.show({
-        severity: "error",       
+        severity: "error",
         summary: "Erro",
-        detail: "Os campos empreendimento, localização e descrição são obrigatórios",
+        detail:
+          "Os campos empreendimento, localização e descrição são obrigatórios",
         life: 3000,
       });
       return;
-    }};
+    }
+  };
 
   return (
     <div>
-      <Toast ref={toast} position="top-right"/>
+      <Toast ref={toast} position="top-right" />
       <ActionBar />
       <Card className="shadow-md p-6 w-full ">
         {/* Campo Empreendimento */}
@@ -95,7 +100,7 @@ export default function FormEmpreendimento({
             icon="pi pi-check"
             className="p-button-next px-4 py-2"
             onClick={handleSave}
-          />  
+          />
         </div>
       </Card>
     </div>
