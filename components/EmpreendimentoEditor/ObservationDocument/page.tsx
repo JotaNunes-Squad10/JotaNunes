@@ -1,3 +1,4 @@
+import { Button } from "primereact/button";
 import React, { useState } from "react";
 
 export default function ObservationDocument() {
@@ -33,6 +34,12 @@ export default function ObservationDocument() {
         {/* Opcional: Contador de caracteres para o usuário */}
         <div className="text-right text-sm text-gray-500 mt-1">
           {observation.length} / {MAX_LENGTH} caracteres
+        </div>
+
+        <div className="relative mt-14">
+          <button className="p-2 bg-blue-700 rounded-xs text-white cursor-pointer mt-4 w-24 hover:bg-blue-800 absolute right-0 bottom-0">
+            Salvar
+          </button>
         </div>
       </form>
     </div>

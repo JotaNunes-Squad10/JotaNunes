@@ -107,6 +107,7 @@ export default function EmpreendimentoEditor({
           </div>
         </div>
       </div>
+      <footer className="mb-10"></footer>
     </div>
   );
 }
