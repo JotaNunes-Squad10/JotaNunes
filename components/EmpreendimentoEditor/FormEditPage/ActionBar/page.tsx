@@ -3,12 +3,9 @@
 import React, { useRef, useState } from "react";
 import { Button } from "primereact/button";
 import { Menu } from "primereact/menu";
+import { FileText } from "lucide-react";
 
 export default function ActionBar() {
-
-  const handleStatus = () => {
-    alert("Alterando status...");
-  };
 
   const handleExportar = () => {
     alert("Exportando arquivo...");
@@ -67,8 +64,10 @@ export default function ActionBar() {
       <Button
         label="Exportar PDF"
         className="h-11 w-40 sm:w-48 sm:h-12"
+        style={{ fontSize: "0.8rem" }}
         severity="danger"
         onClick={handleExportar}
+        icon={<FileText className="mr-2" size={15} />}
       />
     </div>
   );

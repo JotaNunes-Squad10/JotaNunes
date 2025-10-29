@@ -16,6 +16,7 @@
     "axios": "^1.11.0",
     "cookies-next": "^6.1.0",
     "jwt-decode": "^4.0.0",
+    "lucide-react": "^0.548.0",
     "mysql2": "^3.15.1",
     "next": "15.4.6",
     "primeicons": "^7.0.0",
