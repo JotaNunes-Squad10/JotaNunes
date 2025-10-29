@@ -50,12 +50,12 @@ export default function JotanunesLogin() {
   const handleUpdatePassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (newPassword !== confirmPassword) {
+    if (newPassword.trim() !== confirmPassword.trim()) {
       toast.error("A confirmação de senha não confere!");
       return;
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.trim().length < 6) {
       toast.error("A nova senha deve ter pelo menos 6 caracteres!");
       return;
     }
@@ -63,7 +63,11 @@ export default function JotanunesLogin() {
     setUpdatingPassword(true);
 
     try {
-      await authService.updatePassword({ username, currentPassword, newPassword });
+      await authService.updatePassword({ 
+        username: username.trim(), 
+        currentPassword: currentPassword.trim(), 
+        newPassword: newPassword.trim() 
+      });
       toast.success("Senha atualizada com sucesso! Faça login com a nova senha.");
       closeUpdatePasswordModal();
       setSenha(""); // Limpa a senha do login
@@ -104,7 +108,10 @@ export default function JotanunesLogin() {
     setLoading(true);
 
     try {
-      const response = await authService.authenticate({ username, password: senha });
+      const response = await authService.authenticate({ 
+        username: username.trim(), 
+        password: senha.trim() 
+      });
       
       const token = response?.data?.accessToken;
       const trimmed = typeof token === "string" ? token.trim() : undefined;
@@ -156,7 +163,7 @@ export default function JotanunesLogin() {
       
       if (isAccountNotSetup) {
         try {
-          const userInfo = await authService.getUserByUsername(username);
+          const userInfo = await authService.getUserByUsername(username.trim());
           if (userInfo?.data?.requiredActions?.includes("UPDATE_PASSWORD")) {
             toast.info("Necessário atualizar a senha para continuar.");
             setShowUpdatePasswordModal(true);
