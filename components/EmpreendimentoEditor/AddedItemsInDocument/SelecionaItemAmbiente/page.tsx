@@ -46,7 +46,7 @@ export default function SelecioneItemAmbiente({
             name: uni.nome,
             code: uni.nome,
           }));
-        } else if (ambienteSelecionado === "Marcas") {
+        } else if (ambienteSelecionado === "MARCAS") {
           // Caso padrão, se quiser adicionar outros ambientes com apenas 1 subitem
           opcoes = [
             {
