@@ -83,6 +83,16 @@ export interface CreateAmbientePayload {
   topicoId: number;
 }
 
+export interface CreateDocumentoPayload {
+  nome: string;
+  descricao: string;
+  tamanhoArea: number;
+  localizacao: string;
+  padrao: number;
+  status: number;
+  empreendimentoTopicos: {}[];
+}
+
 // Configuração da API principal
 export const api = axios.create({
   baseURL: "https://jotanunesservice.onrender.com",
@@ -228,6 +238,18 @@ export const ItemsServie = {
   async createItem(payload: Item): Promise<Item> {
     const response = await axios.post<Item>(
       "https://jotanunesservice.onrender.com/api/v1/items/CreateItem",
+      payload
+    );
+
+    return response.data;
+  },
+};
+
+// Configuração da API do Documento
+export const DocumentoService = {
+  async createDocumento(payload: CreateDocumentoPayload): Promise<any> {
+    const response = await axios.post<CreateDocumentoPayload>(
+      "https://jotanunesservice.onrender.com/api/v1/empreendimento/CreateEmpreendimento",
       payload
     );
 

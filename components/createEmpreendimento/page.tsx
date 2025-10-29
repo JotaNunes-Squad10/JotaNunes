@@ -10,19 +10,23 @@ import ActionBar from "../EmpreendimentoEditor/FormEditPage/ActionBar/page";
 import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
 import { useRef } from "react";
+import { DocumentoService } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 export default function CreateEmpreendimento() {
   // Estados para os campos do formulário
+  const router = useRouter();
+
   const [nomeDocumento, setNomeDocumento] = useState<string>("");
   const [descricaoDocumento, setDescricaoDocumento] = useState<string>("");
   const [localizacaoDocumento, setLocalizacaoDocumento] = useState<string>("");
   const [tamanhoAreaDocumento, setTamanhoAreaDocumento] = useState<number>();
-  const [padraoDocumento, setPadraoDocumento] = useState<string>("");
-  const [statusDocumento, setStatusDocumento] = useState<string>("");
+  const [padraoDocumento, setPadraoDocumento] = useState<number>();
+  const [statusDocumento, setStatusDocumento] = useState<number>();
   const [versaoDocumento, setVersaoDocumento] = useState<number>();
 
   const toast = useRef<Toast>(null);
-  const handleSave = () => {
+  const handleSave = async () => {
     if (
       !nomeDocumento.trim() ||
       !localizacaoDocumento.trim() ||
@@ -38,12 +42,47 @@ export default function CreateEmpreendimento() {
       return;
     }
 
-    // Lógica para salvar os dados do empreendimento
+    try {
+      const payload = {
+        nome: nomeDocumento,
+        descricao: descricaoDocumento,
+        tamanhoArea: tamanhoAreaDocumento || 0,
+        localizacao: localizacaoDocumento,
+        padrao: padraoDocumento || 1,
+        status: statusDocumento || 3,
+        empreendimentoTopicos: [],
+      };
+
+      const response = await DocumentoService.createDocumento(payload);
+
+      toast.current?.show({
+        severity: "success",
+        summary: "Sucesso",
+        detail: "Empreendimento criado com sucesso!",
+        life: 3000,
+      });
+
+      setTimeout(() => {
+        router.push(`/empreendimento/${response.data.id}`);
+      }, 1500);
+
+      return;
+    } catch (error) {
+      console.error("Erro ao criar empreendimento:", error);
+      toast.current?.show({
+        severity: "error",
+        summary: "Erro",
+        detail:
+          "Houve um erro ao criar o empreendimento. Tente novamente mais tarde.",
+        life: 3000,
+      });
+    }
 
     toast.current?.show({
-      severity: "success",
-      summary: "Sucesso",
-      detail: "Empreendimento criado com sucesso!",
+      severity: "error",
+      summary: "Erro",
+      detail:
+        "Os campos empreendimento, localização e descrição são obrigatórios",
       life: 3000,
     });
   };
@@ -96,7 +135,7 @@ export default function CreateEmpreendimento() {
               </div>
               <div className="flex justify-end gap-2 mt-3">
                 <Button
-                  label="Guardar"
+                  label="Enviar"
                   icon="pi pi-check"
                   className="p-button-next px-4 py-2"
                   onClick={handleSave}
