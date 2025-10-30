@@ -1,8 +1,11 @@
+import { Button } from "primereact/button";
 import React, { useState } from "react";
 
 export default function ObservationDocument() {
   const [observation, setObservation] = useState("");
   const MAX_LENGTH = 300;
+
+  const [loading, setLoading] = useState(false);
 
   // Função que atualiza o estado
   const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -12,7 +15,16 @@ export default function ObservationDocument() {
 
   return (
     <div className="mt-10">
-      <form className="flex flex-col">
+      <form
+        className="flex flex-col"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setLoading(true);
+          setTimeout(() => {
+            setLoading(false);
+          }, 2000);
+        }}
+      >
         <label htmlFor="observation" className="font-bold mb-3">
           Observação:
         </label>
@@ -36,9 +48,27 @@ export default function ObservationDocument() {
         </div>
 
         <div className="relative mt-14">
-          <button className="p-2 bg-blue-700 rounded-xs text-white cursor-pointer mt-4 w-24 hover:bg-blue-800 absolute right-0 bottom-0">
+          {/* <button
+            type="submit"
+            className="p-2 bg-blue-700 rounded-xs text-white cursor-pointer mt-4 w-24 hover:bg-blue-800 absolute right-0 bottom-0"
+          >
             Salvar
-          </button>
+          </button> */}
+
+          <Button
+            label="Salvar"
+            style={{
+              backgroundColor: "#3566D1",
+              border: "none",
+              borderRadius: "4px",
+              color: "white",
+              position: "absolute",
+              right: "0px",
+              bottom: "0",
+            }}
+            loading={loading}
+            type="submit"
+          />
         </div>
       </form>
     </div>
