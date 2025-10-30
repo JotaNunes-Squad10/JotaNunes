@@ -135,8 +135,7 @@ export default function CreateEmpreendimento() {
               </div>
               <div className="flex justify-end gap-2 mt-3">
                 <Button
-                  label="Enviar"
-                  icon="pi pi-check"
+                  label="Criar Empreendimento"
                   className="p-button-next px-4 py-2"
                   onClick={handleSave}
                 />
