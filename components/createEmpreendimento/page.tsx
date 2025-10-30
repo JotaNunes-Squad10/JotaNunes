@@ -26,6 +26,9 @@ export default function CreateEmpreendimento() {
   const [versaoDocumento, setVersaoDocumento] = useState<number>();
 
   const toast = useRef<Toast>(null);
+
+  const [loading, setLoading] = useState<boolean>(false);
+
   const handleSave = async () => {
     if (
       !nomeDocumento.trim() ||
@@ -41,6 +44,8 @@ export default function CreateEmpreendimento() {
       });
       return;
     }
+
+    setLoading(true);
 
     try {
       const payload = {
@@ -76,15 +81,19 @@ export default function CreateEmpreendimento() {
           "Houve um erro ao criar o empreendimento. Tente novamente mais tarde.",
         life: 3000,
       });
+    } finally {
+      setLoading(false);
     }
 
-    toast.current?.show({
-      severity: "error",
-      summary: "Erro",
-      detail:
-        "Os campos empreendimento, localização e descrição são obrigatórios",
-      life: 3000,
-    });
+    setTimeout(() => {
+      toast.current?.show({
+        severity: "error",
+        summary: "Erro",
+        detail:
+          "Os campos empreendimento, localização e descrição são obrigatórios",
+        life: 3000,
+      });
+    }, 1500);
   };
 
   return (
@@ -136,6 +145,7 @@ export default function CreateEmpreendimento() {
               <div className="flex justify-end gap-2 mt-3">
                 <Button
                   label="Criar Empreendimento"
+                  loading={loading}
                   className="p-button-next px-4 py-2"
                   onClick={handleSave}
                 />
