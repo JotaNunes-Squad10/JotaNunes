@@ -34,7 +34,10 @@ export default function FormEmpreendimento({
   params,
 }: FormEmpreendimentoProps) {
   const toast = useRef<Toast>(null);
+  const [loading, setLoading] = useState(false);
+
   const handleSave = () => {
+    setLoading(true);
     if (
       !params.nomeDocumento.trim() ||
       !params.localizacaoDocumento.trim() ||
@@ -47,8 +50,20 @@ export default function FormEmpreendimento({
           "Os campos empreendimento, localização e descrição são obrigatórios",
         life: 3000,
       });
+      setLoading(false);
       return;
     }
+
+    // Simulando uma operação assíncrona, como uma chamada de API
+    setTimeout(() => {
+      toast.current?.show({
+        severity: "success",
+        summary: "Sucesso",
+        detail: "Informações do empreendimento salvas com sucesso!",
+        life: 3000,
+      });
+      setLoading(false);
+    }, 2000);
   };
 
   return (
@@ -100,6 +115,7 @@ export default function FormEmpreendimento({
             icon="pi pi-check"
             className="p-button-next px-4 py-2"
             onClick={handleSave}
+            loading={loading}
           />
         </div>
       </Card>
