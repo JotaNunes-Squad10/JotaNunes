@@ -38,6 +38,7 @@ export default function CriarNovoAmbiente({
         visible={visible}
         modal={false}
         style={{ width: "35vw" }}
+        breakpoints={{ "960px": "75vw", "640px": "90vw" }}
         onHide={() => {
           if (!visible) return;
           setVisible(false);
