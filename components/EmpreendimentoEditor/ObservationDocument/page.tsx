@@ -1,4 +1,5 @@
 import { Button } from "primereact/button";
+import { Toast } from "primereact/toast";
 import React, { useState } from "react";
 
 export default function ObservationDocument() {
@@ -6,6 +7,8 @@ export default function ObservationDocument() {
   const MAX_LENGTH = 300;
 
   const [loading, setLoading] = useState(false);
+
+  const toast = React.useRef<Toast>(null);
 
   // Função que atualiza o estado
   const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -15,6 +18,7 @@ export default function ObservationDocument() {
 
   return (
     <div className="mt-10">
+      <Toast ref={toast} position="top-left" />
       <form
         className="flex flex-col"
         onSubmit={(e) => {
@@ -22,6 +26,12 @@ export default function ObservationDocument() {
           setLoading(true);
           setTimeout(() => {
             setLoading(false);
+            toast.current?.show({
+              severity: "success",
+              summary: "Sucesso",
+              detail: "Observação salva com sucesso!",
+              life: 3000,
+            });
           }, 2000);
         }}
       >
