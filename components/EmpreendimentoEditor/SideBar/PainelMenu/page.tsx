@@ -11,7 +11,6 @@ import {
   SubTopic,
   DeleteTopicPayload,
 } from "@/lib/api";
-import { UnidadePrivativaPage } from "@/components/unidadePrivativa/page";
 
 interface CustomSideBarProps {
   ambienteSelecionado: any;
@@ -80,65 +79,133 @@ export default function PainelMenu({
       let childItems: MenuItem[] = [];
 
       if (topico.nome === "ÁREA COMUM") {
-        childItems = subTopicos.map((sub) => ({
-          label: sub.nome,
-          icon: "",
-          command: () => {
-            setAmbienteSelecionado(topico.nome);
-            setItemAmbienteSelecionado(sub.nome);
-          },
-          template: (item, options) => {
-            const isSelected =
-              ambienteSelecionado === topico.nome &&
-              itemAmbienteSelecionado === sub.nome;
+        subTopicos.forEach((sub) => {
+          if (sub.topico.id === topico.id) {
+            childItems.push({
+              label: sub.nome,
+              icon: "",
+              command: () => {
+                setAmbienteSelecionado(topico.nome);
+                setItemAmbienteSelecionado(sub.nome);
+              },
+              template: (item, options) => {
+                const isSelected =
+                  ambienteSelecionado === topico.nome &&
+                  itemAmbienteSelecionado === sub.nome;
 
-            return (
-              <div
-                onClick={options.onClick}
-                style={{
-                  backgroundColor: isSelected ? "#dc2626" : "transparent", // vermelho
-                  color: isSelected ? "#ffffff" : "inherit",
-                  fontWeight: isSelected ? "bold" : "normal",
-                  padding: "0.5rem 0.75rem",
-                  borderRadius: "0.375rem",
-                  cursor: "pointer",
-                }}
-              >
-                {sub.nome}
-              </div>
-            );
-          },
-        }));
+                return (
+                  <div
+                    onClick={options.onClick}
+                    style={{
+                      backgroundColor: isSelected ? "#dc2626" : "transparent", // vermelho
+                      color: isSelected ? "#ffffff" : "inherit",
+                      fontWeight: isSelected ? "bold" : "normal",
+                      padding: "0.5rem 0.75rem",
+                      borderRadius: "0.375rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {sub.nome}
+                  </div>
+                );
+              },
+            });
+          }
+        });
+
+        // childItems = subTopicos.map((sub) => ({
+        //   label: sub.nome,
+        //   icon: "",
+        //   command: () => {
+        //     setAmbienteSelecionado(topico.nome);
+        //     setItemAmbienteSelecionado(sub.nome);
+        //   },
+        //   template: (item, options) => {
+        //     const isSelected =
+        //       ambienteSelecionado === topico.nome &&
+        //       itemAmbienteSelecionado === sub.nome;
+
+        //     return (
+        //       <div
+        //         onClick={options.onClick}
+        //         style={{
+        //           backgroundColor: isSelected ? "#dc2626" : "transparent", // vermelho
+        //           color: isSelected ? "#ffffff" : "inherit",
+        //           fontWeight: isSelected ? "bold" : "normal",
+        //           padding: "0.5rem 0.75rem",
+        //           borderRadius: "0.375rem",
+        //           cursor: "pointer",
+        //         }}
+        //       >
+        //         {sub.nome}
+        //       </div>
+        //     );
+        //   },
+        // }));
       } else if (topico.nome === "UNIDADES PRIVATIVAS") {
-        childItems = UnidadePrivativaPage.map((uni) => ({
-          label: uni.nome,
-          icon: "",
-          command: () => {
-            setAmbienteSelecionado(topico.nome);
-            setItemAmbienteSelecionado(uni.nome);
-          },
-          template: (item, options) => {
-            const isSelected =
-              ambienteSelecionado === topico.nome &&
-              itemAmbienteSelecionado === uni.nome;
+        subTopicos.forEach((sub) => {
+          if (sub.topico.id === topico.id) {
+            childItems.push({
+              label: sub.nome,
+              icon: "",
+              command: () => {
+                setAmbienteSelecionado(topico.nome);
+                setItemAmbienteSelecionado(sub.nome);
+              },
+              template: (item, options) => {
+                const isSelected =
+                  ambienteSelecionado === topico.nome &&
+                  itemAmbienteSelecionado === sub.nome;
 
-            return (
-              <div
-                onClick={options.onClick}
-                style={{
-                  backgroundColor: isSelected ? "#dc2626" : "transparent",
-                  color: isSelected ? "#ffffff" : "inherit",
-                  fontWeight: isSelected ? "bold" : "normal",
-                  padding: "0.5rem 0.75rem",
-                  borderRadius: "0.375rem",
-                  cursor: "pointer",
-                }}
-              >
-                {uni.nome}
-              </div>
-            );
-          },
-        }));
+                return (
+                  <div
+                    onClick={options.onClick}
+                    style={{
+                      backgroundColor: isSelected ? "#dc2626" : "transparent", // vermelho
+                      color: isSelected ? "#ffffff" : "inherit",
+                      fontWeight: isSelected ? "bold" : "normal",
+                      padding: "0.5rem 0.75rem",
+                      borderRadius: "0.375rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {sub.nome}
+                  </div>
+                );
+              },
+            });
+          }
+        });
+
+        // childItems = UnidadePrivativaPage.map((uni) => ({
+        //   label: uni.nome,
+        //   icon: "",
+        //   command: () => {
+        //     setAmbienteSelecionado(topico.nome);
+        //     setItemAmbienteSelecionado(uni.nome);
+        //   },
+        //   template: (item, options) => {
+        //     const isSelected =
+        //       ambienteSelecionado === topico.nome &&
+        //       itemAmbienteSelecionado === uni.nome;
+
+        //     return (
+        //       <div
+        //         onClick={options.onClick}
+        //         style={{
+        //           backgroundColor: isSelected ? "#dc2626" : "transparent",
+        //           color: isSelected ? "#ffffff" : "inherit",
+        //           fontWeight: isSelected ? "bold" : "normal",
+        //           padding: "0.5rem 0.75rem",
+        //           borderRadius: "0.375rem",
+        //           cursor: "pointer",
+        //         }}
+        //       >
+        //         {uni.nome}
+        //       </div>
+        //     );
+        //   },
+        // }));
       } else if (topico.nome === "MARCAS") {
         childItems = [
           {

@@ -48,14 +48,14 @@ export default function EmpreendimentoEditor({
     getInfoDocument();
   }, [documentId]);
 
-  console.log("Document ID:", documentId);
-  console.log("Nome Documento:", nomeDocumento);
-  console.log("Descrição Documento:", descricaoDocumento);
-  console.log("Localização Documento:", localizacaoDocumento);
-  console.log("Tamanho Área Documento:", tamanhoAreaDocumento);
-  console.log("Padrão Documento:", padraoDocumento);
-  console.log("Status Documento:", statusDocumento);
-  console.log("Versão Documento:", versaoDocumento);
+  // console.log("Document ID:", documentId);
+  // console.log("Nome Documento:", nomeDocumento);
+  // console.log("Descrição Documento:", descricaoDocumento);
+  // console.log("Localização Documento:", localizacaoDocumento);
+  // console.log("Tamanho Área Documento:", tamanhoAreaDocumento);
+  // console.log("Padrão Documento:", padraoDocumento);
+  // console.log("Status Documento:", statusDocumento);
+  // console.log("Versão Documento:", versaoDocumento);
 
   return (
     <div className="min-h-screen">

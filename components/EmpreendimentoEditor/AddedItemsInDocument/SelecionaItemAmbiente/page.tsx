@@ -32,20 +32,19 @@ export default function SelecioneItemAmbiente({
         let opcoes: DropdownOption[] = [];
 
         if (ambienteSelecionado === "ÁREA COMUM") {
-          opcoes = allSubTopicos.map((item) => ({
-            name: item.nome,
-            code: item.id.toString(),
-          }));
+          opcoes = allSubTopicos
+            .filter((item) => item.topico.nome === "ÁREA COMUM")
+            .map((item) => ({
+              name: item.nome,
+              code: item.id.toString(),
+            }));
         } else if (ambienteSelecionado === "UNIDADES PRIVATIVAS") {
-          // Se quiser usar o mesmo mock do PainelMenu
-          const { UnidadePrivativaPage } = await import(
-            "@/components/unidadePrivativa/page"
-          );
-
-          opcoes = UnidadePrivativaPage.map((uni) => ({
-            name: uni.nome,
-            code: uni.nome,
-          }));
+          opcoes = allSubTopicos
+            .filter((item) => item.topico.nome === "UNIDADES PRIVATIVAS")
+            .map((item) => ({
+              name: item.nome,
+              code: item.id.toString(),
+            }));
         } else if (ambienteSelecionado === "MARCAS") {
           // Caso padrão, se quiser adicionar outros ambientes com apenas 1 subitem
           opcoes = [

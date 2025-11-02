@@ -63,7 +63,11 @@ export interface GetAllItemResponse {
 }
 
 // Interface dos subitems do tópico ambientes
-export type SubTopic = Topico;
+export type SubTopic = {
+  id: number;
+  nome: string;
+  topico: Topico;
+};
 
 export interface GetAllSubTopicProps {
   data: SubTopic[];
