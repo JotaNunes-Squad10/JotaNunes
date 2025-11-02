@@ -7,10 +7,10 @@ import AddedItemsInDocument from "./AddedItemsInDocument/page";
 import TabelaItens from "./ViewMateralsDocument/page";
 import ObservationDocument from "./ObservationDocument/page";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { DocumentoService } from "@/lib/api";
 
 interface EmpreendimentoEditorProps {
-  documentId: number;
+  documentId: string;
 }
 
 export default function EmpreendimentoEditor({
@@ -29,32 +29,33 @@ export default function EmpreendimentoEditor({
   const [statusDocumento, setStatusDocumento] = useState<string>("");
   const [versaoDocumento, setVersaoDocumento] = useState<number>();
 
-  // Verificando se é documento existe e adicionando seus valores
-
+  // Buscar as informações do documento ao carregar o componente
   useEffect(() => {
-    if (documentId > 0) {
-      axios
-        .get(
-          `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${documentId}`
-        )
-        .then((res) => {
-          setNomeDocumento(res.data.data.nome);
-          setDescricaoDocumento(res.data.data.descricao);
-          setLocalizacaoDocumento(res.data.data.localizacao);
-          setTamanhoAreaDocumento(res.data.data.tamanhoArea);
-          setPadraoDocumento(res.data.data.padrao);
-          setStatusDocumento(res.data.data.status);
-          setVersaoDocumento(res.data.data.versao);
-        });
-    }
-    // console.log(nomeDocumento);
-    // console.log(descricaoDocumento);
-    // console.log(localizacaoDocumento);
-    // console.log(tamanhoAreaDocumento);
-    // console.log(padraoDocumento);
-    // console.log(statusDocumento);
-    // console.log(versaoDocumento);
-  }, []);
+    const getInfoDocument = async () => {
+      const documentData = await DocumentoService.getDocumentoById(documentId);
+      console.log("Dados do documento:", documentData);
+      if (documentData) {
+        setNomeDocumento(documentData.data.nome);
+        setDescricaoDocumento(documentData.data.descricao);
+        setLocalizacaoDocumento(documentData.data.localizacao);
+        setTamanhoAreaDocumento(documentData.data.tamanhoArea);
+        setPadraoDocumento(documentData.data.padrao);
+        setStatusDocumento(documentData.data.status);
+        setVersaoDocumento(documentData.data.versao);
+      }
+    };
+
+    getInfoDocument();
+  }, [documentId]);
+
+  console.log("Document ID:", documentId);
+  console.log("Nome Documento:", nomeDocumento);
+  console.log("Descrição Documento:", descricaoDocumento);
+  console.log("Localização Documento:", localizacaoDocumento);
+  console.log("Tamanho Área Documento:", tamanhoAreaDocumento);
+  console.log("Padrão Documento:", padraoDocumento);
+  console.log("Status Documento:", statusDocumento);
+  console.log("Versão Documento:", versaoDocumento);
 
   return (
     <div className="min-h-screen">

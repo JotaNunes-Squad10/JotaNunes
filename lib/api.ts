@@ -255,4 +255,17 @@ export const DocumentoService = {
 
     return response.data;
   },
+
+  async getDocumentoById(documentId: string): Promise<any> {
+    try {
+      const response = await axios.get(
+        `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${documentId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar informações do documento:", error);
+    }
+
+    return null;
+  },
 };

@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 
 export default function Empreendimento() {
   const params = useParams<{ documentId: string }>();
-  const documentId = Number(params?.documentId);
+  const documentId = String(params?.documentId);
   return (
     <div>
       <EmpreendimentoEditor documentId={documentId} />
