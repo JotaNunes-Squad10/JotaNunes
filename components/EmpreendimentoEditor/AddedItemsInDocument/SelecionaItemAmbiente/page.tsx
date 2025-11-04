@@ -2,7 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { Dropdown, DropdownChangeEvent } from "primereact/dropdown";
-import { subTopicosAmbienteService, SubTopic } from "@/lib/api";
+import {
+  subTopicosAmbienteService,
+  SubTopic,
+  topicoService,
+  Topico,
+} from "@/lib/api";
 import AdicionarNovoAmbiente from "./AdicionarNovoAmbiente/page";
 
 interface Props {
@@ -27,41 +32,22 @@ export default function SelecioneItemAmbiente({
   useEffect(() => {
     async function fetchSubTopicos() {
       try {
-        const allSubTopicos = await subTopicosAmbienteService.getAllAmbiente();
+        const allSubTopicos: SubTopic[] =
+          await subTopicosAmbienteService.getAllAmbiente();
+        const allTopics: Topico[] = await topicoService.getAllTopic();
 
         let opcoes: DropdownOption[] = [];
 
-        if (ambienteSelecionado === "ÁREA COMUM") {
-          opcoes = allSubTopicos
-            .filter((item) => item.topico.nome === "ÁREA COMUM")
-            .map((item) => ({
-              name: item.nome,
-              code: item.id.toString(),
-            }));
-        } else if (ambienteSelecionado === "UNIDADES PRIVATIVAS") {
-          opcoes = allSubTopicos
-            .filter((item) => item.topico.nome === "UNIDADES PRIVATIVAS")
-            .map((item) => ({
-              name: item.nome,
-              code: item.id.toString(),
-            }));
-        } else if (ambienteSelecionado === "MARCAS") {
-          // Caso padrão, se quiser adicionar outros ambientes com apenas 1 subitem
-          opcoes = [
-            {
-              name: "Descrição Marcas",
-              code: "Descrição Marcas",
-            },
-          ];
-        } else if (ambienteSelecionado) {
-          // Caso padrão, se quiser adicionar outros ambientes com apenas 1 subitem
-          opcoes = [
-            {
-              name: "Subitem 1",
-              code: "subitem1",
-            },
-          ];
-        }
+        allTopics.forEach((t) => {
+          if (ambienteSelecionado === t.nome) {
+            opcoes = allSubTopicos
+              .filter((item) => item.topico.id === t.id)
+              .map((item) => ({
+                name: item.nome,
+                code: item.id.toString(),
+              }));
+          }
+        });
 
         setOpcoesFiltradas(opcoes);
       } catch (error) {
