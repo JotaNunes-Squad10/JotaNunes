@@ -115,30 +115,20 @@ export default function PainelMenu({
           if (childItems.length === 0 && ![1, 2, 3].includes(idTopic)) {
             childItems.push(
               {
-                label: "Item Padrão",
-                icon: "",
-                command: () => {
-                  setAmbienteSelecionado(topico.nome);
-                  setItemAmbienteSelecionado("Item Padrão");
-                },
+                label: "Adicione um novo ambiente",
                 template: (item, options) => {
-                  const isSelected =
-                    ambienteSelecionado === topico.nome &&
-                    itemAmbienteSelecionado === "Item Padrão";
-
                   return (
                     <div
                       onClick={options.onClick}
-                      style={{
-                        backgroundColor: isSelected ? "#dc2626" : "transparent", // vermelho
-                        color: isSelected ? "#ffffff" : "inherit",
-                        fontWeight: isSelected ? "bold" : "normal",
-                        padding: "0.5rem 0.75rem",
-                        borderRadius: "0.375rem",
-                        cursor: "pointer",
-                      }}
+                      className={`
+                      flex items-center
+                      px-3 py-2
+                      rounded-md
+                      cursor-pointer
+                      color-gray-500
+                    `}
                     >
-                      Item Padrão
+                      Adicione um novo item
                     </div>
                   );
                 },
