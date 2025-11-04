@@ -78,153 +78,25 @@ export default function PainelMenu({
     return topicos.map((topico, index) => {
       let childItems: MenuItem[] = [];
 
-      if (topico.nome === "ÁREA COMUM") {
-        subTopicos.forEach((sub) => {
-          if (sub.topico.id === topico.id) {
-            childItems.push({
-              label: sub.nome,
-              icon: "",
-              command: () => {
-                setAmbienteSelecionado(topico.nome);
-                setItemAmbienteSelecionado(sub.nome);
-              },
-              template: (item, options) => {
-                const isSelected =
-                  ambienteSelecionado === topico.nome &&
-                  itemAmbienteSelecionado === sub.nome;
-
-                return (
-                  <div
-                    onClick={options.onClick}
-                    style={{
-                      backgroundColor: isSelected ? "#dc2626" : "transparent", // vermelho
-                      color: isSelected ? "#ffffff" : "inherit",
-                      fontWeight: isSelected ? "bold" : "normal",
-                      padding: "0.5rem 0.75rem",
-                      borderRadius: "0.375rem",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {sub.nome}
-                  </div>
-                );
-              },
-            });
-          }
-        });
-
-        // childItems = subTopicos.map((sub) => ({
-        //   label: sub.nome,
-        //   icon: "",
-        //   command: () => {
-        //     setAmbienteSelecionado(topico.nome);
-        //     setItemAmbienteSelecionado(sub.nome);
-        //   },
-        //   template: (item, options) => {
-        //     const isSelected =
-        //       ambienteSelecionado === topico.nome &&
-        //       itemAmbienteSelecionado === sub.nome;
-
-        //     return (
-        //       <div
-        //         onClick={options.onClick}
-        //         style={{
-        //           backgroundColor: isSelected ? "#dc2626" : "transparent", // vermelho
-        //           color: isSelected ? "#ffffff" : "inherit",
-        //           fontWeight: isSelected ? "bold" : "normal",
-        //           padding: "0.5rem 0.75rem",
-        //           borderRadius: "0.375rem",
-        //           cursor: "pointer",
-        //         }}
-        //       >
-        //         {sub.nome}
-        //       </div>
-        //     );
-        //   },
-        // }));
-      } else if (topico.nome === "UNIDADES PRIVATIVAS") {
-        subTopicos.forEach((sub) => {
-          if (sub.topico.id === topico.id) {
-            childItems.push({
-              label: sub.nome,
-              icon: "",
-              command: () => {
-                setAmbienteSelecionado(topico.nome);
-                setItemAmbienteSelecionado(sub.nome);
-              },
-              template: (item, options) => {
-                const isSelected =
-                  ambienteSelecionado === topico.nome &&
-                  itemAmbienteSelecionado === sub.nome;
-
-                return (
-                  <div
-                    onClick={options.onClick}
-                    style={{
-                      backgroundColor: isSelected ? "#dc2626" : "transparent", // vermelho
-                      color: isSelected ? "#ffffff" : "inherit",
-                      fontWeight: isSelected ? "bold" : "normal",
-                      padding: "0.5rem 0.75rem",
-                      borderRadius: "0.375rem",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {sub.nome}
-                  </div>
-                );
-              },
-            });
-          }
-        });
-
-        // childItems = UnidadePrivativaPage.map((uni) => ({
-        //   label: uni.nome,
-        //   icon: "",
-        //   command: () => {
-        //     setAmbienteSelecionado(topico.nome);
-        //     setItemAmbienteSelecionado(uni.nome);
-        //   },
-        //   template: (item, options) => {
-        //     const isSelected =
-        //       ambienteSelecionado === topico.nome &&
-        //       itemAmbienteSelecionado === uni.nome;
-
-        //     return (
-        //       <div
-        //         onClick={options.onClick}
-        //         style={{
-        //           backgroundColor: isSelected ? "#dc2626" : "transparent",
-        //           color: isSelected ? "#ffffff" : "inherit",
-        //           fontWeight: isSelected ? "bold" : "normal",
-        //           padding: "0.5rem 0.75rem",
-        //           borderRadius: "0.375rem",
-        //           cursor: "pointer",
-        //         }}
-        //       >
-        //         {uni.nome}
-        //       </div>
-        //     );
-        //   },
-        // }));
-      } else if (topico.nome === "MARCAS") {
-        childItems = [
-          {
-            label: "Descrição Marcas",
+      subTopicos.forEach((sub) => {
+        if (sub.topico.id === topico.id && sub.nome.trim() !== "") {
+          childItems.push({
+            label: sub.nome,
             icon: "",
             command: () => {
               setAmbienteSelecionado(topico.nome);
-              setItemAmbienteSelecionado("Descrição Marcas");
+              setItemAmbienteSelecionado(sub.nome);
             },
             template: (item, options) => {
               const isSelected =
                 ambienteSelecionado === topico.nome &&
-                itemAmbienteSelecionado === "Descrição Marcas";
+                itemAmbienteSelecionado === sub.nome;
 
               return (
                 <div
                   onClick={options.onClick}
                   style={{
-                    backgroundColor: isSelected ? "#dc2626" : "transparent",
+                    backgroundColor: isSelected ? "#dc2626" : "transparent", // vermelho
                     color: isSelected ? "#ffffff" : "inherit",
                     fontWeight: isSelected ? "bold" : "normal",
                     padding: "0.5rem 0.75rem",
@@ -232,125 +104,314 @@ export default function PainelMenu({
                     cursor: "pointer",
                   }}
                 >
-                  Descrição Marcas
+                  {sub.nome}
                 </div>
               );
             },
-          },
-        ];
-      } else {
-        childItems = [
-          {
-            label: "Item 1",
-            icon: "",
-            command: () => {
-              setAmbienteSelecionado(topico.nome);
-              setItemAmbienteSelecionado("Descrição Marcas");
-            },
-            template: (item, options) => {
-              const isSelected =
-                ambienteSelecionado === topico.nome &&
-                itemAmbienteSelecionado === "Descrição Marcas";
+          });
+        } else {
+          // Caso não haja sub-tópicos, adiciona um item padrão
+          const idTopic = topico.id;
+          if (childItems.length === 0 && ![1, 2, 3].includes(idTopic)) {
+            childItems.push(
+              {
+                label: "Item Padrão",
+                icon: "",
+                command: () => {
+                  setAmbienteSelecionado(topico.nome);
+                  setItemAmbienteSelecionado("Item Padrão");
+                },
+                template: (item, options) => {
+                  const isSelected =
+                    ambienteSelecionado === topico.nome &&
+                    itemAmbienteSelecionado === "Item Padrão";
 
-              return (
-                <div
-                  onClick={options.onClick}
-                  style={{
-                    backgroundColor: isSelected ? "#dc2626" : "transparent",
-                    color: isSelected ? "#ffffff" : "inherit",
-                    fontWeight: isSelected ? "bold" : "normal",
-                    padding: "0.5rem 0.75rem",
-                    borderRadius: "0.375rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  Item 1
-                </div>
-              );
-            },
-          },
-          {
-            label: "Item 2",
-            icon: "",
-            command: () => {
-              setAmbienteSelecionado(topico.nome);
-              setItemAmbienteSelecionado("Descrição Marcas");
-            },
-            template: (item, options) => {
-              const isSelected =
-                ambienteSelecionado === topico.nome &&
-                itemAmbienteSelecionado === "Descrição Marcas";
+                  return (
+                    <div
+                      onClick={options.onClick}
+                      style={{
+                        backgroundColor: isSelected ? "#dc2626" : "transparent", // vermelho
+                        color: isSelected ? "#ffffff" : "inherit",
+                        fontWeight: isSelected ? "bold" : "normal",
+                        padding: "0.5rem 0.75rem",
+                        borderRadius: "0.375rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Item Padrão
+                    </div>
+                  );
+                },
+              },
+              {
+                label: "Excluir Ambiente",
+                icon: "",
+                command: async () => {
+                  try {
+                    const idTopicoPayload: DeleteTopicPayload = {
+                      id: topico.id,
+                    };
+                    await topicoService.deleteTopic(idTopicoPayload);
 
-              return (
-                <div
-                  onClick={options.onClick}
-                  style={{
-                    backgroundColor: isSelected ? "#dc2626" : "transparent",
-                    color: isSelected ? "#ffffff" : "inherit",
-                    fontWeight: isSelected ? "bold" : "normal",
-                    padding: "0.5rem 0.75rem",
-                    borderRadius: "0.375rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  Item 2
-                </div>
-              );
-            },
-          },
-          // Deve ser sempre o ultimo item!
-          {
-            label: "Excluir Ambiente",
-            icon: "",
-            command: async () => {
-              try {
-                const idTopicoPayload: DeleteTopicPayload = {
-                  id: topico.id,
-                };
-                await topicoService.deleteTopic(idTopicoPayload);
+                    // Realizando regarga dos tópicos
+                    const novosTopicos = await topicoService.getAllTopic();
+                    const novosSubTopicos =
+                      await subTopicosAmbienteService.getAllAmbiente();
 
-                // Realizando regarga dos tópicos
-                const novosTopicos = await topicoService.getAllTopic();
-                const novosSubTopicos =
-                  await subTopicosAmbienteService.getAllAmbiente();
+                    setTopicos(novosTopicos);
+                    setSubTopicos(novosSubTopicos);
+                  } catch (error) {
+                    console.error("Erro ao excluir o tópico:", error);
+                  }
+                },
+                template: (item, options) => {
+                  const isSelected =
+                    ambienteSelecionado === topico.nome &&
+                    itemAmbienteSelecionado === "Excluir Ambiente";
 
-                setTopicos(novosTopicos);
-                setSubTopicos(novosSubTopicos);
-              } catch (error) {
-                console.error("Erro ao excluir o tópico:", error);
+                  return (
+                    <div
+                      onClick={options.onClick}
+                      className={`
+                      flex items-center
+                      px-3 py-2
+                      rounded-md
+                      cursor-pointer
+                      text-red-700
+                      hover:bg-red-600
+                      hover:text-white
+                      ${
+                        isSelected
+                          ? "bg-red-600 text-white font-bold"
+                          : "bg-red-100 text-red-700"
+                      }
+                    `}
+                    >
+                      <i className="pi pi-times mr-3 text-lg" />
+                      Excluir Ambiente
+                    </div>
+                  );
+                },
               }
-            },
-            template: (item, options) => {
-              const isSelected =
-                ambienteSelecionado === topico.nome &&
-                itemAmbienteSelecionado === "Descrição Marcas";
+            );
+          }
+        }
+      });
 
-              return (
-                <div
-                  onClick={options.onClick}
-                  className={`
-                    flex items-center 
-                    px-3 py-2 
-                    rounded-md 
-                    cursor-pointer 
-                    text-red-700 
-                    hover:bg-red-600 
-                    hover:text-white 
-                    ${
-                      isSelected
-                        ? "bg-red-600 text-white font-bold"
-                        : "bg-red-100 text-red-700"
-                    }
-                  `}
-                >
-                  <i className="pi pi-times mr-3 text-lg" />
-                  Excluir Ambiente
-                </div>
-              );
-            },
-          },
-        ];
-      }
+      // if (topico.nome === "ÁREA COMUM") {
+      //   subTopicos.forEach((sub) => {
+      //     if (sub.topico.id === topico.id) {
+      //       childItems.push({
+      //         label: sub.nome,
+      //         icon: "",
+      //         command: () => {
+      //           setAmbienteSelecionado(topico.nome);
+      //           setItemAmbienteSelecionado(sub.nome);
+      //         },
+      //         template: (item, options) => {
+      //           const isSelected =
+      //             ambienteSelecionado === topico.nome &&
+      //             itemAmbienteSelecionado === sub.nome;
+
+      //           return (
+      //             <div
+      //               onClick={options.onClick}
+      //               style={{
+      //                 backgroundColor: isSelected ? "#dc2626" : "transparent", // vermelho
+      //                 color: isSelected ? "#ffffff" : "inherit",
+      //                 fontWeight: isSelected ? "bold" : "normal",
+      //                 padding: "0.5rem 0.75rem",
+      //                 borderRadius: "0.375rem",
+      //                 cursor: "pointer",
+      //               }}
+      //             >
+      //               {sub.nome}
+      //             </div>
+      //           );
+      //         },
+      //       });
+      //     }
+      //   });
+      // } else if (topico.nome === "UNIDADES PRIVATIVAS") {
+      //   subTopicos.forEach((sub) => {
+      //     if (sub.topico.id === topico.id) {
+      //       childItems.push({
+      //         label: sub.nome,
+      //         icon: "",
+      //         command: () => {
+      //           setAmbienteSelecionado(topico.nome);
+      //           setItemAmbienteSelecionado(sub.nome);
+      //         },
+      //         template: (item, options) => {
+      //           const isSelected =
+      //             ambienteSelecionado === topico.nome &&
+      //             itemAmbienteSelecionado === sub.nome;
+
+      //           return (
+      //             <div
+      //               onClick={options.onClick}
+      //               style={{
+      //                 backgroundColor: isSelected ? "#dc2626" : "transparent", // vermelho
+      //                 color: isSelected ? "#ffffff" : "inherit",
+      //                 fontWeight: isSelected ? "bold" : "normal",
+      //                 padding: "0.5rem 0.75rem",
+      //                 borderRadius: "0.375rem",
+      //                 cursor: "pointer",
+      //               }}
+      //             >
+      //               {sub.nome}
+      //             </div>
+      //           );
+      //         },
+      //       });
+      //     }
+      //   });
+      // } else if (topico.nome === "MARCAS") {
+      //   childItems = [
+      //     {
+      //       label: "Descrição Marcas",
+      //       icon: "",
+      //       command: () => {
+      //         setAmbienteSelecionado(topico.nome);
+      //         setItemAmbienteSelecionado("Descrição Marcas");
+      //       },
+      //       template: (item, options) => {
+      //         const isSelected =
+      //           ambienteSelecionado === topico.nome &&
+      //           itemAmbienteSelecionado === "Descrição Marcas";
+
+      //         return (
+      //           <div
+      //             onClick={options.onClick}
+      //             style={{
+      //               backgroundColor: isSelected ? "#dc2626" : "transparent",
+      //               color: isSelected ? "#ffffff" : "inherit",
+      //               fontWeight: isSelected ? "bold" : "normal",
+      //               padding: "0.5rem 0.75rem",
+      //               borderRadius: "0.375rem",
+      //               cursor: "pointer",
+      //             }}
+      //           >
+      //             Descrição Marcas
+      //           </div>
+      //         );
+      //       },
+      //     },
+      //   ];
+      // }
+      // else {
+      //   childItems = [
+      //     {
+      //       label: "Item 1",
+      //       icon: "",
+      //       command: () => {
+      //         setAmbienteSelecionado(topico.nome);
+      //         setItemAmbienteSelecionado("Descrição Marcas");
+      //       },
+      //       template: (item, options) => {
+      //         const isSelected =
+      //           ambienteSelecionado === topico.nome &&
+      //           itemAmbienteSelecionado === "Descrição Marcas";
+
+      //         return (
+      //           <div
+      //             onClick={options.onClick}
+      //             style={{
+      //               backgroundColor: isSelected ? "#dc2626" : "transparent",
+      //               color: isSelected ? "#ffffff" : "inherit",
+      //               fontWeight: isSelected ? "bold" : "normal",
+      //               padding: "0.5rem 0.75rem",
+      //               borderRadius: "0.375rem",
+      //               cursor: "pointer",
+      //             }}
+      //           >
+      //             Item 1
+      //           </div>
+      //         );
+      //       },
+      //     },
+      //     {
+      //       label: "Item 2",
+      //       icon: "",
+      //       command: () => {
+      //         setAmbienteSelecionado(topico.nome);
+      //         setItemAmbienteSelecionado("Descrição Marcas");
+      //       },
+      //       template: (item, options) => {
+      //         const isSelected =
+      //           ambienteSelecionado === topico.nome &&
+      //           itemAmbienteSelecionado === "Descrição Marcas";
+
+      //         return (
+      //           <div
+      //             onClick={options.onClick}
+      //             style={{
+      //               backgroundColor: isSelected ? "#dc2626" : "transparent",
+      //               color: isSelected ? "#ffffff" : "inherit",
+      //               fontWeight: isSelected ? "bold" : "normal",
+      //               padding: "0.5rem 0.75rem",
+      //               borderRadius: "0.375rem",
+      //               cursor: "pointer",
+      //             }}
+      //           >
+      //             Item 2
+      //           </div>
+      //         );
+      //       },
+      //     },
+      //     // Deve ser sempre o ultimo item!
+      //     {
+      //       label: "Excluir Ambiente",
+      //       icon: "",
+      //       command: async () => {
+      //         try {
+      //           const idTopicoPayload: DeleteTopicPayload = {
+      //             id: topico.id,
+      //           };
+      //           await topicoService.deleteTopic(idTopicoPayload);
+
+      //           // Realizando regarga dos tópicos
+      //           const novosTopicos = await topicoService.getAllTopic();
+      //           const novosSubTopicos =
+      //             await subTopicosAmbienteService.getAllAmbiente();
+
+      //           setTopicos(novosTopicos);
+      //           setSubTopicos(novosSubTopicos);
+      //         } catch (error) {
+      //           console.error("Erro ao excluir o tópico:", error);
+      //         }
+      //       },
+      //       template: (item, options) => {
+      //         const isSelected =
+      //           ambienteSelecionado === topico.nome &&
+      //           itemAmbienteSelecionado === "Descrição Marcas";
+
+      //         return (
+      //           <div
+      //             onClick={options.onClick}
+      //             className={`
+      //               flex items-center
+      //               px-3 py-2
+      //               rounded-md
+      //               cursor-pointer
+      //               text-red-700
+      //               hover:bg-red-600
+      //               hover:text-white
+      //               ${
+      //                 isSelected
+      //                   ? "bg-red-600 text-white font-bold"
+      //                   : "bg-red-100 text-red-700"
+      //               }
+      //             `}
+      //           >
+      //             <i className="pi pi-times mr-3 text-lg" />
+      //             Excluir Ambiente
+      //           </div>
+      //         );
+      //       },
+      //     },
+      //   ];
+      // }
 
       return {
         label: `${index + 1}. ${topico.nome}`,
