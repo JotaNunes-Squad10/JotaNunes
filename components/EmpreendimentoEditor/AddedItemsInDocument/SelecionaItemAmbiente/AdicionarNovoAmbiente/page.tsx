@@ -20,19 +20,31 @@ export default function AdicionarNovoAmbiente({
   const [novoAmbiente, setNovoAmbiente] = useState<string>("");
 
   const handleCriarAmbiente = async () => {
+    if (!novoAmbiente.trim()) {
+      alert("Digite um nome válido para o ambiente.");
+      return;
+    }
+
     const allTopic = await topicoService.getAllTopic();
-    await allTopic.forEach((topic) => {
-      if (ambienteSelecionado === topic.nome) {
-        const idTopic = topic.id;
-        const payloadNovoAmbiente: CreateAmbientePayload = {
-          nome: novoAmbiente,
-          topicoId: idTopic,
-        };
-        AmbienteService.createAmbiente(payloadNovoAmbiente);
-        setVisible(false);
-        onCreateNewSubItem && onCreateNewSubItem();
-      }
-    });
+    const topic = allTopic.find((t) => t.nome === ambienteSelecionado);
+
+    if (!topic) {
+      console.error("Tópico não encontrado", ambienteSelecionado);
+      return;
+    }
+
+    const payloadNovoAmbiente: CreateAmbientePayload = {
+      nome: novoAmbiente,
+      topicoId: topic.id,
+    };
+
+    try {
+      await AmbienteService.createAmbiente(payloadNovoAmbiente);
+      setVisible(false);
+      onCreateNewSubItem?.();
+    } catch (error) {
+      console.error("Erro ao criar um ambiente", error);
+    }
   };
 
   return (
@@ -59,7 +71,6 @@ export default function AdicionarNovoAmbiente({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              window.alert("Enviado...");
             }}
           >
             <div className="flex flex-col">

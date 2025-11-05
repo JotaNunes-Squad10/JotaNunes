@@ -228,8 +228,8 @@ export const AmbienteService = {
   // A possibilidade de não estar funcionando
   async createAmbiente(
     payload: CreateAmbientePayload
-  ): Promise<CreateAmbientePayload> {
-    const response = await axios.post<CreateAmbientePayload>(
+  ): Promise<{ id: number; nome: string; topicoId: number }> {
+    const response = await axios.post(
       "https://jotanunesservice.onrender.com/api/v1/ambiente/CreateAmbiente",
       payload
     );
