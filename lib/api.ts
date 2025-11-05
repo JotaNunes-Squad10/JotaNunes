@@ -46,6 +46,18 @@ export interface Marca {
   nome: string;
 }
 
+
+export interface Empreendimento {
+  id: number;
+  nome: string;
+  descricao: string;
+  localizacao: string;
+  tamanhoArea: number;
+  padrao: string;
+  status: string;
+  versao: number;
+}
+
 export interface GetAllTopicResponse {
   data: Topico[];
 }
@@ -67,6 +79,24 @@ export interface GetAllItemProps {
 
 export interface GetAllMarcaProps {
   data: Marca[];
+}
+
+export interface GetAllEmpreendimentoProps {
+  data: Empreendimento[];
+}
+
+export interface GenerateDocumentoPayload {
+  id: string;
+  version: number;
+}
+
+export interface GenerateDocumentoResponse {
+  data: string;
+  validationResult: {
+    isValid: boolean;
+    errors: string[];
+    ruleSetsExecuted?: string[] | null;
+  };
 }
 
 // Configuração da API principal
@@ -138,6 +168,8 @@ authApi.interceptors.response.use(
   }
 );
 
+
+
 // Configurações da API Tópicos
 export const topicoService = {
   async getAllTopic(): Promise<Topico[]> {
@@ -176,5 +208,39 @@ export const marcaService = {
     );
 
     return response.data.data;
+  },
+};
+
+export const empreendimentoService = {
+  async getAllEmpreendimento(): Promise<Empreendimento[]> {
+    const response = await axios.get<GetAllEmpreendimentoProps>(
+      "https://jotanunesservice.onrender.com/api/v1/empreendimento/GetAllEmpreendimentos"
+    );
+
+    return response.data.data;
+  },
+};
+
+// Configuração da API do Documento
+export const DocumentoService = {
+  async generateDocumento(payload: GenerateDocumentoPayload): Promise<GenerateDocumentoResponse> {
+    const response = await axios.post<GenerateDocumentoResponse>(
+      "https://jotanunesservice.onrender.com/api/v1/empreendimento/GenerateDocumentoEmpreendimento",
+      payload
+    );
+    return response.data;
+  },
+
+  async getDocumentoById(documentId: string): Promise<any> {
+    try {
+      const response = await axios.get(
+        `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${documentId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar informações do documento:", error);
+    }
+
+    return null;
   },
 };

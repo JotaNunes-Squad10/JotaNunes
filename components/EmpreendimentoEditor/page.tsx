@@ -59,7 +59,7 @@ export default function EmpreendimentoEditor({
   return (
     <div className="min-h-screen">
       <div>
-        <Header />
+        <Header/>
       </div>
 
       <CustomSidebarComponent
