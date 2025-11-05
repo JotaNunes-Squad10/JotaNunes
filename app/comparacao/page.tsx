@@ -34,7 +34,6 @@ export default function Comparacao({ ambienteSelecionado, setAmbienteSelecionado
   const [versoes, setVersoes] = useState<number[]>([]);
   const [selectedVersao, setSelectedVersao] = useState<number | null>(null);
 
-  // 🔥 Estados para os documentos
   const [documentoAtual, setDocumentoAtual] = useState<string | null>(null);
   const [documentoComparado, setDocumentoComparado] = useState<string | null>(null);
 
@@ -69,7 +68,7 @@ export default function Comparacao({ ambienteSelecionado, setAmbienteSelecionado
     setDocumentoComparado(null);
 
     try {
-      // 📄 Busca automática da versão mais recente
+
       const responseAtual = await DocumentoService.generateDocumento({
         id: String(empreendimentoSelecionado.id),
         version: empreendimentoSelecionado.versao,
@@ -78,7 +77,7 @@ export default function Comparacao({ ambienteSelecionado, setAmbienteSelecionado
       console.log("📄 Documento atual (versão mais recente):", responseAtual);
       setDocumentoAtual(responseAtual.data);
     } catch (error) {
-      console.error("❌ Erro ao gerar documento atual:", error);
+      console.error("Erro ao gerar documento atual:", error);
     }
   };
 
@@ -97,7 +96,7 @@ export default function Comparacao({ ambienteSelecionado, setAmbienteSelecionado
       console.log("📄 Documento da versão selecionada:", responseComparado);
       setDocumentoComparado(responseComparado.data);
     } catch (error) {
-      console.error("❌ Erro ao gerar documento comparado:", error);
+      console.error("Erro ao gerar documento comparado:", error);
     }
   };
 
@@ -130,16 +129,13 @@ export default function Comparacao({ ambienteSelecionado, setAmbienteSelecionado
         {selectedTitulo && (
         <div className="w-full flex flex-col gap-4 mb-5 flex-1">
 
-            {/* Linha com nome + select da versão */}
             <div className="flex flex-col md:flex-row items-center gap-4 w-full max-w-[900px] mx-auto">
 
-            {/* Nome do empreendimento (50%) */}
             <div className="w-full md:w-1/2">
                 <p className="text-sm text-gray-500 mb-1">Empreendimento selecionado:</p>
                 <h2 className="text-xl font-bold">{selectedTitulo.name}</h2>
             </div>
 
-            {/* Select de versão (50%) */}
             <div className="w-full md:w-1/2">
                 <p className="text-sm text-gray-500 mb-1">Selecione a versão para comparar</p>
 
@@ -156,33 +152,29 @@ export default function Comparacao({ ambienteSelecionado, setAmbienteSelecionado
 
             <div className="h-[2px] w-full bg-gray-300"></div>
             {documentoAtual && (
-  <div className="mt-10 w-full flex flex-col gap-6">
+            <div className="mt-10 w-full flex flex-col gap-6">
 
-    {/* Títulos */}
-    <div className="flex gap-4 font-bold text-lg">
-      <p className="flex-1 text-center">Versão Atual (mais recente)</p>
-      {documentoComparado && <p className="flex-1 text-center">Versão Selecionada</p>}
-    </div>
+                <div className="flex gap-4 font-bold text-lg">
+                <p className="flex-1 text-center">Versão Atual (mais recente)</p>
+                {documentoComparado && <p className="flex-1 text-center">Versão Selecionada</p>}
+                </div>
 
-    {/* PDFs lado a lado */}
-    <div className={`flex gap-6 ${documentoComparado ? "flex-row" : "justify-center"}`}>
-      
-      {/* PDF Atual */}
-      <iframe
-        className="flex-1 h-[80vh] border rounded"
-        src={`data:application/pdf;base64,${documentoAtual}`}
-      />
+                <div className={`flex gap-6 ${documentoComparado ? "flex-row" : "justify-center"}`}>
+                
+                <iframe
+                    className="flex-1 h-[80vh] border rounded"
+                    src={`data:application/pdf;base64,${documentoAtual}`}
+                />
 
-      {/* PDF da versão selecionada */}
-      {documentoComparado && (
-        <iframe
-          className="flex-1 h-[80vh] border rounded"
-          src={`data:application/pdf;base64,${documentoComparado}`}
-        />
-      )}
-    </div>
-  </div>
-)}
+                {documentoComparado && (
+                    <iframe
+                    className="flex-1 h-[80vh] border rounded"
+                    src={`data:application/pdf;base64,${documentoComparado}`}
+                    />
+                )}
+                </div>
+            </div>
+            )}
         </div>
         )}
       </div>
