@@ -93,7 +93,6 @@ export interface CreateDocumentoPayload {
   tamanhoArea: number;
   localizacao: string;
   padrao: number;
-  status: number;
   empreendimentoTopicos: {}[];
 }
 
