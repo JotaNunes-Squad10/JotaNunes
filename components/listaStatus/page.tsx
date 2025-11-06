@@ -78,9 +78,10 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
       case "Revisão":
         return ["Editar", "Mudar status"];
       case "Pendente":
+        return ["Revisar", "Mudar status"];
       case "Aprovados":
       case "Cancelados":
-        return ["Visualizar", "Mudar status"];
+        return ["Visualizar", "Criar padrão"];
       default:
         return [];
     }
