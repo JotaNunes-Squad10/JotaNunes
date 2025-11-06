@@ -15,6 +15,8 @@ import {
   InputAdornment,
   Chip,
   IconButton,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FirstPageIcon from "@mui/icons-material/FirstPage";
@@ -31,6 +33,7 @@ export type Empreendimento = {
   versao: string;
   usuario: string;
   status: string;
+  showStatusChange?: boolean;
 };
 
 type EmpreendimentosTableProps = {
@@ -53,6 +56,35 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   const rowsPerPage = 10;
   const [orderBy, setOrderBy] = useState<"nome" | "ultimaAlteracao" | "usuario">("nome");
   const [orderAsc, setOrderAsc] = useState(true);
+
+  // Novo estado para dropdown
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedEmp, setSelectedEmp] = useState<Empreendimento | null>(null);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, emp: Empreendimento) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedEmp(emp);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedEmp(null);
+  };
+
+  // Função que retorna as opções do dropdown baseado no status
+  const getDropdownOptions = (status: string) => {
+    switch (status) {
+      case "Editando":
+      case "Revisão":
+        return ["Editar", "Mudar status"];
+      case "Pendente":
+      case "Aprovados":
+      case "Cancelados":
+        return ["Visualizar", "Mudar status"];
+      default:
+        return [];
+    }
+  };
 
   // Decodifica o token JWT e extrai o perfil
   useEffect(() => {
@@ -82,7 +114,6 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
     return permitidos.includes(status);
   };
 
-  // Verifica se o perfil tem permissão para o status exibido
   const possuiPermissaoGeral =
     filtroAtivo === "Todos"
       ? true
@@ -221,8 +252,6 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
               <TableCell sx={{ fontWeight: "bold" }} align="center">
                 Status
               </TableCell>
-
-              {/* Só mostra a coluna Ações se tiver permissão */}
               {possuiPermissaoGeral && (
                 <TableCell sx={{ fontWeight: "bold" }} align="center">
                   Ações
@@ -311,13 +340,14 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                     />
                   </TableCell>
 
-                  {/* Ações só aparece se o perfil tiver permissão */}
                   {possuiPermissaoGeral && (
                     <TableCell align="center">
                       {podeEditar(userProfile, empreendimento.status) && (
-                        <IconButton>
-                          <i className="pi pi-pen-to-square" style={{ fontSize: "1.2rem" }}></i>
-                        </IconButton>
+                        <>
+                          <IconButton onClick={(e) => handleMenuOpen(e, empreendimento)}>
+                            <i className="pi pi-pen-to-square" style={{ fontSize: "1.2rem" }}></i>
+                          </IconButton>
+                        </>
                       )}
                     </TableCell>
                   )}
@@ -327,6 +357,79 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Dropdown dinâmico */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        PaperProps={{
+          sx: {
+            mt: 1,
+            borderRadius: "12px",
+            backgroundColor: "#f3f3f3",
+            border: "2px solid #d7d7d7",
+            boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)"
+          },
+        }}
+        transformOrigin={{ vertical: "top", horizontal: "center" }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        {selectedEmp &&
+          (!selectedEmp.showStatusChange
+            ? getDropdownOptions(selectedEmp.status).map((opt) => (
+                <MenuItem
+                  key={opt}
+                  onClick={() => {
+                    if (opt === "Mudar status") {
+                      setSelectedEmp({ ...selectedEmp, showStatusChange: true });
+                    } else {
+                      handleMenuClose();
+                    }
+                  }}
+                  sx={{
+                    fontWeight: "bold",
+                    borderBottom: "1px solid #d7d7d7",
+                    "&:last-of-type": { borderBottom: "none" },
+                    "&:hover": {
+                      backgroundColor: "#e9e9e9",
+                    },
+                  }}
+                >
+                  {opt}
+                </MenuItem>
+              ))
+            : (() => {
+                const status = selectedEmp.status;
+                const opcoesStatus =
+                  status === "Editando"
+                    ? ["Pendente"]
+                    : status === "Revisão"
+                    ? ["Pendente"]
+                    : status === "Pendente"
+                    ? ["Revisão", "Aprovados"]
+                    : [];
+
+                return opcoesStatus.map((novo) => (
+                  <MenuItem
+                    key={novo}
+                    onClick={() => {
+                      handleMenuClose();
+                    }}
+                    sx={{
+                      fontWeight: "bold",
+                      borderBottom: "1px solid #d7d7d7",
+                      "&:last-of-type": { borderBottom: "none" },
+                      "&:hover": {
+                        backgroundColor: "#e9e9e9",
+                      },
+                    }}
+                  >
+                    {novo}
+                  </MenuItem>
+                ));
+              })())}
+      </Menu>
 
       {/* Paginação */}
       {!loading && totalPages > 1 && (
