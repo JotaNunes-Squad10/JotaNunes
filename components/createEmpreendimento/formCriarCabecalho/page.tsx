@@ -4,10 +4,9 @@ import React, { useRef, useState } from "react";
 import { Card } from "primereact/card";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
-import ActionBar from "@/components/EmpreendimentoEditor/FormEditPage/ActionBar/page";
 import { Dispatch, SetStateAction } from "react";
 import { Toast } from "primereact/toast";
-import { Button } from "primereact/button";
+import ActionBarCreate from "../actionBarCreate/page";
 
 interface InfosDocument {
   nomeDocumento: string;
@@ -34,42 +33,15 @@ export default function FormCreateEmpreendimento({
   params,
 }: FormEmpreendimentoProps) {
   const toast = useRef<Toast>(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleSave = () => {
-    setLoading(true);
-    if (
-      !params.nomeDocumento.trim() ||
-      !params.localizacaoDocumento.trim() ||
-      !params.descricaoDocumento.trim()
-    ) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Erro",
-        detail:
-          "Os campos empreendimento, localização e descrição são obrigatórios",
-        life: 3000,
-      });
-      setLoading(false);
-      return;
-    }
-
-    // Simulando uma operação assíncrona, como uma chamada de API
-    setTimeout(() => {
-      toast.current?.show({
-        severity: "success",
-        summary: "Sucesso",
-        detail: "Informações do empreendimento salvas com sucesso!",
-        life: 3000,
-      });
-      setLoading(false);
-    }, 2000);
-  };
 
   return (
     <div>
       <Toast ref={toast} position="top-right" />
-      <ActionBar />
+      <ActionBarCreate
+        nomeDocumento={params.nomeDocumento}
+        descricaoDocumento={params.descricaoDocumento}
+        localizacaoDocumento={params.localizacaoDocumento}
+      />
       <Card className="shadow-md p-6 w-full ">
         {/* Campo Empreendimento */}
         <div className="flex flex-col sm:flex-row sm:items-center mb-6">
@@ -109,15 +81,7 @@ export default function FormCreateEmpreendimento({
             className="w-full"
           />
         </div>
-        <div className="flex justify-end gap-2 mt-3">
-          <Button
-            label="Criar Documento"
-            icon="pi pi-check"
-            className="p-button-next px-4 py-2"
-            onClick={handleSave}
-            loading={loading}
-          />
-        </div>
+        <div className="flex justify-end gap-2 mt-3"></div>
       </Card>
     </div>
   );
