@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -19,6 +21,8 @@ import FirstPageIcon from "@mui/icons-material/FirstPage";
 import LastPageIcon from "@mui/icons-material/LastPage";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { Skeleton } from "primereact/skeleton";
+import { getCookie } from "cookies-next";
+import { jwtDecode } from "jwt-decode";
 
 export type Empreendimento = {
   id: number;
@@ -45,10 +49,48 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   loading = false,
 }) => {
   const [page, setPage] = useState(0);
+  const [userProfile, setUserProfile] = useState<number | null>(null);
   const rowsPerPage = 10;
   const [orderBy, setOrderBy] = useState<"nome" | "ultimaAlteracao" | "usuario">("nome");
   const [orderAsc, setOrderAsc] = useState(true);
 
+  // Decodifica o token JWT e extrai o perfil
+  useEffect(() => {
+    try {
+      const token = getCookie("accessToken");
+      if (token && typeof token === "string") {
+        type JwtPayload = { profile?: number };
+        const decoded = jwtDecode<JwtPayload>(token);
+        setUserProfile(decoded.profile || null);
+      }
+    } catch (error) {
+      console.error("Erro ao decodificar token:", error);
+      setUserProfile(null);
+    }
+  }, []);
+
+  // Define quais status cada perfil pode editar
+  const permissoes: Record<number, string[]> = {
+    1: ["Editando", "Pendente", "Revisão", "Aprovados", "Cancelados"], // Admin
+    2: ["Pendente", "Aprovados"], // Gestor
+    3: ["Editando", "Revisão"], // Operador
+  };
+
+  const podeEditar = (perfil: number | null, status: string) => {
+    if (!perfil) return false;
+    const permitidos = permissoes[perfil] || [];
+    return permitidos.includes(status);
+  };
+
+  // Verifica se o perfil tem permissão para o status exibido
+  const possuiPermissaoGeral =
+    filtroAtivo === "Todos"
+      ? true
+      : userProfile
+      ? permissoes[userProfile]?.includes(filtroAtivo) ?? false
+      : false;
+
+  // Ordenação e filtragem
   const parseDateToTimestamp = (s?: string): number => {
     if (!s) return 0;
     const [d, m, y] = s.split("/").map(Number);
@@ -95,12 +137,11 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   const empreendimentosPaginados = empreendimentosOrdenados.slice(startIndex, endIndex);
   const totalPages = Math.ceil(empreendimentosFiltrados.length / rowsPerPage);
 
-  const SortableHeader: React.FC<{ label: string; column: "nome" | "ultimaAlteracao" | "usuario" }> = ({ label, column }) => (
-    <TableCell
-      sx={{ fontWeight: "bold", cursor: "pointer" }}
-      align="center"
-      onClick={() => handleSort(column)}
-    >
+  const SortableHeader: React.FC<{ label: string; column: "nome" | "ultimaAlteracao" | "usuario" }> = ({
+    label,
+    column,
+  }) => (
+    <TableCell sx={{ fontWeight: "bold", cursor: "pointer" }} align="center" onClick={() => handleSort(column)}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
         {label}
         <ArrowDropDownIcon
@@ -119,6 +160,16 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
       </Box>
     </TableCell>
   );
+
+  if (userProfile === null && getCookie("accessToken")) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Skeleton width="100%" height="3rem" />
+        <Skeleton width="100%" height="3rem" />
+        <Skeleton width="100%" height="3rem" />
+      </Box>
+    );
+  }
 
   return (
     <Paper elevation={0} sx={{ p: 3, border: "none" }}>
@@ -141,11 +192,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
             endAdornment:
               searchTerm && (
                 <InputAdornment position="end">
-                  <IconButton
-                    size="small"
-                    onClick={() => onSearchChange("")}
-                    edge="end"
-                  >
+                  <IconButton size="small" onClick={() => onSearchChange("")} edge="end">
                     ✕
                   </IconButton>
                 </InputAdornment>
@@ -174,9 +221,13 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
               <TableCell sx={{ fontWeight: "bold" }} align="center">
                 Status
               </TableCell>
-              <TableCell sx={{ fontWeight: "bold" }} align="center">
-                Ações
-              </TableCell>
+
+              {/* Só mostra a coluna Ações se tiver permissão */}
+              {possuiPermissaoGeral && (
+                <TableCell sx={{ fontWeight: "bold" }} align="center">
+                  Ações
+                </TableCell>
+              )}
             </TableRow>
           </TableHead>
 
@@ -196,7 +247,6 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                         p: 2,
                       }}
                     >
-                      <Skeleton width="20%" height="1.2rem" />
                       <Skeleton width="20%" height="1.2rem" />
                       <Skeleton width="20%" height="1.2rem" />
                       <Skeleton width="20%" height="1.2rem" />
@@ -246,7 +296,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                             ? "#A8E6A1"
                             : empreendimento.status === "Pendente"
                             ? "#FFD966"
-                            : empreendimento.status === "Revisao"
+                            : empreendimento.status === "Revisão"
                             ? "#FF9800"
                             : empreendimento.status === "Aprovados"
                             ? "#4CAF50"
@@ -260,14 +310,17 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                       }}
                     />
                   </TableCell>
-                  <TableCell align="center">
-                    <IconButton>
-                      <i
-                        className="pi pi-pen-to-square"
-                        style={{ fontSize: "1.2rem" }}
-                      ></i>
-                    </IconButton>
-                  </TableCell>
+
+                  {/* Ações só aparece se o perfil tiver permissão */}
+                  {possuiPermissaoGeral && (
+                    <TableCell align="center">
+                      {podeEditar(userProfile, empreendimento.status) && (
+                        <IconButton>
+                          <i className="pi pi-pen-to-square" style={{ fontSize: "1.2rem" }}></i>
+                        </IconButton>
+                      )}
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
@@ -277,20 +330,8 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
 
       {/* Paginação */}
       {!loading && totalPages > 1 && (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            mt: 3,
-            gap: 4,
-            alignItems: "center",
-          }}
-        >
-          <IconButton
-            onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
-            disabled={page === 0}
-            sx={{ color: "crimson" }}
-          >
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3, gap: 4, alignItems: "center" }}>
+          <IconButton onClick={() => setPage((prev) => Math.max(prev - 1, 0))} disabled={page === 0} sx={{ color: "crimson" }}>
             <FirstPageIcon />
           </IconButton>
           <Typography variant="body2" sx={{ fontWeight: "bold" }}>
