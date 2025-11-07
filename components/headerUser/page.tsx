@@ -61,7 +61,6 @@ const Header: React.FC<HeaderProps> = ({}) => {
       </div>
       <div className="flex items-center gap-1 sm:gap-2 flex-nowrap">
         <Menu_usuario userName={userName} />
-        <i className="pi pi-bell text-xl sm:text-2xl text-gray-700 mr-2 sm:mr-3" />
       </div>
     </header>
   );
