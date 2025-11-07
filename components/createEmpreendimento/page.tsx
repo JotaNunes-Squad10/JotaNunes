@@ -8,29 +8,60 @@ import Header from "../../components/headerUser/page";
 import FormCreateEmpreendimento from "./formCriarCabecalho/page";
 import CustomSidebarComponent from "../EmpreendimentoEditor/SideBar/page";
 import AddedItemsInDocument from "../EmpreendimentoEditor/AddedItemsInDocument/page";
-import TabelaItens from "../EmpreendimentoEditor/ViewMateralsDocument/page";
+import TabelaItensInitial from "./TabelaItensInitial/page";
 import ObservationDocument from "../EmpreendimentoEditor/ObservationDocument/page";
+import { CreateDocumentoPayload, EmpreendimentosTopicos } from "@/lib/api";
 
 export default function CreateEmpreendimento() {
   // Estados para os campos do formulário
   const router = useRouter();
 
-  const [ambienteSelecionado, setAmbienteSelecionado] = useState();
-  const [itemAmbienteSelecionado, setItemAmbienteSelecionado] = useState();
+  const [ambienteSelecionado, setAmbienteSelecionado] = useState("");
+  const [itemAmbienteSelecionado, setItemAmbienteSelecionado] = useState("");
 
-  const [nomeDocumento, setNomeDocumento] = useState<string>("");
-  const [descricaoDocumento, setDescricaoDocumento] = useState<string>("");
-  const [localizacaoDocumento, setLocalizacaoDocumento] = useState<string>("");
-  const [tamanhoAreaDocumento, setTamanhoAreaDocumento] = useState<number>();
-  const [padraoDocumento, setPadraoDocumento] = useState<number>(0);
-  const [statusDocumento, setStatusDocumento] = useState<string>("");
-  const [versaoDocumento, setVersaoDocumento] = useState<number>();
+  // const [nomeDocumento, setNomeDocumento] = useState<string>("");
+  // const [descricaoDocumento, setDescricaoDocumento] = useState<string>("");
+  // const [localizacaoDocumento, setLocalizacaoDocumento] = useState<string>("");
+  // const [tamanhoAreaDocumento, setTamanhoAreaDocumento] = useState<number>();
+  // const [padraoDocumento, setPadraoDocumento] = useState<number>(0);
+  // const [statusDocumento, setStatusDocumento] = useState<string>("");
+  // const [versaoDocumento, setVersaoDocumento] = useState<number>();
+
+  const [documento, setDocumento] = useState<CreateDocumentoPayload>({
+    nome: "",
+    descricao: "",
+    localizacao: "",
+    tamanhoArea: 0,
+    padrao: 0,
+    empreendimentoTopicos: [],
+  });
+
+  // Funções de atualização
+  const updateDocumento = (field: keyof CreateDocumentoPayload, value: any) => {
+    setDocumento((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const addTopico = (novoTopico: EmpreendimentosTopicos) => {
+    setDocumento((prev) => ({
+      ...prev,
+      empreendimentoTopicos: [...prev.empreendimentoTopicos, novoTopico],
+    }));
+  };
+
+  const resetDocumento = () => {
+    setDocumento({
+      nome: "",
+      descricao: "",
+      localizacao: "",
+      tamanhoArea: 0,
+      padrao: 0,
+      empreendimentoTopicos: [],
+    });
+  };
 
   return (
     <div className="min-h-screen">
-      <div>
-        <Header />
-      </div>
+      <Header />
 
       <CustomSidebarComponent
         ambienteSelecionado={ambienteSelecionado}
@@ -43,22 +74,8 @@ export default function CreateEmpreendimento() {
         <div className="flex flex-col w-full max-screen-lg px-4 lg:w-[60%]">
           <div>
             <FormCreateEmpreendimento
-              params={{
-                nomeDocumento,
-                setNomeDocumento,
-                descricaoDocumento,
-                setDescricaoDocumento,
-                localizacaoDocumento,
-                setLocalizacaoDocumento,
-                tamanhoAreaDocumento,
-                setTamanhoAreaDocumento,
-                padraoDocumento,
-                setPadraoDocumento,
-                statusDocumento,
-                setStatusDocumento,
-                versaoDocumento,
-                setVersaoDocumento,
-              }}
+              documento={documento}
+              updateDocumento={updateDocumento}
             />
           </div>
           <div>
@@ -70,7 +87,12 @@ export default function CreateEmpreendimento() {
             />
           </div>
           <div className="w-full overflow-x-auto">
-            <TabelaItens />
+            <TabelaItensInitial
+              documento={documento}
+              setDocumento={setDocumento}
+              topicoSelecionado={ambienteSelecionado}
+              ambienteSelecionado={itemAmbienteSelecionado}
+            />
           </div>
           <div>
             <ObservationDocument />

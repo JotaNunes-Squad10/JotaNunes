@@ -97,7 +97,7 @@ export interface CreateDocumentoPayload {
   tamanhoArea: number;
   localizacao: string;
   padrao: number;
-  empreendimentoTopicos: {}[];
+  empreendimentoTopicos: EmpreendimentosTopicos[];
 }
 
 // Interface do GetTopicId
