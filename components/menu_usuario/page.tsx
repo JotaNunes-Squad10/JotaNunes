@@ -1,13 +1,11 @@
 "use client";
 import 'primereact/resources/themes/saga-blue/theme.css';
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState,  useRef } from 'react';
 import { TieredMenu } from 'primereact/tieredmenu';
 import { MenuItem } from 'primereact/menuitem';
 import { UserRound } from 'lucide-react';
 import { jwtDecode } from "jwt-decode";
 import Cookies from "js-cookie";
-
 import UpdtePasswordModal from '../gerenciamentoUser/updtePasswd/page';
 
 interface MenuUsuarioProps {
@@ -82,8 +80,7 @@ export default function Menu_usuario({ userName }: MenuUsuarioProps) {
   ];
 
   return (
-    <div className="flex items-center gap-1 sm:gap-2 flex-nowrap cursor-pointer p-2 transition hover:scale-105 rounded-lg
-    hover:bg-red-100 transition-colors duration-200 ">
+  <div className="flex items-center gap-1 sm:gap-2 flex-nowrap cursor-pointer p-2 hover:scale-105 rounded-lg hover:bg-red-100 transition-colors duration-200 ">
       {/* Menu invisível, só aparece no clique */}
       <TieredMenu model={items} popup ref={menu} breakpoint="700px" />
 

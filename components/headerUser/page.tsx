@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from 'next/image';
 import { MouseEventHandler } from "react";
 import { getCookie } from "cookies-next";
 import { jwtDecode } from "jwt-decode";
@@ -52,10 +53,13 @@ const Header: React.FC<HeaderProps> = ({}) => {
           />*/}
         </button>
         <a href="/dashboard" className="inline-block">
-          <img
+          <Image
             src="/img/LogoPreta.png"
             alt="Logo"
-            className="h-8 sm:h-10 w-auto"
+            width={40}
+            height={40}
+            className="h-8 sm:h-10 w-auto object-contain"
+            priority
           />
         </a>
       </div>
