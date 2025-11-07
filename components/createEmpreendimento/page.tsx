@@ -19,14 +19,6 @@ export default function CreateEmpreendimento() {
   const [ambienteSelecionado, setAmbienteSelecionado] = useState("");
   const [itemAmbienteSelecionado, setItemAmbienteSelecionado] = useState("");
 
-  // const [nomeDocumento, setNomeDocumento] = useState<string>("");
-  // const [descricaoDocumento, setDescricaoDocumento] = useState<string>("");
-  // const [localizacaoDocumento, setLocalizacaoDocumento] = useState<string>("");
-  // const [tamanhoAreaDocumento, setTamanhoAreaDocumento] = useState<number>();
-  // const [padraoDocumento, setPadraoDocumento] = useState<number>(0);
-  // const [statusDocumento, setStatusDocumento] = useState<string>("");
-  // const [versaoDocumento, setVersaoDocumento] = useState<number>();
-
   const [documento, setDocumento] = useState<CreateDocumentoPayload>({
     nome: "",
     descricao: "",
@@ -35,6 +27,11 @@ export default function CreateEmpreendimento() {
     padrao: 0,
     empreendimentoTopicos: [],
   });
+
+  // TODO: Sincronizar os elementos que estão na tabela com a lista que está em adicionar os itens.
+  const [itemForAmbienteInDocument, setItemForAmbienteInDocument] = useState<
+    number[]
+  >([]);
 
   // Funções de atualização
   const updateDocumento = (field: keyof CreateDocumentoPayload, value: any) => {
