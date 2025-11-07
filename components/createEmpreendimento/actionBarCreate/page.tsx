@@ -4,6 +4,8 @@ import React, { useRef, useState } from "react";
 import { Button } from "primereact/button";
 import { Menu } from "primereact/menu";
 import { Toast } from "primereact/toast";
+import { useRouter } from "next/navigation";
+import { CreateDocumentoPayload, DocumentoService } from "@/lib/api";
 
 interface ActionBarCreateProps {
   nomeDocumento: string;
@@ -24,6 +26,8 @@ export default function ActionBarCreate({
   const menuRef = useRef<Menu>(null);
   const [loading, setLoading] = useState(false);
   const toast = useRef<Toast>(null);
+
+  const router = useRouter();
 
   const statusOpcoes = [
     {
@@ -48,13 +52,48 @@ export default function ActionBarCreate({
     },
   ];
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setLoading(true);
     if (
-      !nomeDocumento.trim() ||
-      !localizacaoDocumento.trim() ||
-      !descricaoDocumento.trim()
+      nomeDocumento.trim() ||
+      localizacaoDocumento.trim() ||
+      descricaoDocumento.trim()
     ) {
+      try {
+        const payload: CreateDocumentoPayload = {
+          nome: nomeDocumento,
+          descricao: descricaoDocumento,
+          tamanhoArea: 0,
+          localizacao: localizacaoDocumento,
+          padrao: 1,
+          empreendimentoTopicos: [],
+        };
+
+        const response = await DocumentoService.createDocumento(payload);
+
+        toast.current?.show({
+          severity: "success",
+          summary: "Sucesso",
+          detail: "Informações do empreendimento salvas com sucesso!",
+          life: 3000,
+        });
+
+        setTimeout(() => {
+          router.push(`/empreendimento/${response.data.id}`);
+          console.log("O bagui foi enviado");
+        }, 1500);
+
+        return;
+      } catch (error) {
+        console.error("Erro ao criar um novo documento", error);
+      } finally {
+        setLoading(false);
+      }
+
+      return;
+    }
+
+    setTimeout(() => {
       toast.current?.show({
         severity: "error",
         summary: "Erro",
@@ -62,20 +101,8 @@ export default function ActionBarCreate({
           "Os campos empreendimento, localização e descrição são obrigatórios",
         life: 3000,
       });
-      setLoading(false);
-      return;
-    }
-
-    // Simulando uma operação assíncrona, como uma chamada de API
-    setTimeout(() => {
-      toast.current?.show({
-        severity: "success",
-        summary: "Sucesso",
-        detail: "Informações do empreendimento salvas com sucesso!",
-        life: 3000,
-      });
-      setLoading(false);
-    }, 2000);
+    }, 1500);
+    setLoading(false);
   };
 
   const getStatuscolor = () => {

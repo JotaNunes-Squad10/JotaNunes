@@ -53,6 +53,7 @@ export default function FormCreateEmpreendimento({
             onChange={(e) => params.setNomeDocumento(e.target.value)}
             placeholder="Digite o nome do empreendimento"
             className="flex-1"
+            required
           />
         </div>
         {/* Campo Localização */}
@@ -65,6 +66,7 @@ export default function FormCreateEmpreendimento({
             onChange={(e) => params.setLocalizacaoDocumento(e.target.value)}
             placeholder="Digite a localização"
             className="flex-1"
+            required
           />
         </div>
         {/* Campo Descrição */}
@@ -79,6 +81,7 @@ export default function FormCreateEmpreendimento({
             rows={4}
             autoResize
             className="w-full"
+            required
           />
         </div>
         <div className="flex justify-end gap-2 mt-3"></div>
