@@ -49,7 +49,9 @@ export default function Menu_usuario({ userName }: MenuUsuarioProps) {
   }
 
   function handleUpdatePassword() {
-    setShowUpdtePasswordModal(true);
+    if (!showUpdtePasswordModal) {
+      setShowUpdtePasswordModal(true);
+    }
   }
 
   const items: MenuItem[] = [
@@ -80,7 +82,8 @@ export default function Menu_usuario({ userName }: MenuUsuarioProps) {
   ];
 
   return (
-  <div className="flex items-center gap-1 sm:gap-2 flex-nowrap cursor-pointer p-2 hover:scale-105 rounded-lg hover:bg-red-100 transition-colors duration-200 ">
+  <>
+    <div className="flex items-center gap-1 sm:gap-2 flex-nowrap cursor-pointer p-2 hover:scale-105 rounded-lg hover:bg-red-100 transition-colors duration-200 ">
       {/* Menu invisível, só aparece no clique */}
       <TieredMenu model={items} popup ref={menu} breakpoint="700px" />
 
@@ -91,13 +94,13 @@ export default function Menu_usuario({ userName }: MenuUsuarioProps) {
       >
         <UserRound size={22} className="text-gray-700" />
         <span className="text-xs sm:text-base truncate max-w-[120px] sm:max-w-xs">
-        <span className="font-semibold">{userName}</span>
+          <span className="font-semibold">{userName}</span>
         </span>
       </div>
-      {showUpdtePasswordModal && (
-        <UpdtePasswordModal onClose={() => setShowUpdtePasswordModal(false)} />
-      )}
     </div>
-    
+    {showUpdtePasswordModal && (
+      <UpdtePasswordModal onClose={() => setShowUpdtePasswordModal(false)} />
+    )}
+  </>
   );
 }
