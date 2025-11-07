@@ -96,6 +96,28 @@ export interface CreateDocumentoPayload {
   empreendimentoTopicos: {}[];
 }
 
+// Interface do GetTopicId
+interface GetDocumentoById {
+  id: number;
+  nome: string;
+  descricao: string;
+  localizacao: string;
+  empreendimentosTopicos: {
+    topicoId: number;
+    posicao: number;
+    versoes: number[];
+    topicoAmbientes: {
+      ambienteId: 29;
+      posicao: number;
+      versoes: number[];
+    }[];
+    ambienteItens: {
+      itemId: number;
+      versoes: number[];
+    }[];
+  }[];
+}
+
 // Configuração da API principal
 export const api = axios.create({
   baseURL: "https://jotanunesservice.onrender.com",
@@ -259,16 +281,18 @@ export const DocumentoService = {
     return response.data;
   },
 
-  async getDocumentoById(documentId: string): Promise<any> {
+  async getDocumentoById(
+    documentId: string
+  ): Promise<GetDocumentoById | undefined> {
     try {
       const response = await axios.get(
         `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${documentId}`
       );
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error("Erro ao buscar informações do documento:", error);
     }
 
-    return null;
+    return;
   },
 };

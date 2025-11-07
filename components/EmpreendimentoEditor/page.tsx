@@ -24,24 +24,20 @@ export default function EmpreendimentoEditor({
   const [nomeDocumento, setNomeDocumento] = useState<string>("");
   const [descricaoDocumento, setDescricaoDocumento] = useState<string>("");
   const [localizacaoDocumento, setLocalizacaoDocumento] = useState<string>("");
-  const [tamanhoAreaDocumento, setTamanhoAreaDocumento] = useState<number>();
+  const [tamanhoAreaDocumento, setTamanhoAreaDocumento] = useState<number>(0);
   const [padraoDocumento, setPadraoDocumento] = useState<string>("");
   const [statusDocumento, setStatusDocumento] = useState<string>("");
-  const [versaoDocumento, setVersaoDocumento] = useState<number>();
+  const [versaoDocumento, setVersaoDocumento] = useState<number>(1);
 
   // Buscar as informações do documento ao carregar o componente
   useEffect(() => {
     const getInfoDocument = async () => {
       const documentData = await DocumentoService.getDocumentoById(documentId);
-      console.log("Dados do documento:", documentData);
+      // console.log("Dados do documento:", documentData);
       if (documentData) {
-        setNomeDocumento(documentData.data.nome);
-        setDescricaoDocumento(documentData.data.descricao);
-        setLocalizacaoDocumento(documentData.data.localizacao);
-        setTamanhoAreaDocumento(documentData.data.tamanhoArea);
-        setPadraoDocumento(documentData.data.padrao);
-        setStatusDocumento(documentData.data.status);
-        setVersaoDocumento(documentData.data.versao);
+        setNomeDocumento(documentData.nome);
+        setDescricaoDocumento(documentData.descricao);
+        setLocalizacaoDocumento(documentData.localizacao);
       }
     };
 

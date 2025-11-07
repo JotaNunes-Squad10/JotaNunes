@@ -16,14 +16,14 @@ interface InfosDocument {
   setDescricaoDocumento: Dispatch<SetStateAction<string>>;
   localizacaoDocumento: string;
   setLocalizacaoDocumento: Dispatch<SetStateAction<string>>;
-  tamanhoAreaDocumento: number | undefined;
-  setTamanhoAreaDocumento: Dispatch<SetStateAction<number | undefined>>;
+  tamanhoAreaDocumento: number;
+  setTamanhoAreaDocumento: Dispatch<SetStateAction<number>>;
   padraoDocumento: string;
   setPadraoDocumento: Dispatch<SetStateAction<string>>;
   statusDocumento: string;
   setStatusDocumento: Dispatch<SetStateAction<string>>;
-  versaoDocumento: number | undefined;
-  setVersaoDocumento: Dispatch<SetStateAction<number | undefined>>;
+  versaoDocumento: number;
+  setVersaoDocumento: Dispatch<SetStateAction<number>>;
 }
 
 interface FormEmpreendimentoProps {
@@ -77,7 +77,7 @@ export default function FormEmpreendimento({
             Empreendimento:
           </label>
           <InputText
-            value={params.nomeDocumento}
+            value={params.nomeDocumento ?? ""}
             onChange={(e) => params.setNomeDocumento(e.target.value)}
             placeholder="Digite o nome do empreendimento"
             className="flex-1"
@@ -89,7 +89,7 @@ export default function FormEmpreendimento({
             Localização:
           </label>
           <InputText
-            value={params.localizacaoDocumento}
+            value={params.localizacaoDocumento ?? ""}
             onChange={(e) => params.setLocalizacaoDocumento(e.target.value)}
             placeholder="Digite a localização"
             className="flex-1"
@@ -101,7 +101,7 @@ export default function FormEmpreendimento({
             Descrição do Empreendimento:
           </label>
           <InputTextarea
-            value={params.descricaoDocumento}
+            value={params.descricaoDocumento ?? ""}
             onChange={(e) => params.setDescricaoDocumento(e.target.value)}
             placeholder="Digite a descrição"
             rows={4}
