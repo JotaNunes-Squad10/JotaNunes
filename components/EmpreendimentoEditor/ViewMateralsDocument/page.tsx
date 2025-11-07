@@ -1,8 +1,20 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import "primeicons/primeicons.css"; // Garante que o ícone 'pi-times' funcione
+import {
+  EmpreendimentosTopicos,
+  itemService,
+  subTopicosAmbienteService,
+  topicoService,
+} from "@/lib/api";
+
+interface TableItensProps {
+  empreendimentoTopicos: EmpreendimentosTopicos[] | [];
+  topicoSelecionado: string;
+  ambienteSelecionado: string;
+}
 
 // 1. Definição da Interface Mockada
 interface TabelaItem {
@@ -11,29 +23,86 @@ interface TabelaItem {
   descricao: string;
 }
 
-// 2. Dados Mockados (Simulando o resultado da combinação de Item e Descrição)
-const mockItemsData: TabelaItem[] = [
-  { id: 1, item: "Acabamento Externo", descricao: "Acabamento cromado" },
-  {
-    id: 2,
-    item: "Acabamento Interno",
-    descricao: "Acabamento em textura acrílica",
-  },
-  { id: 3, item: "Ar Condicionado", descricao: "Alumínio pintado de branco" },
-  {
-    id: 4,
-    item: "Bancada",
-    descricao: "Alumínio pintado de branco com vidro liso",
-  },
-  {
-    id: 5,
-    item: "Borda",
-    descricao: "Bloco cerâmico rebocado com chapisco rústico ou bloco aparente",
-  },
-];
+export default function TabelaItens({
+  empreendimentoTopicos,
+  topicoSelecionado,
+  ambienteSelecionado,
+}: TableItensProps) {
+  const [itens, setItens] = useState<TabelaItem[]>([]);
 
-export default function TabelaItens() {
-  const [itens, setItens] = useState<TabelaItem[]>(mockItemsData);
+  // Lógica para conseguir alinhar o tópico e ambientes
+  useEffect(() => {
+    let idTopic: number | undefined;
+    let idAmbiente: number | undefined;
+
+    const alignInformations = async () => {
+      try {
+        const allTopics = topicoService.getAllTopic();
+        const allAmbiente = subTopicosAmbienteService.getAllAmbiente();
+
+        // Alinhando as informações
+        idTopic = (await allTopics).find(
+          (t) => t.nome == topicoSelecionado
+        )?.id;
+
+        idAmbiente = (await allAmbiente).find(
+          (a) => a.nome === ambienteSelecionado && a.topico.id === idTopic
+        )?.id;
+
+        if (typeof idAmbiente === "number") {
+          const idsInDocumento = getItemsDocument(idTopic, idAmbiente);
+          const itensInformations = await mappingItensInTable(idsInDocumento);
+          if (itensInformations) setItens(itensInformations);
+        }
+      } catch (error) {
+        console.error("Erro ao pegar as informações para alinhamento", error);
+      }
+      return;
+    };
+
+    const getItemsDocument = (
+      idTopic: number | undefined,
+      idAmbiente: number | undefined
+    ) => {
+      if (!empreendimentoTopicos) return;
+
+      const topico = empreendimentoTopicos.find((t) => t.topicoId === idTopic);
+
+      if (!topico) return console.warn("Erro, tópico não encontrado.");
+
+      const ambiente = topico.topicoAmbientes.find(
+        (a) => a.ambienteId === idAmbiente
+      );
+
+      if (!ambiente) return console.warn("Erro, ambiente não encotrado.");
+
+      const idsInDocumento = ambiente.ambienteItens.map((i) => i.itemId);
+
+      return idsInDocumento;
+    };
+
+    const mappingItensInTable = async (idsItens: number[] | void) => {
+      if (!idsItens || idsItens.length == 0) return;
+
+      try {
+        const items = await Promise.all(
+          idsItens.map((id) => itemService.getItemById(id))
+        );
+
+        const tabelaItems: TabelaItem[] = items.map((item) => ({
+          id: item.id!,
+          item: item.nome,
+          descricao: item.descricao,
+        }));
+
+        return tabelaItems;
+      } catch (error) {
+        console.error("Erro ao buscar os itens por id", error);
+      }
+    };
+
+    alignInformations();
+  }, [topicoSelecionado, ambienteSelecionado]);
 
   // Função para remover um item
   const removeItem = (itemId: number) => {

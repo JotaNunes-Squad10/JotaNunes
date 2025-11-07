@@ -62,6 +62,10 @@ export interface GetAllItemResponse {
   data: Item[];
 }
 
+export interface GetItemById {
+  data: Item;
+}
+
 // Interface dos subitems do tópico ambientes
 export type SubTopic = {
   id: number;
@@ -97,25 +101,52 @@ export interface CreateDocumentoPayload {
 }
 
 // Interface do GetTopicId
-interface GetDocumentoById {
+export interface GetDocumentoById {
   id: number;
   nome: string;
   descricao: string;
   localizacao: string;
-  empreendimentosTopicos: {
-    topicoId: number;
-    posicao: number;
-    versoes: number[];
-    topicoAmbientes: {
-      ambienteId: 29;
-      posicao: number;
-      versoes: number[];
-    }[];
-    ambienteItens: {
-      itemId: number;
-      versoes: number[];
-    }[];
-  }[];
+  padrao: string;
+  status: string;
+  versao: number;
+  usuarioAlteracao: string;
+  dataHoraAlteracao: string;
+  empreendimentos: Empreendimento[];
+  empreendimentoTopicos: EmpreendimentosTopicos[];
+}
+
+export interface Empreendimento {
+  id: number;
+  nome: string;
+  descricao: string;
+  localizacao: string;
+  padrao: string;
+  versao: number;
+}
+
+export interface EmpreendimentosTopicos {
+  topicoId: number;
+  posicao: number;
+  versoes: number[];
+  topicoAmbientes: TopicoAmbiente[];
+  ambienteItens: AmbienteItens[];
+}
+
+export interface TopicoAmbiente {
+  ambienteId: number;
+  posicao: number;
+  versoes: number[];
+  ambienteItens: AmbienteItens[];
+}
+
+export interface AmbienteItens {
+  itemId: number;
+  versoes: number[];
+}
+
+export interface TopicoMaterial {
+  materialId: number;
+  versoes: number[];
 }
 
 // Configuração da API principal
@@ -229,6 +260,14 @@ export const itemService = {
   async getAllItem(): Promise<Item[]> {
     const response = await axios.get<GetAllItemProps>(
       "https://jotanunesservice.onrender.com/api/v1/items/GetAllItems"
+    );
+
+    return response.data.data;
+  },
+
+  async getItemById(id: number): Promise<Item> {
+    const response = await axios.get<GetItemById>(
+      `https://jotanunesservice.onrender.com/api/v1/items/GetItemById/${id}`
     );
 
     return response.data.data;

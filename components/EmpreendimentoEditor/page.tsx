@@ -7,7 +7,11 @@ import AddedItemsInDocument from "./AddedItemsInDocument/page";
 import TabelaItens from "./ViewMateralsDocument/page";
 import ObservationDocument from "./ObservationDocument/page";
 import { useEffect, useState } from "react";
-import { DocumentoService } from "@/lib/api";
+import {
+  DocumentoService,
+  EmpreendimentosTopicos,
+  itemService,
+} from "@/lib/api";
 
 interface EmpreendimentoEditorProps {
   documentId: string;
@@ -17,8 +21,8 @@ export default function EmpreendimentoEditor({
   documentId,
 }: EmpreendimentoEditorProps) {
   // Gerenciamento dos ambientes e itens dos ambientes.
-  const [ambienteSelecionado, setAmbienteSelecionado] = useState();
-  const [itemAmbienteSelecionado, setItemAmbienteSelecionado] = useState();
+  const [ambienteSelecionado, setAmbienteSelecionado] = useState("");
+  const [itemAmbienteSelecionado, setItemAmbienteSelecionado] = useState("");
 
   // Gerenciamento do documento
   const [nomeDocumento, setNomeDocumento] = useState<string>("");
@@ -29,15 +33,21 @@ export default function EmpreendimentoEditor({
   const [statusDocumento, setStatusDocumento] = useState<string>("");
   const [versaoDocumento, setVersaoDocumento] = useState<number>(1);
 
+  // Estados relacionados aos itens no documento
+  const [empreendimentoTopicos, setEmpreendimentoTopicos] = useState<
+    EmpreendimentosTopicos[]
+  >([]);
+
   // Buscar as informações do documento ao carregar o componente
   useEffect(() => {
     const getInfoDocument = async () => {
       const documentData = await DocumentoService.getDocumentoById(documentId);
-      // console.log("Dados do documento:", documentData);
+      console.log("Dados do documento:", documentData);
       if (documentData) {
         setNomeDocumento(documentData.nome);
         setDescricaoDocumento(documentData.descricao);
         setLocalizacaoDocumento(documentData.localizacao);
+        setEmpreendimentoTopicos(documentData.empreendimentoTopicos);
       }
     };
 
@@ -52,6 +62,9 @@ export default function EmpreendimentoEditor({
   // console.log("Padrão Documento:", padraoDocumento);
   // console.log("Status Documento:", statusDocumento);
   // console.log("Versão Documento:", versaoDocumento);
+  console.log(empreendimentoTopicos);
+
+  // TODO: usar empreendimentoTopicos nos componentes de adicionar itens no documento para fazer o filtro dos intens que já estão dentro dele.
 
   return (
     <div className="min-h-screen">
@@ -97,7 +110,11 @@ export default function EmpreendimentoEditor({
             />
           </div>
           <div className="w-full overflow-x-auto">
-            <TabelaItens />
+            <TabelaItens
+              empreendimentoTopicos={empreendimentoTopicos}
+              topicoSelecionado={ambienteSelecionado}
+              ambienteSelecionado={itemAmbienteSelecionado}
+            />
           </div>
           <div>
             <ObservationDocument />
