@@ -4,7 +4,7 @@ import { useState } from "react";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primeicons/primeicons.css";
 import { useRouter } from "next/navigation";
-import Header from "../gerenciamentoUser/headerUser/page";
+import Header from "../../components/headerUser/page";
 import FormCreateEmpreendimento from "./formCriarCabecalho/page";
 import CustomSidebarComponent from "../EmpreendimentoEditor/SideBar/page";
 import AddedItemsInDocument from "../EmpreendimentoEditor/AddedItemsInDocument/page";
