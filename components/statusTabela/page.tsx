@@ -10,7 +10,7 @@ import EmpreendimentosTable, { Empreendimento } from "../listaStatus/page";
 
 const StatusTabela: React.FC = () => {
   const searchParams = useSearchParams();
-  const statusParam = searchParams.get("status");
+  const statusParam = searchParams?.get("status");
 
   const [empreendimentos, setEmpreendimentos] = useState<Empreendimento[]>([]);
   const [filtroAtivo, setFiltroAtivo] = useState<string>("Todos");
@@ -30,7 +30,7 @@ const StatusTabela: React.FC = () => {
 
         const data = response.data?.data || [];
 
-        const parsedData: Empreendimento[] = data.map((item: any) => ({
+  const parsedData: Empreendimento[] = data.map((item: Record<string, unknown>) => ({
           id: item.id,
           nome: item.nome,
           ultimaAlteracao: "-",
@@ -56,7 +56,7 @@ const StatusTabela: React.FC = () => {
       <Box sx={{ px: 4, py: 2 }}>
         {/* Cards de Status */}
         <Box mb={3}>
-          <StatusSummary empreendimentos={empreendimentos} />
+          <StatusSummary />
         </Box>
 
         {/* Tabela */}
