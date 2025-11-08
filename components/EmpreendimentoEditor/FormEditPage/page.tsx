@@ -52,25 +52,25 @@ export default function FormEmpreendimento({
 
     try {
       await DocumentoService.updateEmpreendimento(empreendimento);
+
       toast.current?.show({
         severity: "success",
         summary: "Sucesso",
         detail: "Informações do empreendimento salvas com sucesso!",
         life: 3000,
       });
-      setLoading(false);
     } catch (error) {
       toast.current?.show({
         severity: "error",
         summary: "Erro",
         detail:
-          "Os campos empreendimento, localização e descrição são obrigatórios",
+          "Erro ao salvar o empreendimento. Verifique os campos obrigatórios ou tente mais tarde.",
         life: 3000,
       });
+      console.error("Falha ao salvar:", error);
+    } finally {
       setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

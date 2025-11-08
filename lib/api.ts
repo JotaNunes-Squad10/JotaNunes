@@ -352,9 +352,10 @@ export const DocumentoService = {
         "https://jotanunesservice.onrender.com/api/v1/empreendimento/UpdateEmpreendimento",
         payload
       );
-      return response;
+      return response.data;
     } catch (error) {
       console.error("Houve um erro ao tentar modificar o documento", error);
+      throw error;
     }
     return;
   },
