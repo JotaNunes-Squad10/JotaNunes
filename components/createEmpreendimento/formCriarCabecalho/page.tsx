@@ -7,16 +7,30 @@ import { InputTextarea } from "primereact/inputtextarea";
 import { Dispatch, SetStateAction } from "react";
 import { Toast } from "primereact/toast";
 import ActionBarCreate from "../actionBarCreate/page";
-import { CreateDocumentoPayload } from "@/lib/api";
+
+interface InfosDocument {
+  nomeDocumento: string;
+  setNomeDocumento: Dispatch<SetStateAction<string>>;
+  descricaoDocumento: string;
+  setDescricaoDocumento: Dispatch<SetStateAction<string>>;
+  localizacaoDocumento: string;
+  setLocalizacaoDocumento: Dispatch<SetStateAction<string>>;
+  tamanhoAreaDocumento: number | undefined;
+  setTamanhoAreaDocumento: Dispatch<SetStateAction<number | undefined>>;
+  padraoDocumento: number;
+  setPadraoDocumento: Dispatch<SetStateAction<number>>;
+  statusDocumento: string;
+  setStatusDocumento: Dispatch<SetStateAction<string>>;
+  versaoDocumento: number | undefined;
+  setVersaoDocumento: Dispatch<SetStateAction<number | undefined>>;
+}
 
 interface FormEmpreendimentoProps {
-  documento: CreateDocumentoPayload;
-  updateDocumento: (field: keyof CreateDocumentoPayload, value: any) => void;
+  params: InfosDocument;
 }
 
 export default function FormCreateEmpreendimento({
-  documento,
-  updateDocumento,
+  params,
 }: FormEmpreendimentoProps) {
   const toast = useRef<Toast>(null);
 
@@ -24,9 +38,9 @@ export default function FormCreateEmpreendimento({
     <div>
       <Toast ref={toast} position="top-right" />
       <ActionBarCreate
-        nomeDocumento={documento.nome}
-        descricaoDocumento={documento.descricao}
-        localizacaoDocumento={documento.localizacao}
+        nomeDocumento={params.nomeDocumento}
+        descricaoDocumento={params.descricaoDocumento}
+        localizacaoDocumento={params.localizacaoDocumento}
       />
       <Card className="shadow-md p-6 w-full ">
         {/* Campo Empreendimento */}
@@ -35,8 +49,8 @@ export default function FormCreateEmpreendimento({
             Empreendimento:
           </label>
           <InputText
-            value={documento.nome}
-            onChange={(e) => updateDocumento("descricao", e.target.value)}
+            value={params.nomeDocumento}
+            onChange={(e) => params.setNomeDocumento(e.target.value)}
             placeholder="Digite o nome do empreendimento"
             className="flex-1"
             required
@@ -48,8 +62,8 @@ export default function FormCreateEmpreendimento({
             Localização:
           </label>
           <InputText
-            value={documento.localizacao}
-            onChange={(e) => updateDocumento("localizacao", e.target.value)}
+            value={params.localizacaoDocumento}
+            onChange={(e) => params.setLocalizacaoDocumento(e.target.value)}
             placeholder="Digite a localização"
             className="flex-1"
             required
@@ -61,8 +75,8 @@ export default function FormCreateEmpreendimento({
             Descrição do Empreendimento:
           </label>
           <InputTextarea
-            value={documento.descricao}
-            onChange={(e) => updateDocumento("descricao", e.target.value)}
+            value={params.descricaoDocumento}
+            onChange={(e) => params.setDescricaoDocumento(e.target.value)}
             placeholder="Digite a descrição"
             rows={4}
             autoResize
