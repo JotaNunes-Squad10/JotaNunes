@@ -2,6 +2,7 @@ import React from "react";
 import { Box } from "@mui/material";
 
 import Header from "../../components/headerUser/page";
+import Popup from '../../components/popup/page';
 import StatusSummary from "../../components/home/status/page";
 import Recentes from "../../components/home/recentes/page";
 import AcoesRapidas from "../../components/home/acoesRapidas/page";
@@ -41,6 +42,7 @@ const Dashboard: React.FC = () => {
             <AcoesRapidas />
           </Box>
         </Box>
+        <Popup />
       </Box>
     </>
   );

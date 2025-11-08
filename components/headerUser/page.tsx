@@ -56,8 +56,8 @@ const Header: React.FC<HeaderProps> = ({}) => {
           <Image
             src="/img/LogoPreta.png"
             alt="Logo"
-            width={40}
-            height={40}
+            width={100}
+            height={100}
             className="h-8 sm:h-10 w-auto object-contain"
             priority
           />
