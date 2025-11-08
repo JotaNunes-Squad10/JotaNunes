@@ -8,6 +8,11 @@ import ActionBar from "./ActionBar/page";
 import { Dispatch, SetStateAction } from "react";
 import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
+import {
+  DocumentoService,
+  EmpreendimentosTopicos,
+  UpdateEmpreendimento,
+} from "@/lib/api";
 
 interface InfosDocument {
   nomeDocumento: string;
@@ -24,25 +29,37 @@ interface InfosDocument {
   setStatusDocumento: Dispatch<SetStateAction<string>>;
   versaoDocumento: number;
   setVersaoDocumento: Dispatch<SetStateAction<number>>;
+  empreendimentoTopicos: EmpreendimentosTopicos[];
+  setEmpreendimentoTopicos: Dispatch<SetStateAction<EmpreendimentosTopicos[]>>;
 }
 
 interface FormEmpreendimentoProps {
-  params: InfosDocument;
+  empreendimento: UpdateEmpreendimento;
+  updateEmpreendimento: (field: keyof UpdateEmpreendimento, value: any) => void;
 }
 
 export default function FormEmpreendimento({
-  params,
+  empreendimento,
+  updateEmpreendimento,
 }: FormEmpreendimentoProps) {
   const toast = useRef<Toast>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setLoading(true);
-    if (
-      !params.nomeDocumento.trim() ||
-      !params.localizacaoDocumento.trim() ||
-      !params.descricaoDocumento.trim()
-    ) {
+
+    console.log(empreendimento);
+
+    try {
+      await DocumentoService.updateEmpreendimento(empreendimento);
+      toast.current?.show({
+        severity: "success",
+        summary: "Sucesso",
+        detail: "Informações do empreendimento salvas com sucesso!",
+        life: 3000,
+      });
+      setLoading(false);
+    } catch (error) {
       toast.current?.show({
         severity: "error",
         summary: "Erro",
@@ -51,19 +68,9 @@ export default function FormEmpreendimento({
         life: 3000,
       });
       setLoading(false);
-      return;
     }
 
-    // Simulando uma operação assíncrona, como uma chamada de API
-    setTimeout(() => {
-      toast.current?.show({
-        severity: "success",
-        summary: "Sucesso",
-        detail: "Informações do empreendimento salvas com sucesso!",
-        life: 3000,
-      });
-      setLoading(false);
-    }, 2000);
+    setLoading(false);
   };
 
   return (
@@ -77,8 +84,8 @@ export default function FormEmpreendimento({
             Empreendimento:
           </label>
           <InputText
-            value={params.nomeDocumento ?? ""}
-            onChange={(e) => params.setNomeDocumento(e.target.value)}
+            value={empreendimento.nome}
+            onChange={(e) => updateEmpreendimento("nome", e.target.value)}
             placeholder="Digite o nome do empreendimento"
             className="flex-1"
           />
@@ -89,8 +96,10 @@ export default function FormEmpreendimento({
             Localização:
           </label>
           <InputText
-            value={params.localizacaoDocumento ?? ""}
-            onChange={(e) => params.setLocalizacaoDocumento(e.target.value)}
+            value={empreendimento.localizacao}
+            onChange={(e) =>
+              updateEmpreendimento("localizacao", e.target.value)
+            }
             placeholder="Digite a localização"
             className="flex-1"
           />
@@ -101,8 +110,8 @@ export default function FormEmpreendimento({
             Descrição do Empreendimento:
           </label>
           <InputTextarea
-            value={params.descricaoDocumento ?? ""}
-            onChange={(e) => params.setDescricaoDocumento(e.target.value)}
+            value={empreendimento.descricao}
+            onChange={(e) => updateEmpreendimento("descricao", e.target.value)}
             placeholder="Digite a descrição"
             rows={4}
             autoResize

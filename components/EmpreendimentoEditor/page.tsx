@@ -11,6 +11,7 @@ import {
   DocumentoService,
   EmpreendimentosTopicos,
   itemService,
+  UpdateEmpreendimento,
 } from "@/lib/api";
 
 interface EmpreendimentoEditorProps {
@@ -25,18 +26,35 @@ export default function EmpreendimentoEditor({
   const [itemAmbienteSelecionado, setItemAmbienteSelecionado] = useState("");
 
   // Gerenciamento do documento
-  const [nomeDocumento, setNomeDocumento] = useState<string>("");
-  const [descricaoDocumento, setDescricaoDocumento] = useState<string>("");
-  const [localizacaoDocumento, setLocalizacaoDocumento] = useState<string>("");
+
   const [tamanhoAreaDocumento, setTamanhoAreaDocumento] = useState<number>(0);
   const [padraoDocumento, setPadraoDocumento] = useState<string>("");
   const [statusDocumento, setStatusDocumento] = useState<string>("");
   const [versaoDocumento, setVersaoDocumento] = useState<number>(1);
 
-  // Estados relacionados aos itens no documento
+  // Estados relacionados aos itens no documento (Apenas busca)
   const [empreendimentoTopicos, setEmpreendimentoTopicos] = useState<
     EmpreendimentosTopicos[]
   >([]);
+
+  // Estado que gerencia o documento para editar
+  const [empreendimento, setEmpreendimento] = useState<UpdateEmpreendimento>({
+    id: documentId,
+    nome: "",
+    descricao: "",
+    localizacao: "",
+    tamanhoArea: 0,
+    padrao: 1, // Requer alterar de forma dinâmica o padrão
+    empreendimentoTopicos: [],
+  });
+
+  // Funções de atualização
+  const updateEmpreendimento = (
+    field: keyof UpdateEmpreendimento,
+    value: any
+  ) => {
+    setEmpreendimento((prev) => ({ ...prev, [field]: value }));
+  };
 
   // Buscar as informações do documento ao carregar o componente
   useEffect(() => {
@@ -44,10 +62,11 @@ export default function EmpreendimentoEditor({
       const documentData = await DocumentoService.getDocumentoById(documentId);
       console.log("Dados do documento:", documentData);
       if (documentData) {
-        setNomeDocumento(documentData.nome);
-        setDescricaoDocumento(documentData.descricao);
-        setLocalizacaoDocumento(documentData.localizacao);
         setEmpreendimentoTopicos(documentData.empreendimentoTopicos);
+
+        updateEmpreendimento("nome", documentData.nome);
+        updateEmpreendimento("descricao", documentData.descricao);
+        updateEmpreendimento("localizacao", documentData.localizacao);
       }
     };
 
@@ -83,22 +102,8 @@ export default function EmpreendimentoEditor({
         <div className="flex flex-col w-full max-screen-lg px-4 lg:w-[60%]">
           <div>
             <FormEmpreendimento
-              params={{
-                nomeDocumento,
-                setNomeDocumento,
-                descricaoDocumento,
-                setDescricaoDocumento,
-                localizacaoDocumento,
-                setLocalizacaoDocumento,
-                tamanhoAreaDocumento,
-                setTamanhoAreaDocumento,
-                padraoDocumento,
-                setPadraoDocumento,
-                statusDocumento,
-                setStatusDocumento,
-                versaoDocumento,
-                setVersaoDocumento,
-              }}
+              empreendimento={empreendimento}
+              updateEmpreendimento={updateEmpreendimento}
             />
           </div>
           <div>

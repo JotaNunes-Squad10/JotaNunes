@@ -149,6 +149,17 @@ export interface TopicoMaterial {
   versoes: number[];
 }
 
+// Interface do Payload PUT
+export interface UpdateEmpreendimento {
+  id: string;
+  nome: string;
+  descricao: string;
+  localizacao: string;
+  tamanhoArea: number;
+  padrao: number;
+  empreendimentoTopicos: any[];
+}
+
 // Configuração da API principal
 export const api = axios.create({
   baseURL: "https://jotanunesservice.onrender.com",
@@ -332,6 +343,19 @@ export const DocumentoService = {
       console.error("Erro ao buscar informações do documento:", error);
     }
 
+    return;
+  },
+
+  async updateEmpreendimento(payload: UpdateEmpreendimento): Promise<any> {
+    try {
+      const response = await axios.put(
+        "https://jotanunesservice.onrender.com/api/v1/empreendimento/UpdateEmpreendimento",
+        payload
+      );
+      return response;
+    } catch (error) {
+      console.error("Houve um erro ao tentar modificar o documento", error);
+    }
     return;
   },
 };
