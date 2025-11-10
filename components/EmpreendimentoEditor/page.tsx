@@ -10,7 +10,6 @@ import { useEffect, useState } from "react";
 import {
   DocumentoService,
   EmpreendimentosTopicos,
-  itemService,
   UpdateEmpreendimento,
 } from "@/lib/api";
 
@@ -21,28 +20,57 @@ interface EmpreendimentoEditorProps {
 export default function EmpreendimentoEditor({
   documentId,
 }: EmpreendimentoEditorProps) {
-  // Gerenciamento dos ambientes e itens dos ambientes.
   const [ambienteSelecionado, setAmbienteSelecionado] = useState("");
   const [itemAmbienteSelecionado, setItemAmbienteSelecionado] = useState("");
-
-  // Estados relacionados aos itens no documento (Apenas busca)
-  const [empreendimentoTopicos, setEmpreendimentoTopicos] = useState<
-    EmpreendimentosTopicos[]
-  >([]);
   const [itensDocumento, setItensDocumento] = useState<number[]>([]);
 
-  // Estado que gerencia o documento para editar
   const [empreendimento, setEmpreendimento] = useState<UpdateEmpreendimento>({
     id: documentId,
     nome: "",
     descricao: "",
     localizacao: "",
     tamanhoArea: 0,
-    padrao: 1, // Requer alterar de forma dinâmica o padrão
+    padrao: 1,
     empreendimentoTopicos: [],
   });
 
-  // Funções de atualização
+  // 🟢 Carregar o documento
+  useEffect(() => {
+    const getInfoDocument = async () => {
+      try {
+        const documentData = await DocumentoService.getDocumentoById(
+          documentId
+        );
+        if (!documentData) return;
+
+        const doc = documentData || documentData; // compatibilidade com retorno
+
+        setEmpreendimento({
+          id: doc.id,
+          nome: doc.nome,
+          descricao: doc.descricao,
+          localizacao: doc.localizacao,
+          tamanhoArea: doc.tamanhoArea || 0,
+          padrao: Number(doc.padrao) || 1,
+          empreendimentoTopicos: doc.empreendimentoTopicos || [],
+        });
+
+        // coletar todos os itemIds
+        const idsInDoc = doc.empreendimentoTopicos.flatMap((t: any) =>
+          t.topicoAmbientes.flatMap((a: any) =>
+            a.ambienteItens.map((i: any) => i.itemId)
+          )
+        );
+        setItensDocumento(idsInDoc);
+      } catch (error) {
+        console.error("Erro ao carregar documento:", error);
+      }
+    };
+
+    getInfoDocument();
+  }, [documentId]);
+
+  // 🟡 Atualiza qualquer campo do documento
   const updateEmpreendimento = (
     field: keyof UpdateEmpreendimento,
     value: any
@@ -50,57 +78,64 @@ export default function EmpreendimentoEditor({
     setEmpreendimento((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleAddItems = (ids: number[]) => {
-    setItensDocumento((prev) => [...prev, ...ids]);
+  // 🟢 Adicionar itens no payload local
+  const handleAddItems = (
+    ids: number[],
+    topicoId: number,
+    ambienteId: number
+  ) => {
+    setEmpreendimento((prev) => {
+      const clone = structuredClone(prev);
+      const topico = clone.empreendimentoTopicos.find(
+        (t) => t.topicoId === topicoId
+      );
+      if (!topico) return prev;
+
+      const ambiente = topico.topicoAmbientes.find(
+        (a: any) => a.ambienteId === ambienteId
+      );
+      if (!ambiente) return prev;
+
+      const existentes = ambiente.ambienteItens.map((i: any) => i.itemId);
+      const novos = ids.filter((id) => !existentes.includes(id));
+      ambiente.ambienteItens.push(
+        ...novos.map((id) => ({ itemId: id, versoes: [] }))
+      );
+
+      return { ...clone };
+    });
   };
 
-  const handleRemoveItem = (id: number) => {
-    setItensDocumento((prev) => prev.filter((itemId) => itemId !== id));
+  // 🟠 Remover item localmente
+  const handleRemoveItem = (
+    itemId: number,
+    topicoId: number,
+    ambienteId: number
+  ) => {
+    setEmpreendimento((prev) => {
+      const clone = structuredClone(prev);
+      const topico = clone.empreendimentoTopicos.find(
+        (t) => t.topicoId === topicoId
+      );
+      if (!topico) return prev;
+
+      const ambiente = topico.topicoAmbientes.find(
+        (a: any) => a.ambienteId === ambienteId
+      );
+      if (!ambiente) return prev;
+
+      ambiente.ambienteItens = ambiente.ambienteItens.filter(
+        (i: any) => i.itemId !== itemId
+      );
+      return { ...clone };
+    });
   };
 
-  // Buscar as informações do documento ao carregar o componente
-  useEffect(() => {
-    const getInfoDocument = async () => {
-      const documentData = await DocumentoService.getDocumentoById(documentId);
-      console.log("Dados do documento:", documentData);
-      if (documentData) {
-        setEmpreendimentoTopicos(documentData.empreendimentoTopicos);
-        const idsInDocumento = documentData.empreendimentoTopicos.flatMap(
-          (topico) =>
-            topico.topicoAmbientes.flatMap((amb) =>
-              amb.ambienteItens.map((i) => i.itemId)
-            )
-        );
-
-        console.log(idsInDocumento);
-
-        setItensDocumento(idsInDocumento);
-        updateEmpreendimento("nome", documentData.nome);
-        updateEmpreendimento("descricao", documentData.descricao);
-        updateEmpreendimento("localizacao", documentData.localizacao);
-      }
-    };
-
-    getInfoDocument();
-  }, [documentId]);
-
-  // console.log("Document ID:", documentId);
-  // console.log("Nome Documento:", nomeDocumento);
-  // console.log("Descrição Documento:", descricaoDocumento);
-  // console.log("Localização Documento:", localizacaoDocumento);
-  // console.log("Tamanho Área Documento:", tamanhoAreaDocumento);
-  // console.log("Padrão Documento:", padraoDocumento);
-  // console.log("Status Documento:", statusDocumento);
-  // console.log("Versão Documento:", versaoDocumento);
-  console.log(empreendimentoTopicos);
-
-  // TODO: usar empreendimentoTopicos nos componentes de adicionar itens no documento para fazer o filtro dos intens que já estão dentro dele.
+  if (!empreendimento) return <div>Carregando documento...</div>;
 
   return (
     <div className="min-h-screen">
-      <div>
-        <Header />
-      </div>
+      <Header />
 
       <CustomSidebarComponent
         ambienteSelecionado={ambienteSelecionado}
@@ -111,38 +146,31 @@ export default function EmpreendimentoEditor({
 
       <div className="pt-30 flex justify-center w-full">
         <div className="flex flex-col w-full max-screen-lg px-4 lg:w-[60%]">
-          <div>
-            <FormEmpreendimento
-              empreendimento={empreendimento}
-              updateEmpreendimento={updateEmpreendimento}
-            />
-          </div>
-          <div>
-            <AddedItemsInDocument
-              ambienteSelecionado={ambienteSelecionado}
-              setAmbienteSelecionado={setAmbienteSelecionado}
-              itemAmbienteSelecionado={itemAmbienteSelecionado}
-              setItemAmbienteSelecionado={setItemAmbienteSelecionado}
-              empreendimentoTopicos={empreendimentoTopicos}
-              itensDocumento={itensDocumento}
-              onAddItems={handleAddItems}
-            />
-          </div>
-          <div className="w-full overflow-x-auto">
-            <TabelaItens
-              empreendimentoTopicos={empreendimentoTopicos}
-              topicoSelecionado={ambienteSelecionado}
-              ambienteSelecionado={itemAmbienteSelecionado}
-              itensDocumento={itensDocumento}
-              onRemoveItem={handleRemoveItem}
-            />
-          </div>
-          <div>
-            <ObservationDocument />
-          </div>
+          <FormEmpreendimento
+            empreendimento={empreendimento}
+            updateEmpreendimento={updateEmpreendimento}
+          />
+
+          <AddedItemsInDocument
+            ambienteSelecionado={ambienteSelecionado}
+            setAmbienteSelecionado={setAmbienteSelecionado}
+            itemAmbienteSelecionado={itemAmbienteSelecionado}
+            setItemAmbienteSelecionado={setItemAmbienteSelecionado}
+            empreendimento={empreendimento}
+            itensDocumento={itensDocumento}
+            onAddItems={handleAddItems}
+          />
+
+          <TabelaItens
+            empreendimento={empreendimento}
+            topicoSelecionado={ambienteSelecionado}
+            ambienteSelecionado={itemAmbienteSelecionado}
+            onRemoveItem={handleRemoveItem}
+          />
+
+          <ObservationDocument />
         </div>
       </div>
-      <footer className="mb-10"></footer>
     </div>
   );
 }

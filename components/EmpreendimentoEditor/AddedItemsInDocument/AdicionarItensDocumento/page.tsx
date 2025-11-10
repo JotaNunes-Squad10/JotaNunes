@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { MultiSelect, MultiSelectChangeEvent } from "primereact/multiselect";
 import AdicionarNovoItem from "./AdicionarNovoItem/page";
-import { EmpreendimentosTopicos, itemService, marcaService } from "@/lib/api";
+import {
+  itemService,
+  marcaService,
+  subTopicosAmbienteService,
+  UpdateEmpreendimento,
+} from "@/lib/api";
 import { Button } from "primereact/button";
 
 interface Props {
   itemAmbienteSelecionado: string;
-  empreendimentoTopicos: EmpreendimentosTopicos[];
+  empreendimento: UpdateEmpreendimento;
   itensDocumento: number[];
-  onAddItems: (ids: number[]) => void;
+  onAddItems: (ids: number[], topicoId: number, ambienteId: number) => void;
 }
 
 interface AmbienteOption {
@@ -19,7 +24,7 @@ interface AmbienteOption {
 
 export default function AdicionarItensDocumento({
   itemAmbienteSelecionado,
-  empreendimentoTopicos,
+  empreendimento,
   itensDocumento,
   onAddItems,
 }: Props) {
@@ -28,74 +33,80 @@ export default function AdicionarItensDocumento({
     []
   );
   const [loading, setLoading] = useState(true);
-  const [reload, setReload] = useState(false);
 
   useEffect(() => {
     const fetchItens = async () => {
       setLoading(true);
       try {
-        let data: any[] = [];
-
-        if (itemAmbienteSelecionado === "Descrição Marcas") {
-          data = await marcaService.getAllMarca();
-        } else {
-          data = await itemService.getAllItem();
-        }
-
-        const itensFormatados = data.map((item) => ({
+        const data = await itemService.getAllItem();
+        const todosItens = data || data;
+        const itensFormatados = todosItens.map((item: any) => ({
           name: item.nome,
           code: String(item.id),
-          descricao: "descricao" in item ? item.descricao : "", // 👈 prevenção segura
+          descricao: item.descricao,
         }));
 
-        // Remove itens que já estão no documento
+        // 🔹 pegar o ambiente selecionado e topico correspondente
+        const ambientes = await subTopicosAmbienteService.getAllAmbiente();
+        const ambiente = ambientes.find(
+          (a: any) => a.nome === itemAmbienteSelecionado
+        );
+        if (!ambiente) {
+          setItensAmbiente(itensFormatados);
+          return;
+        }
+
+        const topicoId = ambiente.topico.id;
+        const ambienteId = ambiente.id;
+
+        const topico = empreendimento.empreendimentoTopicos.find(
+          (t) => t.topicoId === topicoId
+        );
+        const ambienteExistente = topico?.topicoAmbientes.find(
+          (a: any) => a.ambienteId === ambienteId
+        );
+
+        const itensExistentes = ambienteExistente
+          ? ambienteExistente.ambienteItens.map((i: any) => i.itemId)
+          : [];
+
+        // 🔹 filtra itens que ainda não estão no documento
         const filtrados = itensFormatados.filter(
-          (i) => !itensDocumento.includes(Number(i.code))
+          (i) => !itensExistentes.includes(Number(i.code))
         );
 
         setItensAmbiente(filtrados);
       } catch (error) {
-        console.error("Erro ao buscar itens:", error);
+        console.error("Erro ao carregar itens:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchItens();
-  }, [itemAmbienteSelecionado, itensDocumento]);
+    if (itemAmbienteSelecionado) fetchItens();
+  }, [itemAmbienteSelecionado, empreendimento]);
 
   const handleAddItems = async () => {
     if (selectedAmbientes.length === 0) return;
 
-    const idsToAdd = selectedAmbientes.map((item) => Number(item.code));
-
-    onAddItems(idsToAdd);
-
-    setItensAmbiente((prev) =>
-      prev.filter((item) => !idsToAdd.includes(Number(item.code)))
+    const ambientes = await subTopicosAmbienteService.getAllAmbiente();
+    const ambiente = ambientes.find(
+      (a: any) => a.nome === itemAmbienteSelecionado
     );
+    if (!ambiente) return;
+
+    const topicoId = ambiente.topico.id;
+    const ambienteId = ambiente.id;
+
+    const idsToAdd = selectedAmbientes.map((i) => Number(i.code));
+    onAddItems(idsToAdd, topicoId, ambienteId);
+
     setSelectedAmbientes([]);
-
-    // TODO: 🚀 Aqui é o ponto exato onde faremos o PUT do documento
-    // try {
-    //   const updatedDoc = { ...documentoAtual, empreendimentoTopicos: novosTopicos };
-    //   await DocumentoService.updateEmpreendimento(updatedDoc);
-    //   console.log("Documento atualizado com sucesso após adição!");
-    // } catch (error) {
-    //   console.error("Erro ao atualizar o documento após adição:", error);
-    // }
-
-    console.log("Itens adicionados (otimista):", idsToAdd);
-  };
-
-  const handleReload = () => {
-    setReload((prev) => !prev);
   };
 
   return (
     <div>
       <div className="flex gap-3 w-full">
-        {/* Container do MultiSelect, ocupando 50% ou o necessário */}
         <div className="card flex justify-content-center w-[50%]">
           <MultiSelect
             value={selectedAmbientes}
@@ -105,20 +116,17 @@ export default function AdicionarItensDocumento({
             options={itensAmbiente}
             optionLabel="name"
             placeholder={
-              loading
-                ? "Carregando itens..."
-                : "Selecione um ou mais Itens de Ambiente"
+              loading ? "Carregando itens..." : "Selecione um ou mais itens"
             }
             className="w-full md:w-14rem"
             display="chip"
-            showClear={selectedAmbientes.length > 0}
             disabled={loading}
             filter
-            filterDelay={400}
           />
         </div>
-        <AdicionarNovoItem onReload={handleReload} />
+        <AdicionarNovoItem onReload={() => {}} />
       </div>
+
       <div className="flex mt-3 w-[50%] gap-5">
         <Button
           label="Adicionar Item"
@@ -127,23 +135,10 @@ export default function AdicionarItensDocumento({
           style={{
             backgroundColor: "#0f582a",
             color: "#ffffff",
-            padding: "0.25rem", // equivalente a p-1
+            padding: "0.25rem",
             width: "100%",
-            borderRadius: "0.5rem", // equivalente a rounded-lg
+            borderRadius: "0.5rem",
             border: "none",
-            cursor: selectedAmbientes.length === 0 ? "not-allowed" : "pointer",
-            opacity: selectedAmbientes.length === 0 ? 0.6 : 1,
-            transition: "background-color 0.2s ease-in-out",
-          }}
-          onMouseEnter={(e) => {
-            if (selectedAmbientes.length > 0)
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                "#0d4923";
-          }}
-          onMouseLeave={(e) => {
-            if (selectedAmbientes.length > 0)
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                "#0f582a";
           }}
         />
       </div>

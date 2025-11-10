@@ -102,13 +102,14 @@ export interface CreateDocumentoPayload {
 
 // Interface do GetTopicId
 export interface GetDocumentoById {
-  id: number;
+  id: string;
   nome: string;
   descricao: string;
   localizacao: string;
   padrao: string;
   status: string;
   versao: number;
+  tamanhoArea: number;
   usuarioAlteracao: string;
   dataHoraAlteracao: string;
   empreendimentos: Empreendimento[];

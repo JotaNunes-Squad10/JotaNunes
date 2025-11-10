@@ -1,22 +1,21 @@
-import React, { useEffect, useState, useCallback } from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
-import "primeicons/primeicons.css";
 import {
-  EmpreendimentosTopicos,
   itemService,
   subTopicosAmbienteService,
   topicoService,
-  DocumentoService, // ← para fazer o PUT futuramente
+  UpdateEmpreendimento,
 } from "@/lib/api";
 
-interface TableItensProps {
-  empreendimentoTopicos: EmpreendimentosTopicos[] | [];
+interface Props {
+  empreendimento: UpdateEmpreendimento;
   topicoSelecionado: string;
   ambienteSelecionado: string;
-  itensDocumento: number[];
-  onRemoveItem: (id: number) => void;
+  onRemoveItem: (itemId: number, topicoId: number, ambienteId: number) => void;
 }
 
 interface TabelaItem {
@@ -26,117 +25,95 @@ interface TabelaItem {
 }
 
 export default function TabelaItens({
-  empreendimentoTopicos,
+  empreendimento,
   topicoSelecionado,
   ambienteSelecionado,
-  itensDocumento,
   onRemoveItem,
-}: TableItensProps) {
+}: Props) {
   const [itens, setItens] = useState<TabelaItem[]>([]);
 
-  /**
-   * 🔹 Carrega itens de acordo com os IDs do documento.
-   * Executa rapidamente e só chama a API se necessário.
-   */
-  const fetchItens = useCallback(async () => {
-    if (!itensDocumento.length) {
+  useEffect(() => {
+    const load = async () => {
+      if (!topicoSelecionado || !ambienteSelecionado) return;
       setItens([]);
-      return;
-    }
 
-    try {
-      // Carrega todos os itens por ID em paralelo
-      const dados = await Promise.all(
-        itensDocumento.map((id) => itemService.getItemById(id))
+      const [topics, ambientes] = await Promise.all([
+        topicoService.getAllTopic(),
+        subTopicosAmbienteService.getAllAmbiente(),
+      ]);
+
+      const topicoId = topics.find((t) => t.nome === topicoSelecionado)?.id;
+      const ambienteId = ambientes.find(
+        (a) => a.nome === ambienteSelecionado && a.topico.id === topicoId
+      )?.id;
+
+      if (!topicoId || !ambienteId) return;
+
+      const topico = empreendimento.empreendimentoTopicos.find(
+        (t) => t.topicoId === topicoId
+      );
+      const ambiente = topico?.topicoAmbientes.find(
+        (a: any) => a.ambienteId === ambienteId
+      );
+      const ids = ambiente?.ambienteItens.map((i: any) => i.itemId) ?? [];
+
+      if (ids.length === 0) return;
+
+      const itensDetalhes = await Promise.all(
+        ids.map((id: any) => itemService.getItemById(id))
       );
 
-      const tabelaFormatada = dados.map((i) => ({
-        id: i.id!,
-        item: i.nome,
-        descricao: i.descricao,
-      }));
+      setItens(
+        itensDetalhes.map((i) => ({
+          id: i.id!,
+          item: i.nome,
+          descricao: i.descricao,
+        }))
+      );
+    };
 
-      setItens(tabelaFormatada);
-    } catch (error) {
-      console.error("Erro ao buscar itens:", error);
-    }
-  }, [itensDocumento]);
+    load();
+  }, [empreendimento, topicoSelecionado, ambienteSelecionado]);
 
-  /**
-   * 🔁 Atualiza itens sempre que o documento mudar.
-   */
-  useEffect(() => {
-    fetchItens();
-  }, [fetchItens]);
+  const handleRemove = async (id: number) => {
+    const [topics, ambientes] = await Promise.all([
+      topicoService.getAllTopic(),
+      subTopicosAmbienteService.getAllAmbiente(),
+    ]);
 
-  /**
-   * 🔸 Remoção otimista — remove imediatamente do front.
-   */
-  const removeItem = async (itemId: number) => {
-    // Atualiza o estado local instantaneamente (melhor UX)
-    setItens((prev) => prev.filter((item) => item.id !== itemId));
+    const topicoId = topics.find((t) => t.nome === topicoSelecionado)?.id;
+    const ambienteId = ambientes.find(
+      (a) => a.nome === ambienteSelecionado && a.topico.id === topicoId
+    )?.id;
 
-    // Atualiza o estado global (lista de itens do documento)
-    onRemoveItem(itemId);
+    if (!topicoId || !ambienteId) return;
 
-    // TODO: 🚀 Aqui é onde faremos o PUT de atualização do documento
-    // try {
-    //   const updatedDoc = { ...documentoAtual, empreendimentoTopicos: novosTopicos };
-    //   await DocumentoService.updateEmpreendimento(updatedDoc);
-    //   console.log("Documento atualizado com sucesso!");
-    // } catch (error) {
-    //   console.error("Erro ao atualizar o documento:", error);
-    //   // Opcional: reverter a alteração local se falhar
-    // }
+    onRemoveItem(id, topicoId, ambienteId);
 
-    console.log(`Item ${itemId} removido do documento (remoção otimista).`);
+    setItens((prev) => prev.filter((i) => i.id !== id));
+
+    // TODO: 🚀 PUT para salvar a remoção
   };
 
-  /**
-   * 🔹 Template da ação de remoção
-   */
-  const actionBodyTemplate = (rowData: TabelaItem) => (
-    <Button
-      icon="pi pi-times"
-      rounded
-      text
-      severity="danger"
-      tooltip="Remover item"
-      onClick={() => removeItem(rowData.id)}
-    />
-  );
-
   return (
-    <div className="card mt-10">
-      <div className="w-full overflow-x-auto">
-        <DataTable value={itens}>
-          <Column
-            field="item"
-            header="Itens"
-            style={{
-              width: "30%",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          />
-          <Column
-            field="descricao"
-            header="Descrição"
-            style={{
-              width: "50%",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          />
-          <Column
-            header="Remover"
-            body={actionBodyTemplate}
-            style={{ width: "15%", textAlign: "center" }}
-          />
-        </DataTable>
-      </div>
+    <div className="card mt-8">
+      <DataTable value={itens} emptyMessage="Nenhum item neste ambiente.">
+        <Column field="item" header="Item" style={{ width: "40%" }} />
+        <Column field="descricao" header="Descrição" style={{ width: "50%" }} />
+        <Column
+          header="Remover"
+          style={{ width: "10%", textAlign: "center" }}
+          body={(rowData) => (
+            <Button
+              icon="pi pi-times"
+              rounded
+              text
+              severity="danger"
+              onClick={() => handleRemove(rowData.id)}
+            />
+          )}
+        />
+      </DataTable>
     </div>
   );
 }

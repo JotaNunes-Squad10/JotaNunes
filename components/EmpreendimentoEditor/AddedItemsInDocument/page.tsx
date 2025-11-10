@@ -1,16 +1,16 @@
 import SelecionaAmbiente from "./SelecionaAmbiente/page";
 import SelecioneItemAmbiente from "./SelecionaItemAmbiente/page";
 import AdicionarItensDocumento from "./AdicionarItensDocumento/page";
-import { EmpreendimentosTopicos } from "@/lib/api";
+import { EmpreendimentosTopicos, UpdateEmpreendimento } from "@/lib/api";
 
 interface Props {
   ambienteSelecionado: any;
   setAmbienteSelecionado: (value: any) => void;
   itemAmbienteSelecionado: string;
   setItemAmbienteSelecionado: (value: any) => void;
-  empreendimentoTopicos: EmpreendimentosTopicos[];
+  empreendimento: UpdateEmpreendimento;
   itensDocumento: number[];
-  onAddItems: (ids: number[]) => void;
+  onAddItems: (ids: number[], topicoId: number, ambienteId: number) => void;
 }
 
 export default function AddedItemsInDocument({
@@ -18,7 +18,7 @@ export default function AddedItemsInDocument({
   setAmbienteSelecionado,
   itemAmbienteSelecionado,
   setItemAmbienteSelecionado,
-  empreendimentoTopicos,
+  empreendimento,
   itensDocumento,
   onAddItems,
 }: Props) {
@@ -37,8 +37,8 @@ export default function AddedItemsInDocument({
       <h3 className="mb-3 font-bold">Itens</h3>
       <AdicionarItensDocumento
         itemAmbienteSelecionado={itemAmbienteSelecionado}
-        empreendimentoTopicos={empreendimentoTopicos}
         itensDocumento={itensDocumento}
+        empreendimento={empreendimento}
         onAddItems={onAddItems}
       />
     </div>
