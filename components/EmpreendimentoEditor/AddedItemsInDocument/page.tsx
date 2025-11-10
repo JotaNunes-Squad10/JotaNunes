@@ -41,11 +41,6 @@ export default function AddedItemsInDocument({
         itensDocumento={itensDocumento}
         onAddItems={onAddItems}
       />
-      <div className="flex mt-3 w-[50%] gap-5">
-        <button className="bg-[#0f582a] p-1 w-full text-white  rounded-lg cursor-pointer hover:bg-[#0d4923]">
-          Adicionar Item
-        </button>
-      </div>
     </div>
   );
 }

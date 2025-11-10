@@ -93,40 +93,60 @@ export default function AdicionarItensDocumento({
   };
 
   return (
-    <div className="flex gap-3 w-full">
-      {/* Container do MultiSelect, ocupando 50% ou o necessário */}
-      <div className="card flex justify-content-center w-[50%]">
-        <MultiSelect
-          value={selectedAmbientes}
-          onChange={(e: MultiSelectChangeEvent) =>
-            setSelectedAmbientes(e.value)
-          }
-          options={itensAmbiente}
-          optionLabel="name"
-          placeholder={
-            loading
-              ? "Carregando itens..."
-              : "Selecione um ou mais Itens de Ambiente"
-          }
-          className="w-full md:w-14rem"
-          display="chip"
-          showClear={selectedAmbientes.length > 0}
-          disabled={loading}
-          filter
-          filterDelay={400}
-        />
+    <div>
+      <div className="flex gap-3 w-full">
+        {/* Container do MultiSelect, ocupando 50% ou o necessário */}
+        <div className="card flex justify-content-center w-[50%]">
+          <MultiSelect
+            value={selectedAmbientes}
+            onChange={(e: MultiSelectChangeEvent) =>
+              setSelectedAmbientes(e.value)
+            }
+            options={itensAmbiente}
+            optionLabel="name"
+            placeholder={
+              loading
+                ? "Carregando itens..."
+                : "Selecione um ou mais Itens de Ambiente"
+            }
+            className="w-full md:w-14rem"
+            display="chip"
+            showClear={selectedAmbientes.length > 0}
+            disabled={loading}
+            filter
+            filterDelay={400}
+          />
+        </div>
+        <AdicionarNovoItem onReload={handleReload} />
       </div>
-
-      <div className="flex items-center gap-2">
+      <div className="flex mt-3 w-[50%] gap-5">
         <Button
-          label="Adicionar"
-          icon="pi pi-plus"
-          severity="success"
+          label="Adicionar Item"
           onClick={handleAddItems}
           disabled={selectedAmbientes.length === 0}
+          style={{
+            backgroundColor: "#0f582a",
+            color: "#ffffff",
+            padding: "0.25rem", // equivalente a p-1
+            width: "100%",
+            borderRadius: "0.5rem", // equivalente a rounded-lg
+            border: "none",
+            cursor: selectedAmbientes.length === 0 ? "not-allowed" : "pointer",
+            opacity: selectedAmbientes.length === 0 ? 0.6 : 1,
+            transition: "background-color 0.2s ease-in-out",
+          }}
+          onMouseEnter={(e) => {
+            if (selectedAmbientes.length > 0)
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                "#0d4923";
+          }}
+          onMouseLeave={(e) => {
+            if (selectedAmbientes.length > 0)
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                "#0f582a";
+          }}
         />
       </div>
-      <AdicionarNovoItem onReload={handleReload} />
     </div>
   );
 }
