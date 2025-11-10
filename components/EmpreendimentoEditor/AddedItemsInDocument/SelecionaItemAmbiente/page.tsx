@@ -13,7 +13,7 @@ import AdicionarNovoAmbiente from "./AdicionarNovoAmbiente/page";
 interface Props {
   itemAmbienteSelecionado: any;
   setItemAmbienteSelecionado: (value: any) => void;
-  ambienteSelecionado: string; // ex: "ÁREA COMUM"
+  ambienteSelecionado: string;
 }
 
 interface DropdownOption {

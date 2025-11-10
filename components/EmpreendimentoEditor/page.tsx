@@ -7,11 +7,7 @@ import AddedItemsInDocument from "./AddedItemsInDocument/page";
 import TabelaItens from "./ViewMateralsDocument/page";
 import ObservationDocument from "./ObservationDocument/page";
 import { useEffect, useState } from "react";
-import {
-  DocumentoService,
-  EmpreendimentosTopicos,
-  UpdateEmpreendimento,
-} from "@/lib/api";
+import { DocumentoService, UpdateEmpreendimento } from "@/lib/api";
 
 interface EmpreendimentoEditorProps {
   documentId: string;

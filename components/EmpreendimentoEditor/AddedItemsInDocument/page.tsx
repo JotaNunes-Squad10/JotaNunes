@@ -1,7 +1,7 @@
 import SelecionaAmbiente from "./SelecionaAmbiente/page";
 import SelecioneItemAmbiente from "./SelecionaItemAmbiente/page";
 import AdicionarItensDocumento from "./AdicionarItensDocumento/page";
-import { EmpreendimentosTopicos, UpdateEmpreendimento } from "@/lib/api";
+import { UpdateEmpreendimento } from "@/lib/api";
 
 interface Props {
   ambienteSelecionado: any;

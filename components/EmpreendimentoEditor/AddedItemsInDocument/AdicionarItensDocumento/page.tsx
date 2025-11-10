@@ -3,7 +3,6 @@ import { MultiSelect, MultiSelectChangeEvent } from "primereact/multiselect";
 import AdicionarNovoItem from "./AdicionarNovoItem/page";
 import {
   itemService,
-  marcaService,
   subTopicosAmbienteService,
   UpdateEmpreendimento,
 } from "@/lib/api";
@@ -25,7 +24,6 @@ interface AmbienteOption {
 export default function AdicionarItensDocumento({
   itemAmbienteSelecionado,
   empreendimento,
-  itensDocumento,
   onAddItems,
 }: Props) {
   const [itensAmbiente, setItensAmbiente] = useState<AmbienteOption[]>([]);

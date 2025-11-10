@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import { Dropdown, DropdownChangeEvent } from "primereact/dropdown";
 import { topicoService, Topico } from "@/lib/api";
 
-// 1. DADOS MOCKADOS (Simulando o resultado da transformação de TÍTULOS)
 interface TituloAmbiente {
   name: string;
   code: string;
@@ -49,7 +48,7 @@ export default function SelecionaAmbiente({
         onChange={(e: DropdownChangeEvent) =>
           setAmbienteSelecionado(e.value.code)
         }
-        options={titulos} // Usa os dados mockados diretamente
+        options={titulos}
         optionLabel="name"
         placeholder="Selecione Ambiente"
         className="w-full md:w-14rem"

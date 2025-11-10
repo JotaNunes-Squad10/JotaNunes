@@ -20,8 +20,6 @@ interface CustomSideBarProps {
   listaNovoAmbiente: string[];
 }
 
-const MarcasPage: any = [{ id: 1, nome: "Descrição Marcas" }];
-
 export default function PainelMenu({
   ambienteSelecionado,
   setAmbienteSelecionado,
