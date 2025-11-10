@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { MultiSelect, MultiSelectChangeEvent } from "primereact/multiselect";
 import AdicionarNovoItem from "./AdicionarNovoItem/page";
 import { EmpreendimentosTopicos, itemService, marcaService } from "@/lib/api";
+import { Button } from "primereact/button";
 
 interface Props {
   itemAmbienteSelecionado: string;
@@ -63,6 +64,30 @@ export default function AdicionarItensDocumento({
     fetchItens();
   }, [itemAmbienteSelecionado, itensDocumento]);
 
+  const handleAddItems = async () => {
+    if (selectedAmbientes.length === 0) return;
+
+    const idsToAdd = selectedAmbientes.map((item) => Number(item.code));
+
+    onAddItems(idsToAdd);
+
+    setItensAmbiente((prev) =>
+      prev.filter((item) => !idsToAdd.includes(Number(item.code)))
+    );
+    setSelectedAmbientes([]);
+
+    // TODO: 🚀 Aqui é o ponto exato onde faremos o PUT do documento
+    // try {
+    //   const updatedDoc = { ...documentoAtual, empreendimentoTopicos: novosTopicos };
+    //   await DocumentoService.updateEmpreendimento(updatedDoc);
+    //   console.log("Documento atualizado com sucesso após adição!");
+    // } catch (error) {
+    //   console.error("Erro ao atualizar o documento após adição:", error);
+    // }
+
+    console.log("Itens adicionados (otimista):", idsToAdd);
+  };
+
   const handleReload = () => {
     setReload((prev) => !prev);
   };
@@ -89,6 +114,16 @@ export default function AdicionarItensDocumento({
           disabled={loading}
           filter
           filterDelay={400}
+        />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          label="Adicionar"
+          icon="pi pi-plus"
+          severity="success"
+          onClick={handleAddItems}
+          disabled={selectedAmbientes.length === 0}
         />
       </div>
       <AdicionarNovoItem onReload={handleReload} />
