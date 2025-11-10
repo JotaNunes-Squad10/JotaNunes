@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { MultiSelect, MultiSelectChangeEvent } from "primereact/multiselect";
 import AdicionarNovoItem from "./AdicionarNovoItem/page";
-import { itemService, marcaService } from "@/lib/api";
+import {
+  EmpreendimentosTopicos,
+  itemService,
+  marcaService,
+  SubTopic,
+  subTopicosAmbienteService,
+} from "@/lib/api";
+import { extractItemIdsFromDocumento } from "@/utils/extractItemsFromDocumento";
 
 interface Props {
   itemAmbienteSelecionado: any;
+  empreendimentoTopicos: EmpreendimentosTopicos[];
 }
 
 interface AmbienteOption {
@@ -15,6 +23,7 @@ interface AmbienteOption {
 
 export default function AdicionarItensDocumento({
   itemAmbienteSelecionado,
+  empreendimentoTopicos,
 }: Props) {
   const [itensAmbiente, setItensAmbiente] = useState<AmbienteOption[]>([]);
   const [selectedAmbientes, setSelectedAmbientes] = useState<AmbienteOption[]>(
@@ -43,6 +52,9 @@ export default function AdicionarItensDocumento({
         }));
 
         setItensAmbiente(itensFormatados);
+
+        // Realiza a lógica de filtragem dos itens que já estão no documento
+        filterItensDocumento(itemAmbienteSelecionado);
       } catch (error) {
         console.error("Erro ao buscar itens:", error);
       } finally {
@@ -52,6 +64,39 @@ export default function AdicionarItensDocumento({
 
     fetchItens();
   }, [itemAmbienteSelecionado, reload]);
+
+  const filterItensDocumento = async (ambienteSelecionado: string) => {
+    try {
+      const ambientes: SubTopic[] =
+        await subTopicosAmbienteService.getAllAmbiente();
+
+      const ambienteEncontrado = ambientes.find(
+        (a) => a.nome === ambienteSelecionado
+      );
+
+      if (!ambienteEncontrado) {
+        console.warn(`Ambiente ${ambienteSelecionado} não encontrado.`);
+        return;
+      }
+
+      const idAmbiente = ambienteEncontrado.id;
+      const idTopico = ambienteEncontrado.topico.id;
+
+      const itemIdsInDocument = extractItemIdsFromDocumento(
+        empreendimentoTopicos,
+        idTopico,
+        idAmbiente
+      );
+
+      const itensFiltrados = itensAmbiente.filter(
+        (item) => !itemIdsInDocument.includes(Number(item.code))
+      );
+
+      setItensAmbiente(itensFiltrados);
+    } catch (error) {
+      console.error("Erro ao filtrar itens do documento", error);
+    }
+  };
 
   const handleReload = () => {
     setReload((prev) => !prev);

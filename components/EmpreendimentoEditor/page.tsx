@@ -112,6 +112,7 @@ export default function EmpreendimentoEditor({
               setAmbienteSelecionado={setAmbienteSelecionado}
               itemAmbienteSelecionado={itemAmbienteSelecionado}
               setItemAmbienteSelecionado={setItemAmbienteSelecionado}
+              empreendimentoTopicos={empreendimentoTopicos}
             />
           </div>
           <div className="w-full overflow-x-auto">
