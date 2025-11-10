@@ -25,17 +25,11 @@ export default function EmpreendimentoEditor({
   const [ambienteSelecionado, setAmbienteSelecionado] = useState("");
   const [itemAmbienteSelecionado, setItemAmbienteSelecionado] = useState("");
 
-  // Gerenciamento do documento
-
-  const [tamanhoAreaDocumento, setTamanhoAreaDocumento] = useState<number>(0);
-  const [padraoDocumento, setPadraoDocumento] = useState<string>("");
-  const [statusDocumento, setStatusDocumento] = useState<string>("");
-  const [versaoDocumento, setVersaoDocumento] = useState<number>(1);
-
   // Estados relacionados aos itens no documento (Apenas busca)
   const [empreendimentoTopicos, setEmpreendimentoTopicos] = useState<
     EmpreendimentosTopicos[]
   >([]);
+  const [itensDocumento, setItensDocumento] = useState<number[]>([]);
 
   // Estado que gerencia o documento para editar
   const [empreendimento, setEmpreendimento] = useState<UpdateEmpreendimento>({
@@ -56,6 +50,14 @@ export default function EmpreendimentoEditor({
     setEmpreendimento((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleAddItems = (ids: number[]) => {
+    setItensDocumento((prev) => [...prev, ...ids]);
+  };
+
+  const handleRemoveItem = (id: number) => {
+    setItensDocumento((prev) => prev.filter((itemId) => itemId !== id));
+  };
+
   // Buscar as informações do documento ao carregar o componente
   useEffect(() => {
     const getInfoDocument = async () => {
@@ -63,7 +65,16 @@ export default function EmpreendimentoEditor({
       console.log("Dados do documento:", documentData);
       if (documentData) {
         setEmpreendimentoTopicos(documentData.empreendimentoTopicos);
+        const idsInDocumento = documentData.empreendimentoTopicos.flatMap(
+          (topico) =>
+            topico.topicoAmbientes.flatMap((amb) =>
+              amb.ambienteItens.map((i) => i.itemId)
+            )
+        );
 
+        console.log(idsInDocumento);
+
+        setItensDocumento(idsInDocumento);
         updateEmpreendimento("nome", documentData.nome);
         updateEmpreendimento("descricao", documentData.descricao);
         updateEmpreendimento("localizacao", documentData.localizacao);
@@ -113,6 +124,8 @@ export default function EmpreendimentoEditor({
               itemAmbienteSelecionado={itemAmbienteSelecionado}
               setItemAmbienteSelecionado={setItemAmbienteSelecionado}
               empreendimentoTopicos={empreendimentoTopicos}
+              itensDocumento={itensDocumento}
+              onAddItems={handleAddItems}
             />
           </div>
           <div className="w-full overflow-x-auto">
@@ -120,6 +133,8 @@ export default function EmpreendimentoEditor({
               empreendimentoTopicos={empreendimentoTopicos}
               topicoSelecionado={ambienteSelecionado}
               ambienteSelecionado={itemAmbienteSelecionado}
+              itensDocumento={itensDocumento}
+              onRemoveItem={handleRemoveItem}
             />
           </div>
           <div>

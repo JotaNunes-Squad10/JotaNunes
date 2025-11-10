@@ -1,22 +1,24 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
-import "primeicons/primeicons.css"; // Garante que o ícone 'pi-times' funcione
+import "primeicons/primeicons.css";
 import {
   EmpreendimentosTopicos,
   itemService,
   subTopicosAmbienteService,
   topicoService,
+  DocumentoService, // ← para fazer o PUT futuramente
 } from "@/lib/api";
 
 interface TableItensProps {
   empreendimentoTopicos: EmpreendimentosTopicos[] | [];
   topicoSelecionado: string;
   ambienteSelecionado: string;
+  itensDocumento: number[];
+  onRemoveItem: (id: number) => void;
 }
 
-// 1. Definição da Interface Mockada
 interface TabelaItem {
   id: number;
   item: string;
@@ -27,109 +29,87 @@ export default function TabelaItens({
   empreendimentoTopicos,
   topicoSelecionado,
   ambienteSelecionado,
+  itensDocumento,
+  onRemoveItem,
 }: TableItensProps) {
   const [itens, setItens] = useState<TabelaItem[]>([]);
 
-  // Lógica para conseguir alinhar o tópico e ambientes
-  useEffect(() => {
-    let idTopic: number | undefined;
-    let idAmbiente: number | undefined;
-
-    const alignInformations = async () => {
-      try {
-        const allTopics = topicoService.getAllTopic();
-        const allAmbiente = subTopicosAmbienteService.getAllAmbiente();
-
-        // Alinhando as informações
-        idTopic = (await allTopics).find(
-          (t) => t.nome == topicoSelecionado
-        )?.id;
-
-        idAmbiente = (await allAmbiente).find(
-          (a) => a.nome === ambienteSelecionado && a.topico.id === idTopic
-        )?.id;
-
-        if (typeof idAmbiente === "number") {
-          const idsInDocumento = getItemsDocument(idTopic, idAmbiente);
-          const itensInformations = await mappingItensInTable(idsInDocumento);
-          if (itensInformations) setItens(itensInformations);
-        }
-      } catch (error) {
-        console.error("Erro ao pegar as informações para alinhamento", error);
-      }
+  /**
+   * 🔹 Carrega itens de acordo com os IDs do documento.
+   * Executa rapidamente e só chama a API se necessário.
+   */
+  const fetchItens = useCallback(async () => {
+    if (!itensDocumento.length) {
+      setItens([]);
       return;
-    };
+    }
 
-    const getItemsDocument = (
-      idTopic: number | undefined,
-      idAmbiente: number | undefined
-    ) => {
-      if (!empreendimentoTopicos) return;
-
-      const topico = empreendimentoTopicos.find((t) => t.topicoId === idTopic);
-
-      if (!topico) return console.warn("Erro, tópico não encontrado.");
-
-      const ambiente = topico.topicoAmbientes.find(
-        (a) => a.ambienteId === idAmbiente
+    try {
+      // Carrega todos os itens por ID em paralelo
+      const dados = await Promise.all(
+        itensDocumento.map((id) => itemService.getItemById(id))
       );
 
-      if (!ambiente) return console.warn("Erro, ambiente não encotrado.");
+      const tabelaFormatada = dados.map((i) => ({
+        id: i.id!,
+        item: i.nome,
+        descricao: i.descricao,
+      }));
 
-      const idsInDocumento = ambiente.ambienteItens.map((i) => i.itemId);
+      setItens(tabelaFormatada);
+    } catch (error) {
+      console.error("Erro ao buscar itens:", error);
+    }
+  }, [itensDocumento]);
 
-      return idsInDocumento;
-    };
+  /**
+   * 🔁 Atualiza itens sempre que o documento mudar.
+   */
+  useEffect(() => {
+    fetchItens();
+  }, [fetchItens]);
 
-    const mappingItensInTable = async (idsItens: number[] | void) => {
-      if (!idsItens || idsItens.length == 0) return;
+  /**
+   * 🔸 Remoção otimista — remove imediatamente do front.
+   */
+  const removeItem = async (itemId: number) => {
+    // Atualiza o estado local instantaneamente (melhor UX)
+    setItens((prev) => prev.filter((item) => item.id !== itemId));
 
-      try {
-        const items = await Promise.all(
-          idsItens.map((id) => itemService.getItemById(id))
-        );
+    // Atualiza o estado global (lista de itens do documento)
+    onRemoveItem(itemId);
 
-        const tabelaItems: TabelaItem[] = items.map((item) => ({
-          id: item.id!,
-          item: item.nome,
-          descricao: item.descricao,
-        }));
+    // TODO: 🚀 Aqui é onde faremos o PUT de atualização do documento
+    // try {
+    //   const updatedDoc = { ...documentoAtual, empreendimentoTopicos: novosTopicos };
+    //   await DocumentoService.updateEmpreendimento(updatedDoc);
+    //   console.log("Documento atualizado com sucesso!");
+    // } catch (error) {
+    //   console.error("Erro ao atualizar o documento:", error);
+    //   // Opcional: reverter a alteração local se falhar
+    // }
 
-        return tabelaItems;
-      } catch (error) {
-        console.error("Erro ao buscar os itens por id", error);
-      }
-    };
-
-    alignInformations();
-  }, [topicoSelecionado, ambienteSelecionado]);
-
-  // Função para remover um item
-  const removeItem = (itemId: number) => {
-    setItens(itens.filter((item) => item.id !== itemId));
-    console.log(`Item com ID ${itemId} removido.`);
-    // Aqui você adicionaria a lógica real de remoção da sua aplicação/API.
+    console.log(`Item ${itemId} removido do documento (remoção otimista).`);
   };
 
-  // 3. Template da Coluna de Ação (Remoção)
-  const actionBodyTemplate = (rowData: TabelaItem) => {
-    return (
-      <Button
-        icon="pi pi-times" // Ícone de 'X' (pi-times)
-        rounded
-        text // Remove o fundo e bordas, deixando apenas o ícone
-        severity="danger" // Cor vermelha para indicar remoção
-        tooltip="Remover item"
-        onClick={() => removeItem(rowData.id)}
-      />
-    );
-  };
+  /**
+   * 🔹 Template da ação de remoção
+   */
+  const actionBodyTemplate = (rowData: TabelaItem) => (
+    <Button
+      icon="pi pi-times"
+      rounded
+      text
+      severity="danger"
+      tooltip="Remover item"
+      onClick={() => removeItem(rowData.id)}
+    />
+  );
 
   return (
     <div className="card mt-10">
       <div className="w-full overflow-x-auto">
         <DataTable value={itens}>
-          {/* Coluna 1: Itens */}
           <Column
             field="item"
             header="Itens"
@@ -140,18 +120,16 @@ export default function TabelaItens({
               textOverflow: "ellipsis",
             }}
           />
-          {/* Coluna 2: Descrição */}
           <Column
             field="descricao"
             header="Descrição"
             style={{
-              width: "50px",
+              width: "50%",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
             }}
           />
-          {/* Coluna 3: Ação (Remoção) */}
           <Column
             header="Remover"
             body={actionBodyTemplate}

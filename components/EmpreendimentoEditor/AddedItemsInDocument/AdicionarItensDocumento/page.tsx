@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { MultiSelect, MultiSelectChangeEvent } from "primereact/multiselect";
 import AdicionarNovoItem from "./AdicionarNovoItem/page";
-import {
-  EmpreendimentosTopicos,
-  itemService,
-  marcaService,
-  SubTopic,
-  subTopicosAmbienteService,
-} from "@/lib/api";
-import { extractItemIdsFromDocumento } from "@/utils/extractItemsFromDocumento";
+import { EmpreendimentosTopicos, itemService, marcaService } from "@/lib/api";
 
 interface Props {
-  itemAmbienteSelecionado: any;
+  itemAmbienteSelecionado: string;
   empreendimentoTopicos: EmpreendimentosTopicos[];
+  itensDocumento: number[];
+  onAddItems: (ids: number[]) => void;
 }
 
 interface AmbienteOption {
@@ -24,6 +19,8 @@ interface AmbienteOption {
 export default function AdicionarItensDocumento({
   itemAmbienteSelecionado,
   empreendimentoTopicos,
+  itensDocumento,
+  onAddItems,
 }: Props) {
   const [itensAmbiente, setItensAmbiente] = useState<AmbienteOption[]>([]);
   const [selectedAmbientes, setSelectedAmbientes] = useState<AmbienteOption[]>(
@@ -34,9 +31,8 @@ export default function AdicionarItensDocumento({
 
   useEffect(() => {
     const fetchItens = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        setSelectedAmbientes([]); // limpa seleção anterior
         let data: any[] = [];
 
         if (itemAmbienteSelecionado === "Descrição Marcas") {
@@ -48,13 +44,15 @@ export default function AdicionarItensDocumento({
         const itensFormatados = data.map((item) => ({
           name: item.nome,
           code: String(item.id),
-          descricao: item.descricao,
+          descricao: "descricao" in item ? item.descricao : "", // 👈 prevenção segura
         }));
 
-        setItensAmbiente(itensFormatados);
+        // Remove itens que já estão no documento
+        const filtrados = itensFormatados.filter(
+          (i) => !itensDocumento.includes(Number(i.code))
+        );
 
-        // Realiza a lógica de filtragem dos itens que já estão no documento
-        filterItensDocumento(itemAmbienteSelecionado);
+        setItensAmbiente(filtrados);
       } catch (error) {
         console.error("Erro ao buscar itens:", error);
       } finally {
@@ -63,40 +61,7 @@ export default function AdicionarItensDocumento({
     };
 
     fetchItens();
-  }, [itemAmbienteSelecionado, reload]);
-
-  const filterItensDocumento = async (ambienteSelecionado: string) => {
-    try {
-      const ambientes: SubTopic[] =
-        await subTopicosAmbienteService.getAllAmbiente();
-
-      const ambienteEncontrado = ambientes.find(
-        (a) => a.nome === ambienteSelecionado
-      );
-
-      if (!ambienteEncontrado) {
-        console.warn(`Ambiente ${ambienteSelecionado} não encontrado.`);
-        return;
-      }
-
-      const idAmbiente = ambienteEncontrado.id;
-      const idTopico = ambienteEncontrado.topico.id;
-
-      const itemIdsInDocument = extractItemIdsFromDocumento(
-        empreendimentoTopicos,
-        idTopico,
-        idAmbiente
-      );
-
-      const itensFiltrados = itensAmbiente.filter(
-        (item) => !itemIdsInDocument.includes(Number(item.code))
-      );
-
-      setItensAmbiente(itensFiltrados);
-    } catch (error) {
-      console.error("Erro ao filtrar itens do documento", error);
-    }
-  };
+  }, [itemAmbienteSelecionado, itensDocumento]);
 
   const handleReload = () => {
     setReload((prev) => !prev);
