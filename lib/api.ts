@@ -150,16 +150,16 @@ export interface TopicoMaterial {
   versoes: number[];
 }
 
-export interface EmprrendimentoTopico {
+export interface EmprendimentoTopico {
   topicoId: number;
   posicao: number;
   topicoAmbientes: {
     ambienteId: number;
     area: number;
     posicao: number;
-    ambienteItens: [{ itemId: number }];
+    ambienteItens: { itemId: number }[]; // ✅ array normal
   }[];
-  topicoMateriais: { materialId: number }[];
+  topicoMateriais: { materialId: number; versoes?: number[] }[] | null; // ✅ permite null
 }
 
 // Interface do Payload PUT
@@ -170,7 +170,7 @@ export interface UpdateEmpreendimento {
   localizacao: string;
   tamanhoArea: number;
   padrao: number;
-  empreendimentoTopicos: any[];
+  empreendimentoTopicos: EmprendimentoTopico[];
 }
 
 // Configuração da API principal
@@ -370,6 +370,5 @@ export const DocumentoService = {
       console.error("Houve um erro ao tentar modificar o documento", error);
       throw error;
     }
-    return;
   },
 };

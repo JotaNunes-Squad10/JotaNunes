@@ -6,7 +6,8 @@ import FormEmpreendimento from "./FormEditPage/page";
 import AddedItemsInDocument from "./AddedItemsInDocument/page";
 import TabelaItens from "./ViewMateralsDocument/page";
 import ObservationDocument from "./ObservationDocument/page";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { Toast } from "primereact/toast";
 import { DocumentoService, UpdateEmpreendimento } from "@/lib/api";
 
 interface EmpreendimentoEditorProps {
@@ -16,32 +17,17 @@ interface EmpreendimentoEditorProps {
 export default function EmpreendimentoEditor({
   documentId,
 }: EmpreendimentoEditorProps) {
-  // Gerenciamento dos ambientes e itens dos ambientes.
   const [ambienteSelecionado, setAmbienteSelecionado] = useState("");
   const [itemAmbienteSelecionado, setItemAmbienteSelecionado] = useState("");
+  const [empreendimento, setEmpreendimento] = useState<UpdateEmpreendimento>();
+  const [loading, setLoading] = useState(false);
+  const toast = useRef<Toast>(null);
 
-  // Estados relacionados aos itens no documento (Apenas busca)
-  // const [empreendimentoTopicos, setEmpreendimentoTopicos] = useState<
-  //   EmpreendimentosTopicos[]
-  // >([]);
-
-  const [itensDocumento, setItensDocumento] = useState<number[]>([]);
-
-  // Estado que gerencia o documento para editar
-  const [empreendimento, setEmpreendimento] = useState<UpdateEmpreendimento>({
-    id: documentId,
-    nome: "",
-    descricao: "",
-    localizacao: "",
-    tamanhoArea: 0,
-    padrao: 1, // Requer alterar de forma dinâmica o padrão
-    empreendimentoTopicos: [],
-  });
-
-  // Busca inicial do documento
+  // 🔹 Buscar documento
   useEffect(() => {
     const getInfoDocument = async () => {
       try {
+        setLoading(true);
         const documentData = await DocumentoService.getDocumentoById(
           documentId
         );
@@ -49,140 +35,223 @@ export default function EmpreendimentoEditor({
 
         setEmpreendimento({
           id: documentData.id,
-          nome: documentData.nome,
-          descricao: documentData.descricao,
-          localizacao: documentData.localizacao,
-          tamanhoArea: documentData.tamanhoArea,
+          nome: documentData.nome || "",
+          descricao: documentData.descricao || "",
+          localizacao: documentData.localizacao || "",
+          tamanhoArea: documentData.tamanhoArea || 0,
           padrao: Number(documentData.padrao) || 1,
-          empreendimentoTopicos: documentData.empreendimentoTopicos || [],
+          empreendimentoTopicos:
+            documentData.empreendimentoTopicos?.map((t: any) => ({
+              topicoId: t.topicoId,
+              posicao: t.posicao ?? 0,
+              topicoAmbientes:
+                t.topicoAmbientes?.map((a: any) => ({
+                  ambienteId: a.ambienteId,
+                  area: a.area ?? 0,
+                  posicao: a.posicao ?? 0,
+                  ambienteItens:
+                    a.ambienteItens?.map((i: any) => ({ itemId: i.itemId })) ||
+                    [],
+                })) || [],
+              topicoMateriais:
+                Array.isArray(t.topicoMateriais) && t.topicoMateriais.length > 0
+                  ? t.topicoMateriais.map((m: any) => ({
+                      materialId: m.materialId,
+                      versoes: m.versoes || [],
+                    }))
+                  : [], // nunca null
+            })) || [],
         });
       } catch (error) {
         console.error("Erro ao carregar documento:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
     getInfoDocument();
   }, [documentId]);
 
-  // Função de atualização de campos simples
+  // 🔹 Atualiza campo simples do empreendimento
   const updateEmpreendimento = (
     field: keyof UpdateEmpreendimento,
     value: any
   ) => {
-    setEmpreendimento((prev) => ({ ...prev, [field]: value }));
+    setEmpreendimento((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
 
-  /**
-   * ✅ handleAddItems — lógica completa
-   *  - cria topico se não existir
-   *  - cria ambiente se não existir
-   *  - adiciona itens novos
-   */
+  // 🔹 Adicionar itens
   const handleAddItems = async (
     ids: number[],
     topicoId: number,
     ambienteId: number
   ) => {
-    if (!ids || ids.length === 0) return;
+    if (!empreendimento) return;
 
-    setEmpreendimento((prev) => {
-      if (!prev) return prev;
-      const clone = structuredClone(prev);
+    // ✅ Cópia profunda e limpeza
+    const clone: UpdateEmpreendimento = JSON.parse(
+      JSON.stringify(empreendimento)
+    );
 
-      // Verifica se o tópico já existe no documento
-      let topico = clone.empreendimentoTopicos.find(
-        (t) => t.topicoId === topicoId
+    clone.nome = clone.nome?.trim() || "Sem nome";
+    clone.descricao = clone.descricao?.trim() || "Sem descrição";
+    clone.localizacao = clone.localizacao?.trim() || "Não informado";
+    clone.padrao = Number(clone.padrao) || 1;
+
+    if (!Array.isArray(clone.empreendimentoTopicos))
+      clone.empreendimentoTopicos = [];
+
+    // 🧩 Garante tópico
+    let topico = clone.empreendimentoTopicos.find(
+      (t) => t.topicoId === topicoId
+    );
+    if (!topico) {
+      topico = {
+        topicoId,
+        posicao: clone.empreendimentoTopicos.length + 1,
+        topicoAmbientes: [],
+        topicoMateriais: [],
+      };
+      clone.empreendimentoTopicos.push(topico);
+    }
+
+    // 🧩 Garante ambiente
+    let ambiente = topico.topicoAmbientes.find(
+      (a) => a.ambienteId === ambienteId
+    );
+    if (!ambiente) {
+      ambiente = {
+        ambienteId,
+        area: 0,
+        posicao: topico.topicoAmbientes.length + 1,
+        ambienteItens: [],
+      };
+      topico.topicoAmbientes.push(ambiente);
+    }
+
+    // 🧩 Adiciona novos itens (sem duplicar)
+    const existentes = ambiente.ambienteItens.map((i) => i.itemId);
+    const novos = ids.filter((id) => !existentes.includes(id));
+    ambiente.ambienteItens.push(...novos.map((id) => ({ itemId: id })));
+
+    // 🔧 Limpa duplicações e nulls
+    topico.topicoAmbientes = topico.topicoAmbientes
+      .filter(Boolean)
+      .map((a) => ({
+        ...a,
+        ambienteItens: a.ambienteItens.filter(Boolean),
+      }));
+
+    topico.topicoMateriais =
+      Array.isArray(topico.topicoMateriais) && topico.topicoMateriais.length > 0
+        ? topico.topicoMateriais
+        : null; // ✅ backend feliz
+
+    // ✅ Atualiza state local
+    setEmpreendimento(clone);
+
+    const payloadToSend: UpdateEmpreendimento = {
+      ...clone,
+      empreendimentoTopicos: clone.empreendimentoTopicos.map((t) => ({
+        topicoId: t.topicoId,
+        posicao: t.posicao ?? 0,
+        topicoAmbientes: t.topicoAmbientes.map((a) => ({
+          ambienteId: a.ambienteId,
+          area: a.area ?? 0,
+          posicao: a.posicao ?? 0,
+          ambienteItens: a.ambienteItens.map((i) => ({ itemId: i.itemId })),
+        })),
+        topicoMateriais: Array.isArray(t.topicoMateriais)
+          ? t.topicoMateriais.map((m) => ({
+              materialId: m.materialId,
+              versoes: m.versoes || [],
+            }))
+          : [],
+      })),
+    };
+
+    console.log("📤 Payload enviado (PUT):", payloadToSend);
+
+    try {
+      setLoading(true);
+      console.log(
+        "📤 Payload (stringificado):",
+        JSON.stringify(clone, null, 2)
       );
-
-      if (!topico) {
-        // Cria um novo tópico se não existir
-        topico = {
-          topicoId,
-          posicao: clone.empreendimentoTopicos.length + 1,
-          topicoAmbientes: [],
-          topicoMateriais: [],
-        };
-        clone.empreendimentoTopicos.push(topico);
-      }
-
-      // Verifica se o ambiente já existe dentro do tópico
-      let ambiente = topico.topicoAmbientes.find(
-        (a: any) => a.ambienteId === ambienteId
-      );
-
-      if (!ambiente) {
-        // Cria um novo ambiente dentro do tópico
-        ambiente = {
-          ambienteId,
-          area: 0,
-          posicao: topico.topicoAmbientes.length + 1,
-          ambienteItens: [],
-        };
-        topico.topicoAmbientes.push(ambiente);
-      }
-
-      // Adiciona os itens (sem duplicar)
-      const existentes = ambiente.ambienteItens.map((i: any) => i.itemId);
-      const novos = ids.filter((id) => !existentes.includes(id));
-
-      ambiente.ambienteItens.push(
-        ...novos.map((id) => ({ itemId: id, versoes: [] }))
-      );
-
-      console.log("✅ Novo estado do payload após adicionar item:");
-      console.log(JSON.stringify(clone, null, 2));
-
-      return { ...clone };
-    });
-
-    // TODO: 🚀 PUT do documento após adição
-    // await DocumentoService.updateEmpreendimento(empreendimento);
+      await DocumentoService.updateEmpreendimento(payloadToSend);
+      toast.current?.show({
+        severity: "success",
+        summary: "Sucesso",
+        detail: "Itens adicionados com sucesso!",
+        life: 3000,
+      });
+    } catch (error) {
+      console.error("❌ Erro ao salvar documento:", error);
+      toast.current?.show({
+        severity: "error",
+        summary: "Erro",
+        detail: "Falha ao salvar no servidor.",
+        life: 4000,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  /**
-   * ✅ handleRemoveItem — remove item do payload
-   */
-  const handleRemoveItem = (
+  // 🔹 Remover itens
+  const handleRemoveItem = async (
     itemId: number,
     topicoId: number,
     ambienteId: number
   ) => {
-    setEmpreendimento((prev) => {
-      if (!prev) return prev;
-      const clone = structuredClone(prev);
+    if (!empreendimento) return;
+    const clone = structuredClone(empreendimento);
 
-      const topico = clone.empreendimentoTopicos.find(
-        (t) => t.topicoId === topicoId
-      );
-      if (!topico) return prev;
+    const topico = clone.empreendimentoTopicos.find(
+      (t) => t.topicoId === topicoId
+    );
+    if (!topico) return;
 
-      const ambiente = topico.topicoAmbientes.find(
-        (a: any) => a.ambienteId === ambienteId
-      );
-      if (!ambiente) return prev;
+    const ambiente = topico.topicoAmbientes.find(
+      (a) => a.ambienteId === ambienteId
+    );
+    if (!ambiente) return;
 
-      ambiente.ambienteItens = ambiente.ambienteItens.filter(
-        (i: any) => i.itemId !== itemId
-      );
+    ambiente.ambienteItens = ambiente.ambienteItens.filter(
+      (i) => i.itemId !== itemId
+    );
 
-      console.log("🗑️ Payload após remoção:");
-      console.log(JSON.stringify(clone, null, 2));
+    setEmpreendimento(clone);
 
-      return { ...clone };
-    });
-
-    // TODO: 🚀 PUT do documento após remoção
-    // await DocumentoService.updateEmpreendimento(empreendimento);
+    try {
+      setLoading(true);
+      await DocumentoService.updateEmpreendimento(clone);
+      toast.current?.show({
+        severity: "info",
+        summary: "Removido",
+        detail: "Item removido com sucesso!",
+        life: 3000,
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar documento:", error);
+      toast.current?.show({
+        severity: "error",
+        summary: "Erro",
+        detail: "Falha ao remover o item do documento.",
+        life: 4000,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (!empreendimento) return <div>Carregando documento...</div>;
+  if (!empreendimento)
+    return <div className="p-4 text-center">Carregando documento...</div>;
 
   return (
     <div className="min-h-screen">
-      <div>
-        <Header />
-      </div>
-
+      <Toast ref={toast} />
+      <Header />
       <CustomSidebarComponent
         ambienteSelecionado={ambienteSelecionado}
         setAmbienteSelecionado={setAmbienteSelecionado}
@@ -192,24 +261,20 @@ export default function EmpreendimentoEditor({
 
       <div className="pt-30 flex justify-center w-full">
         <div className="flex flex-col w-full max-screen-lg px-4 lg:w-[60%]">
-          <div>
-            <FormEmpreendimento
-              empreendimento={empreendimento}
-              updateEmpreendimento={updateEmpreendimento}
-            />
-          </div>
+          <FormEmpreendimento
+            empreendimento={empreendimento}
+            updateEmpreendimento={updateEmpreendimento}
+          />
 
-          <div>
-            <AddedItemsInDocument
-              ambienteSelecionado={ambienteSelecionado}
-              setAmbienteSelecionado={setAmbienteSelecionado}
-              itemAmbienteSelecionado={itemAmbienteSelecionado}
-              setItemAmbienteSelecionado={setItemAmbienteSelecionado}
-              empreendimento={empreendimento}
-              itensDocumento={itensDocumento}
-              onAddItems={handleAddItems}
-            />
-          </div>
+          <AddedItemsInDocument
+            ambienteSelecionado={ambienteSelecionado}
+            setAmbienteSelecionado={setAmbienteSelecionado}
+            itemAmbienteSelecionado={itemAmbienteSelecionado}
+            setItemAmbienteSelecionado={setItemAmbienteSelecionado}
+            empreendimento={empreendimento}
+            itensDocumento={[]}
+            onAddItems={handleAddItems}
+          />
 
           <div className="w-full overflow-x-auto">
             <TabelaItens
@@ -220,12 +285,9 @@ export default function EmpreendimentoEditor({
             />
           </div>
 
-          <div>
-            <ObservationDocument />
-          </div>
+          <ObservationDocument />
         </div>
       </div>
-
       <footer className="mb-10"></footer>
     </div>
   );
