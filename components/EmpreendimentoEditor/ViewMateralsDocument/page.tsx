@@ -31,45 +31,59 @@ export default function TabelaItens({
   onRemoveItem,
 }: Props) {
   const [itens, setItens] = useState<TabelaItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       if (!topicoSelecionado || !ambienteSelecionado) return;
+      setLoading(true); // inicia o loading
       setItens([]);
 
-      const [topics, ambientes] = await Promise.all([
-        topicoService.getAllTopic(),
-        subTopicosAmbienteService.getAllAmbiente(),
-      ]);
+      try {
+        const [topics, ambientes] = await Promise.all([
+          topicoService.getAllTopic(),
+          subTopicosAmbienteService.getAllAmbiente(),
+        ]);
 
-      const topicoId = topics.find((t) => t.nome === topicoSelecionado)?.id;
-      const ambienteId = ambientes.find(
-        (a) => a.nome === ambienteSelecionado && a.topico.id === topicoId
-      )?.id;
+        const topicoId = topics.find((t) => t.nome === topicoSelecionado)?.id;
+        const ambienteId = ambientes.find(
+          (a) => a.nome === ambienteSelecionado && a.topico.id === topicoId
+        )?.id;
 
-      if (!topicoId || !ambienteId) return;
+        if (!topicoId || !ambienteId) {
+          setItens([]);
+          return;
+        }
 
-      const topico = empreendimento.empreendimentoTopicos.find(
-        (t) => t.topicoId === topicoId
-      );
-      const ambiente = topico?.topicoAmbientes.find(
-        (a: any) => a.ambienteId === ambienteId
-      );
-      const ids = ambiente?.ambienteItens.map((i: any) => i.itemId) ?? [];
+        const topico = empreendimento.empreendimentoTopicos.find(
+          (t) => t.topicoId === topicoId
+        );
+        const ambiente = topico?.topicoAmbientes.find(
+          (a: any) => a.ambienteId === ambienteId
+        );
+        const ids = ambiente?.ambienteItens.map((i: any) => i.itemId) ?? [];
 
-      if (ids.length === 0) return;
+        if (ids.length === 0) {
+          setItens([]);
+          return;
+        }
 
-      const itensDetalhes = await Promise.all(
-        ids.map((id: any) => itemService.getItemById(id))
-      );
+        const itensDetalhes = await Promise.all(
+          ids.map((id: any) => itemService.getItemById(id))
+        );
 
-      setItens(
-        itensDetalhes.map((i) => ({
-          id: i.id!,
-          item: i.nome,
-          descricao: i.descricao,
-        }))
-      );
+        setItens(
+          itensDetalhes.map((i) => ({
+            id: i.id!,
+            item: i.nome,
+            descricao: i.descricao,
+          }))
+        );
+      } catch (error) {
+        console.error("Erro ao carregar itens da tabela:", error);
+      } finally {
+        setLoading(false); // encerra o loading
+      }
     };
 
     load();
@@ -89,7 +103,6 @@ export default function TabelaItens({
     if (!topicoId || !ambienteId) return;
 
     onRemoveItem(id, topicoId, ambienteId);
-
     setItens((prev) => prev.filter((i) => i.id !== id));
 
     // TODO: 🚀 PUT para salvar a remoção
@@ -97,7 +110,15 @@ export default function TabelaItens({
 
   return (
     <div className="card mt-8">
-      <DataTable value={itens} emptyMessage="Nenhum item neste ambiente.">
+      <DataTable
+        value={itens}
+        loading={loading}
+        loadingIcon="pi pi-spin pi-spinner"
+        emptyMessage={
+          loading ? "Carregando itens..." : "Nenhum item neste ambiente."
+        }
+        tableStyle={{ minWidth: "50rem" }}
+      >
         <Column field="item" header="Item" style={{ width: "40%" }} />
         <Column field="descricao" header="Descrição" style={{ width: "50%" }} />
         <Column
@@ -110,6 +131,7 @@ export default function TabelaItens({
               text
               severity="danger"
               onClick={() => handleRemove(rowData.id)}
+              disabled={loading}
             />
           )}
         />

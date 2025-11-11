@@ -150,6 +150,18 @@ export interface TopicoMaterial {
   versoes: number[];
 }
 
+export interface EmprrendimentoTopico {
+  topicoId: number;
+  posicao: number;
+  topicoAmbientes: {
+    ambienteId: number;
+    area: number;
+    posicao: number;
+    ambienteItens: [{ itemId: number }];
+  }[];
+  topicoMateriais: { materialId: number }[];
+}
+
 // Interface do Payload PUT
 export interface UpdateEmpreendimento {
   id: string;
