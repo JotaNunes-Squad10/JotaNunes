@@ -107,3 +107,203 @@ export const userService = {
     return { newPassword };
   }
 };
+
+// Interface para Empreendimento
+export interface Empreendimento {
+  id?: string | number;
+  nome?: string;
+  name?: string;
+  descricao?: string;
+  status?: string;
+  localizacao?: string;
+  padrao?: string | number;
+  versao?: number;
+  usuarioAlteracao?: string;
+  dataHoraAlteracao?: string;
+  empreendimentos?: Empreendimento[];
+  empreendimentoTopicos?: EmpreendimentoTopico[];
+}
+
+export interface EmpreendimentoTopico {
+  id?: number;
+  topicoId?: number;
+  posicao?: number;
+  versoes?: number[];
+  topicoAmbientes?: Array<{
+    id?: number;
+    ambienteId?: number;
+    posicao?: number;
+    versoes?: number[];
+    ambienteItens?: Array<{
+      id?: number;
+      itemId?: number;
+      versoes?: number[];
+    }>;
+  }>;
+  topicoMateriais?: Array<{
+    id?: number;
+    materialId?: number;
+    versoes?: number[];
+  }>;
+}
+
+// Item retornado pelo endpoint /api/v1/items/GetItemById/{id}
+export interface Item {
+  id?: number;
+  nome?: string;
+  descricao?: string;
+}
+
+export const itemService = {
+  async getItemById(id: number | string): Promise<Item | null> {
+    try {
+      const response = await authApi.get<{ data: Item }>(`/api/v1/items/GetItemById/${id}`, {
+        headers: { Authorization: getAuthToken() }
+      });
+      const respData = response.data;
+      if (!respData) return null;
+      if ('data' in respData) return (respData as { data: Item }).data || null;
+      return respData as unknown as Item;
+    } catch (err) {
+      console.error(`Erro ao buscar item por id ${id}:`, err);
+      return null;
+    }
+  }
+};
+
+export const empreendimentoService = {
+  async getAllEmpreendimentos(): Promise<Empreendimento[]> {
+    const response = await authApi.get<Empreendimento[] | { data: Empreendimento[] }>(
+      "/api/v1/empreendimento/GetAllEmpreendimentos",
+      { headers: { Authorization: getAuthToken() } }
+    );
+    const respData = response.data;
+    if (Array.isArray(respData)) {
+      return respData as Empreendimento[];
+      console.log('Resposta é um array direto:', respData);
+    }
+    if (respData && typeof respData === 'object' && 'data' in respData && Array.isArray((respData as { data: Empreendimento[] }).data)) {
+      return (respData as { data: Empreendimento[] }).data;
+    }
+    return [];
+  },
+  // Buscar um empreendimento por ID
+  async getEmpreendimentoById(id: string | number): Promise<Empreendimento | null> {
+    try {
+      const response = await authApi.get<Empreendimento | { data: Empreendimento }>(
+        `/api/v1/empreendimento/GetEmpreendimentoById/${id}`,
+        { headers: { Authorization: getAuthToken() } }
+      );
+      const respData = response.data;
+      if (!respData) return null;
+      if (Array.isArray(respData)) {
+        // inesperado: retornar primeiro
+        return respData[0] || null;
+      }
+      if (respData && typeof respData === 'object' && 'data' in respData) {
+        return (respData as { data: Empreendimento }).data || null;
+      }
+      return respData as Empreendimento;
+    } catch (err) {
+      console.error(`Erro ao buscar empreendimento por id ${id}:`, err);
+      return null;
+    }
+  },
+};
+
+export interface Ambiente {
+  id?: number;
+  nome?: string;
+  descricao?: string;
+}
+
+export const ambienteService = {
+  async getAmbienteById(id: number | string): Promise<Ambiente | null> {
+    try {
+      const response = await authApi.get<{ data: Ambiente }>(`/api/v1/ambiente/GetAmbienteById/${id}`, {
+        headers: { Authorization: getAuthToken() }
+      });
+      const respData = response.data;
+      if (!respData) return null;
+      if ('data' in respData) return (respData as { data: Ambiente }).data || null;
+      return respData as unknown as Ambiente;
+    } catch (err) {
+      console.error(`Erro ao buscar ambiente por id ${id}:`, err);
+      return null;
+    }
+  }
+};
+
+export interface Topico {
+  id?: number;
+  nome?: string;
+  descricao?: string;
+}
+
+export const topicoService = {
+  async getTopicoById(id: number | string): Promise<Topico | null> {
+    try {
+      const response = await authApi.get<{ data: Topico }>(`/api/v1/topico/GetTopicoById/${id}`, {
+        headers: { Authorization: getAuthToken() }
+      });
+      const respData = response.data;
+      if (!respData) return null;
+      if ('data' in respData) return (respData as { data: Topico }).data || null;
+      return respData as unknown as Topico;
+    } catch (err) {
+      console.error(`Erro ao buscar topico por id ${id}:`, err);
+      return null;
+    }
+  }
+};
+
+export interface Marca {
+  id?: number;
+  nome?: string;
+}
+
+export interface MarcaMaterialResult {
+  material?: string;
+  marcas?: string[];
+}
+
+export const marcaMaterialService = {
+  async getAllMarcasByMaterialId(id: number | string): Promise<MarcaMaterialResult | null> {
+    try {
+      // allow inspecting non-2xx responses instead of throwing immediately
+      const response = await authApi.get(`/api/v1/marca-material/GetAllMarcasByMaterialId/${id}`, {
+        headers: { Authorization: getAuthToken() },
+        validateStatus: () => true,
+      });
+      // Se a resposta não for 200 OK, retornamos null (server retornou 400/401 etc)
+      if (response.status !== 200) {
+        // opcional: registrar apenas em nível debug
+        console.debug(`marcaMaterialService: status ${response.status} ao buscar marcas para material ${id}`);
+        return null;
+      }
+      const respData = response.data;
+      if (!respData) return null;
+      // se o servidor devolveu texto/html (por ex. página de login), não tentamos parsear
+      const contentType = response.headers && (response.headers['content-type'] || response.headers['Content-Type']);
+      if (typeof respData === 'string' && contentType && !contentType.includes('application/json')) {
+        console.debug(`marcaMaterialService: resposta não-JSON (content-type=${contentType}) para material ${id}`);
+        return null;
+      }
+      // Caso 1: API retorna { data: { materialId, material, marcas: string[] } }
+      if (typeof respData === 'object' && 'data' in respData && respData.data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const inner = (respData as any).data;
+        const result: MarcaMaterialResult = {};
+        if (inner && Array.isArray(inner.marcas)) result.marcas = inner.marcas as string[];
+        if (inner && (inner.material || inner.materialName)) result.material = inner.material || inner.materialName;
+        return result;
+      }
+      // Caso 2: API retorna diretamente um array de strings
+      if (Array.isArray(respData)) return { marcas: respData as string[] };
+      return null;
+    } catch (err) {
+      console.error(`Erro ao buscar marcas do material ${id}:`, err);
+      return null;
+    }
+  }
+};
