@@ -87,17 +87,38 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
     }
   };
 
-  // Decodifica o token JWT e extrai o perfil
+  // Decodifica o token JWT e extrai o grupo
   useEffect(() => {
     try {
       const token = getCookie("accessToken");
-      if (token && typeof token === "string") {
-        type JwtPayload = { profile?: number };
-        const decoded = jwtDecode<JwtPayload>(token);
-        setUserProfile(decoded.profile || null);
+
+      if (!token || typeof token !== "string") {
+        setUserProfile(null);
+        return;
       }
+
+      type JwtPayload = {
+        groups?: string[];
+      };
+
+      const decoded = jwtDecode<JwtPayload>(token);
+      const grupo = decoded.groups?.[0];
+
+      if (!grupo) {
+        setUserProfile(null);
+        return;
+      }
+
+      const mapPerfil: Record<string, number> = {
+        Administrador: 1,
+        Gestor: 2,
+        Operador: 3,
+      };
+
+      const perfilId = mapPerfil[grupo] ?? null;
+      setUserProfile(perfilId);
     } catch (error) {
-      console.error("Erro ao decodificar token:", error);
+      console.error("Erro ao decodificar o token:", error);
       setUserProfile(null);
     }
   }, []);
