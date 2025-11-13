@@ -61,7 +61,7 @@ const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos }) => {
   const statusList = [
     { key: "Editando", label: "Editando", icon: <FilePen color="red" size={30} strokeWidth={1} /> },
     { key: "Pendente", label: "Pendente de aprovação", icon: <FileCheck2 color="red" size={30} strokeWidth={1} /> },
-    { key: "Revisão", label: "Em Revisão", icon: <Eye color="red" size={30} strokeWidth={1} /> },
+    { key: "Em revisão", label: "Em Revisão", icon: <Eye color="red" size={30} strokeWidth={1} /> },
     { key: "Aprovado", label: "Aprovados", icon: <ThumbsUp color="red" size={30} strokeWidth={1} /> },
     { key: "Cancelado", label: "Cancelados", icon: <BookX color="red" size={30} strokeWidth={1} /> },
   ];

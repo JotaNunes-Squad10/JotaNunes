@@ -83,7 +83,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   const getDropdownOptions = (status: string) => {
     switch (status) {
       case "Editando":
-      case "Revisão":
+      case "Em revisão":
         return ["Editar", "Mudar status"];
       case "Pendente":
         return ["Revisar", "Mudar status"];
@@ -133,9 +133,9 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
 
   // Define quais status cada perfil pode editar
   const permissoes: Record<number, string[]> = {
-    1: ["Editando", "Pendente", "Revisão", "Aprovado", "Cancelado"], // Admin
+    1: ["Editando", "Pendente", "Em revisão", "Aprovado", "Cancelado"], // Admin
     2: ["Pendente", "Aprovado"], // Gestor
-    3: ["Editando", "Revisão"], // Operador
+    3: ["Editando", "Em revisão"], // Operador
   };
 
   const podeEditar = (perfil: number | null, status: string) => {
@@ -186,6 +186,35 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
     });
   };
 
+  const atualizarStatusEmpreendimento = async (id: string, status: number) => {
+  try {
+    const token = getCookie("accessToken");
+    const response = await fetch(
+      "https://jotanunesservice.onrender.com/api/v1/empreendimento/UpdateEmpreendimentoStatus",
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json-patch+json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id, status }),
+      }
+    );
+
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Erro ao atualizar status: ${text}`);
+    }
+
+    const data = await response.json();
+    console.log("Status atualizado com sucesso:", data);
+    return data;
+  } catch (error) {
+    console.error("Falha ao atualizar status:", error);
+    alert("Falha ao atualizar o status do empreendimento.");
+  }
+};
 
   const handleSort = (column: "nome" | "ultimaAlteracao" | "usuario") => {
     setPage(0);
@@ -368,7 +397,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                             ? "#A8E6A1"
                             : empreendimento.status === "Pendente"
                             ? "#FFD966"
-                            : empreendimento.status === "Revisão"
+                            : empreendimento.status === "Em revisão"
                             ? "#FF9800"
                             : empreendimento.status === "Aprovado"
                             ? "#4CAF50"
@@ -447,10 +476,10 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                 const opcoesStatus =
                   status === "Editando"
                     ? ["Pendente"]
-                    : status === "Revisão"
+                    : status === "Em revisão"
                     ? ["Pendente"]
                     : status === "Pendente"
-                    ? ["Revisão", "Aprovados"]
+                    ? ["Em revisão", "Aprovados"]
                     : [];
 
                 return opcoesStatus.map((novo) => (
@@ -524,11 +553,25 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
           <Button
             variant="contained"
             color="success"
-            onClick={() => {
-              console.log(
-                `Confirmado: mudar ${selectedEmp?.nome} de ${selectedEmp?.status} para ${novoStatusSelecionado}`
-              );
+            onClick={async () => {
+              if (!selectedEmp || !novoStatusSelecionado) return;
+
+              
+              const mapStatus: Record<string, number> = {
+                Editando: 0,
+                Pendente: 1,
+                'Em revisão': 2,
+                Aprovado: 3,
+                Cancelado: 4,
+              };
+
+              const novoStatusCode = mapStatus[novoStatusSelecionado] ?? 0;
+
+              await atualizarStatusEmpreendimento(selectedEmp.id.toString(), novoStatusCode);
+              
               setOpenConfirmModal(false);
+
+              window.location.reload();
             }}
             sx={{ borderRadius: "20px", px: 3 }}
           >
