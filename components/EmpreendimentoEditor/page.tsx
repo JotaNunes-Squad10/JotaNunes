@@ -1,14 +1,36 @@
 "use client";
 
+import React, { useEffect, useRef, useState } from "react";
 import Header from "../../components/headerUser/page";
 import CustomSidebarComponent from "./SideBar/page";
 import FormEmpreendimento from "./FormEditPage/page";
 import AddedItemsInDocument from "./AddedItemsInDocument/page";
 import TabelaItens from "./ViewMateralsDocument/page";
 import ObservationDocument from "./ObservationDocument/page";
-import { useEffect, useState, useRef } from "react";
 import { Toast } from "primereact/toast";
-import { DocumentoService, UpdateEmpreendimento } from "@/lib/api";
+import {
+  DocumentoService,
+  UpdateEmpreendimento,
+  topicoService,
+  subTopicosAmbienteService,
+  MarcaMateriais,
+  marcaService,
+} from "@/lib/api";
+
+/**
+ * EmpreendimentoEditor/page.tsx
+ *
+ * Versão corrigida e completa do componente principal:
+ * - carrega documento
+ * - edita localmente (add / remove) com optimistic updates
+ * - monta payload defensivo compatível com a API
+ * - faz PUT (updateEmpreendimento) e faz rollback em caso de falha
+ * - exibe toasts para sucesso/erro/aviso
+ *
+ * Observações:
+ * - A API mostrou-se sensível a fields nulos; por isso garantimos arrays vazios em vez de null.
+ * - Se o backend eventualmente exigir `topicoMateriais: null` especificamente, adapte a função buildPayloadForApi.
+ */
 
 interface EmpreendimentoEditorProps {
   documentId: string;
@@ -17,62 +39,154 @@ interface EmpreendimentoEditorProps {
 export default function EmpreendimentoEditor({
   documentId,
 }: EmpreendimentoEditorProps) {
-  const [ambienteSelecionado, setAmbienteSelecionado] = useState("");
-  const [itemAmbienteSelecionado, setItemAmbienteSelecionado] = useState("");
-  const [empreendimento, setEmpreendimento] = useState<UpdateEmpreendimento>();
-  const [loading, setLoading] = useState(false);
-  const toast = useRef<Toast>(null);
+  const [ambienteSelecionado, setAmbienteSelecionado] = useState<string>("");
+  const [itemAmbienteSelecionado, setItemAmbienteSelecionado] =
+    useState<string>("");
+  const [empreendimento, setEmpreendimento] = useState<
+    UpdateEmpreendimento | undefined
+  >(undefined);
+  const [loading, setLoading] = useState<boolean>(false);
+  const toast = useRef<Toast | null>(null);
+  const [marcaMaterial, setMarcaMaterial] = useState<MarcaMateriais[]>();
 
-  // 🔹 Buscar documento
+  // Get de Marcas Material
   useEffect(() => {
-    const getInfoDocument = async () => {
+    const getMarcaMaterial = async () => {
+      try {
+        const response = await marcaService.getAllMarcaMateriais();
+        setMarcaMaterial(response);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    getMarcaMaterial();
+  }, []);
+
+  /**
+   * buildPayloadForApi
+   * Recebe estado local e retorna um payload estritamente compatível com o contrato esperado pela API.
+   * Garante:
+   * - campos numéricos como number
+   * - strings não-nulas
+   * - topicoMateriais como array (não null) — a API já respondeu que espera o campo presente
+   */
+  const buildPayloadForApi = (
+    doc: UpdateEmpreendimento
+  ): UpdateEmpreendimento => {
+    const padraoNumber = Number(doc.padrao) || 1;
+
+    const empreendTopicos =
+      (doc.empreendimentoTopicos || []).map((t: any, ti: number) => {
+        const topicoAmbientes =
+          (t.topicoAmbientes || []).map((a: any, ai: number) => ({
+            ambienteId: Number(a.ambienteId),
+            area: a.area ?? 0,
+            posicao: a.posicao ?? ai + 1,
+            ambienteItens:
+              (a.ambienteItens || []).map((it: any) => ({
+                itemId: Number(it.itemId),
+              })) || [],
+          })) || [];
+
+        // Mantemos array (mesmo que vazio). Se a API quiser null, alterar aqui.
+        const topicoMateriais =
+          Array.isArray(t.topicoMateriais) && t.topicoMateriais.length > 0
+            ? t.topicoMateriais.map((m: any) => ({
+                materialId: Number(m.materialId),
+                ...(m.versoes ? { versoes: m.versoes } : {}),
+              }))
+            : [];
+
+        return {
+          topicoId: Number(t.topicoId),
+          posicao: t.posicao ?? ti + 1,
+          topicoAmbientes,
+          topicoMateriais,
+        };
+      }) || [];
+
+    return {
+      id: doc.id,
+      nome: doc.nome ?? "",
+      descricao: doc.descricao ?? "",
+      localizacao: doc.localizacao ?? "",
+      tamanhoArea: Number(doc.tamanhoArea) || 0,
+      padrao: padraoNumber,
+      empreendimentoTopicos: empreendTopicos as any,
+    };
+  };
+
+  // Carrega documento ao montar / quando documentId mudar
+  useEffect(() => {
+    let mounted = true;
+    const loadDocument = async () => {
       try {
         setLoading(true);
         const documentData = await DocumentoService.getDocumentoById(
           documentId
         );
-        if (!documentData) return;
+        if (!documentData) {
+          if (mounted) setEmpreendimento(undefined);
+          return;
+        }
 
-        setEmpreendimento({
+        // Normaliza o documento recebido para o formato UpdateEmpreendimento
+        const normalized: UpdateEmpreendimento = {
           id: documentData.id,
-          nome: documentData.nome || "",
-          descricao: documentData.descricao || "",
-          localizacao: documentData.localizacao || "",
-          tamanhoArea: documentData.tamanhoArea || 0,
+          nome: documentData.nome ?? "",
+          descricao: documentData.descricao ?? "",
+          localizacao: documentData.localizacao ?? "",
+          tamanhoArea: Number(documentData.tamanhoArea) || 0,
           padrao: Number(documentData.padrao) || 1,
           empreendimentoTopicos:
-            documentData.empreendimentoTopicos?.map((t: any) => ({
-              topicoId: t.topicoId,
-              posicao: t.posicao ?? 0,
-              topicoAmbientes:
-                t.topicoAmbientes?.map((a: any) => ({
-                  ambienteId: a.ambienteId,
-                  area: a.area ?? 0,
-                  posicao: a.posicao ?? 0,
-                  ambienteItens:
-                    a.ambienteItens?.map((i: any) => ({ itemId: i.itemId })) ||
-                    [],
-                })) || [],
-              topicoMateriais:
-                Array.isArray(t.topicoMateriais) && t.topicoMateriais.length > 0
-                  ? t.topicoMateriais.map((m: any) => ({
-                      materialId: m.materialId,
-                      versoes: m.versoes || [],
-                    }))
-                  : [], // nunca null
-            })) || [],
-        });
+            (documentData.empreendimentoTopicos || []).map(
+              (t: any, ti: number) => ({
+                topicoId: Number(t.topicoId),
+                posicao: t.posicao ?? ti + 1,
+                topicoAmbientes:
+                  (t.topicoAmbientes || []).map((a: any, ai: number) => ({
+                    ambienteId: Number(a.ambienteId),
+                    area: a.area ?? 0,
+                    posicao: a.posicao ?? ai + 1,
+                    ambienteItens:
+                      (a.ambienteItens || []).map((it: any) => ({
+                        itemId: Number(it.itemId),
+                      })) || [],
+                  })) || [],
+                topicoMateriais:
+                  Array.isArray(t.topicoMateriais) &&
+                  t.topicoMateriais.length > 0
+                    ? t.topicoMateriais.map((m: any) => ({
+                        materialId: Number(m.materialId),
+                        versoes: m.versoes || [],
+                      }))
+                    : [],
+              })
+            ) || [],
+        };
+
+        if (mounted) setEmpreendimento(normalized);
       } catch (error) {
         console.error("Erro ao carregar documento:", error);
+        toast.current?.show?.({
+          severity: "error",
+          summary: "Erro",
+          detail: "Falha ao carregar documento.",
+          life: 4000,
+        });
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
-    getInfoDocument();
+    loadDocument();
+    return () => {
+      mounted = false;
+    };
   }, [documentId]);
 
-  // 🔹 Atualiza campo simples do empreendimento
+  // Atualiza campos simples (nome, localizacao, ...)
   const updateEmpreendimento = (
     field: keyof UpdateEmpreendimento,
     value: any
@@ -80,173 +194,199 @@ export default function EmpreendimentoEditor({
     setEmpreendimento((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
 
-  // 🔹 Adicionar itens
+  /**
+   * handleAddItems
+   * - ids: array de ids a adicionar
+   * - topicoId / ambienteId: onde adicionar
+   *
+   * Fluxo:
+   *  - snapshot (before) para rollback
+   *  - aplica alteração no clone (optimistic)
+   *  - atualiza state local imediatamente
+   *  - monta payload defensivo e chama API
+   *  - em sucesso: atualiza state com o payload retornado (ou mantem clone)
+   *  - em erro: faz rollback e mostra toast
+   */
   const handleAddItems = async (
     ids: number[],
     topicoId: number,
     ambienteId: number
   ) => {
     if (!empreendimento) return;
+    if (!Array.isArray(ids) || ids.length === 0) return;
 
-    // ✅ Cópia profunda e limpeza
-    const clone: UpdateEmpreendimento = JSON.parse(
+    const before = JSON.parse(
       JSON.stringify(empreendimento)
-    );
-
-    clone.nome = clone.nome?.trim() || "Sem nome";
-    clone.descricao = clone.descricao?.trim() || "Sem descrição";
-    clone.localizacao = clone.localizacao?.trim() || "Não informado";
-    clone.padrao = Number(clone.padrao) || 1;
+    ) as UpdateEmpreendimento;
+    const clone = JSON.parse(
+      JSON.stringify(empreendimento)
+    ) as UpdateEmpreendimento;
 
     if (!Array.isArray(clone.empreendimentoTopicos))
       clone.empreendimentoTopicos = [];
 
-    // 🧩 Garante tópico
     let topico = clone.empreendimentoTopicos.find(
-      (t) => t.topicoId === topicoId
-    );
+      (t) => Number(t.topicoId) === Number(topicoId)
+    ) as any;
+
     if (!topico) {
       topico = {
-        topicoId,
-        posicao: clone.empreendimentoTopicos.length + 1,
+        topicoId: Number(topicoId),
+        posicao: (clone.empreendimentoTopicos || []).length + 1,
         topicoAmbientes: [],
         topicoMateriais: [],
       };
       clone.empreendimentoTopicos.push(topico);
     }
 
-    // 🧩 Garante ambiente
-    let ambiente = topico.topicoAmbientes.find(
-      (a) => a.ambienteId === ambienteId
-    );
+    let ambiente = (topico.topicoAmbientes || []).find(
+      (a: any) => Number(a.ambienteId) === Number(ambienteId)
+    ) as any;
+
     if (!ambiente) {
       ambiente = {
-        ambienteId,
+        ambienteId: Number(ambienteId),
         area: 0,
-        posicao: topico.topicoAmbientes.length + 1,
+        posicao: (topico.topicoAmbientes || []).length + 1,
         ambienteItens: [],
       };
-      topico.topicoAmbientes.push(ambiente);
+      topico.topicoAmbientes = [...(topico.topicoAmbientes || []), ambiente];
     }
 
-    // 🧩 Adiciona novos itens (sem duplicar)
-    const existentes = ambiente.ambienteItens.map((i) => i.itemId);
-    const novos = ids.filter((id) => !existentes.includes(id));
-    ambiente.ambienteItens.push(...novos.map((id) => ({ itemId: id })));
+    const existentes = (ambiente.ambienteItens || []).map((i: any) =>
+      Number(i.itemId)
+    );
+    const novos = ids.filter((id) => !existentes.includes(Number(id)));
+    if (novos.length === 0) {
+      toast.current?.show?.({
+        severity: "warn",
+        summary: "Aviso",
+        detail: "Nenhum item novo para adicionar.",
+        life: 2500,
+      });
+      return;
+    }
 
-    // 🔧 Limpa duplicações e nulls
-    topico.topicoAmbientes = topico.topicoAmbientes
-      .filter(Boolean)
-      .map((a) => ({
-        ...a,
-        ambienteItens: a.ambienteItens.filter(Boolean),
-      }));
+    ambiente.ambienteItens = [
+      ...(ambiente.ambienteItens || []),
+      ...novos.map((id) => ({ itemId: Number(id) })),
+    ];
 
-    topico.topicoMateriais =
-      Array.isArray(topico.topicoMateriais) && topico.topicoMateriais.length > 0
-        ? topico.topicoMateriais
-        : null; // ✅ backend feliz
-
-    // ✅ Atualiza state local
+    // optimistic update
     setEmpreendimento(clone);
 
-    const payloadToSend: UpdateEmpreendimento = {
-      ...clone,
-      empreendimentoTopicos: clone.empreendimentoTopicos.map((t) => ({
-        topicoId: t.topicoId,
-        posicao: t.posicao ?? 0,
-        topicoAmbientes: t.topicoAmbientes.map((a) => ({
-          ambienteId: a.ambienteId,
-          area: a.area ?? 0,
-          posicao: a.posicao ?? 0,
-          ambienteItens: a.ambienteItens.map((i) => ({ itemId: i.itemId })),
-        })),
-        topicoMateriais: Array.isArray(t.topicoMateriais)
-          ? t.topicoMateriais.map((m) => ({
-              materialId: m.materialId,
-              versoes: m.versoes || [],
-            }))
-          : [],
-      })),
-    };
-
-    console.log("📤 Payload enviado (PUT):", payloadToSend);
+    const payload = buildPayloadForApi(clone);
 
     try {
       setLoading(true);
-      console.log(
-        "📤 Payload (stringificado):",
-        JSON.stringify(clone, null, 2)
-      );
-      await DocumentoService.updateEmpreendimento(payloadToSend);
-      toast.current?.show({
+      console.log("📤 Payload enviado (PUT):", payload);
+      await DocumentoService.updateEmpreendimento(payload);
+      // no retorno da API o backend não envia o recurso atualizado completo (depende do backend).
+      // Para manter o state consistente com o que foi enviado:
+      setEmpreendimento(payload);
+      toast.current?.show?.({
         severity: "success",
         summary: "Sucesso",
-        detail: "Itens adicionados com sucesso!",
+        detail: "Itens adicionados ao documento!",
         life: 3000,
       });
-    } catch (error) {
-      console.error("❌ Erro ao salvar documento:", error);
-      toast.current?.show({
+    } catch (err) {
+      console.error("❌ Erro ao salvar (add):", err);
+      setEmpreendimento(before); // rollback
+      toast.current?.show?.({
         severity: "error",
         summary: "Erro",
-        detail: "Falha ao salvar no servidor.",
-        life: 4000,
+        detail: "Falha ao salvar alterações (adição). Revertendo.",
+        life: 5000,
       });
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔹 Remover itens
+  /**
+   * handleRemoveItem
+   * - optimistic update + PUT + rollback em erro
+   */
   const handleRemoveItem = async (
     itemId: number,
     topicoId: number,
     ambienteId: number
   ) => {
     if (!empreendimento) return;
-    const clone = structuredClone(empreendimento);
 
-    const topico = clone.empreendimentoTopicos.find(
-      (t) => t.topicoId === topicoId
+    const before = JSON.parse(
+      JSON.stringify(empreendimento)
+    ) as UpdateEmpreendimento;
+    const clone = JSON.parse(
+      JSON.stringify(empreendimento)
+    ) as UpdateEmpreendimento;
+
+    const topico = (clone.empreendimentoTopicos || []).find(
+      (t: any) => Number(t.topicoId) === Number(topicoId)
+    ) as any;
+
+    if (!topico) {
+      toast.current?.show?.({
+        severity: "warn",
+        summary: "Aviso",
+        detail: "Tópico não encontrado no documento.",
+        life: 3000,
+      });
+      return;
+    }
+
+    const ambiente = (topico.topicoAmbientes || []).find(
+      (a: any) => Number(a.ambienteId) === Number(ambienteId)
+    ) as any;
+
+    if (!ambiente) {
+      toast.current?.show?.({
+        severity: "warn",
+        summary: "Aviso",
+        detail: "Ambiente não encontrado no documento.",
+        life: 3000,
+      });
+      return;
+    }
+
+    ambiente.ambienteItens = (ambiente.ambienteItens || []).filter(
+      (i: any) => Number(i.itemId) !== Number(itemId)
     );
-    if (!topico) return;
 
-    const ambiente = topico.topicoAmbientes.find(
-      (a) => a.ambienteId === ambienteId
-    );
-    if (!ambiente) return;
-
-    ambiente.ambienteItens = ambiente.ambienteItens.filter(
-      (i) => i.itemId !== itemId
-    );
-
+    // optimistic update
     setEmpreendimento(clone);
+
+    const payload = buildPayloadForApi(clone);
 
     try {
       setLoading(true);
-      await DocumentoService.updateEmpreendimento(clone);
-      toast.current?.show({
+      console.log("📤 Payload enviado (PUT):", payload);
+      await DocumentoService.updateEmpreendimento(payload);
+      setEmpreendimento(payload);
+      toast.current?.show?.({
         severity: "info",
         summary: "Removido",
         detail: "Item removido com sucesso!",
         life: 3000,
       });
-    } catch (error) {
-      console.error("Erro ao atualizar documento:", error);
-      toast.current?.show({
+    } catch (err) {
+      console.error("❌ Erro ao salvar (remove):", err);
+      setEmpreendimento(before); // rollback
+      toast.current?.show?.({
         severity: "error",
         summary: "Erro",
-        detail: "Falha ao remover o item do documento.",
-        life: 4000,
+        detail: "Falha ao remover item no servidor. Revertendo.",
+        life: 5000,
       });
     } finally {
       setLoading(false);
     }
   };
 
-  if (!empreendimento)
+  if (!empreendimento) {
     return <div className="p-4 text-center">Carregando documento...</div>;
+  }
 
   return (
     <div className="min-h-screen">
@@ -272,7 +412,7 @@ export default function EmpreendimentoEditor({
             itemAmbienteSelecionado={itemAmbienteSelecionado}
             setItemAmbienteSelecionado={setItemAmbienteSelecionado}
             empreendimento={empreendimento}
-            itensDocumento={[]}
+            itensDocumento={[]} // o componente lê do empreendimento
             onAddItems={handleAddItems}
           />
 

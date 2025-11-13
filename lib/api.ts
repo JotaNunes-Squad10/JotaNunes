@@ -46,6 +46,22 @@ export interface Marca {
   nome: string;
 }
 
+export interface MarcaMateriais {
+  id: number;
+  marca: {
+    id: number;
+    nome: string;
+  };
+  material: {
+    id: number;
+    nome: string;
+  };
+}
+
+interface MarcaMateriaisGet {
+  data: MarcaMateriais[];
+}
+
 export interface GetAllTopicResponse {
   data: Topico[];
 }
@@ -302,6 +318,14 @@ export const marcaService = {
   async getAllMarca(): Promise<Marca[]> {
     const response = await axios.get<GetAllMarcaProps>(
       "https://jotanunesservice.onrender.com/api/v1/marca/GetAllMarcas"
+    );
+
+    return response.data.data;
+  },
+
+  async getAllMarcaMateriais(): Promise<MarcaMateriais[]> {
+    const response = await axios.get<MarcaMateriaisGet>(
+      "https://jotanunesservice.onrender.com/api/v1/marca-material/GetAllMarcaMateriais"
     );
 
     return response.data.data;

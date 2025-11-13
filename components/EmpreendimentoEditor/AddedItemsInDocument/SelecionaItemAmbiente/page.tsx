@@ -60,6 +60,8 @@ export default function SelecioneItemAmbiente({
     } else {
       setOpcoesFiltradas([]);
     }
+
+    console.log(ambienteSelecionado);
   }, [ambienteSelecionado, reloadFlag]);
 
   const handleCreateNewSubItem = () => {
@@ -81,6 +83,9 @@ export default function SelecioneItemAmbiente({
           optionLabel="name"
           placeholder="Selecione Item do Ambiente"
           className="w-full md:w-14rem"
+          disabled={
+            ambienteSelecionado.toLocaleLowerCase() === "marcas" ? true : false
+          }
         />
       </div>
       <AdicionarNovoAmbiente
