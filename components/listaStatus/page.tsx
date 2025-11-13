@@ -79,8 +79,8 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
         return ["Editar", "Mudar status"];
       case "Pendente":
         return ["Revisar", "Mudar status"];
-      case "Aprovados":
-      case "Cancelados":
+      case "Aprovado":
+      case "Cancelado":
         return ["Visualizar", "Criar padrão"];
       default:
         return [];
@@ -146,9 +146,38 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   // Ordenação e filtragem
   const parseDateToTimestamp = (s?: string): number => {
     if (!s) return 0;
-    const [d, m, y] = s.split("/").map(Number);
-    return new Date(y, m - 1, d).getTime();
+
+    // ISO 8601 (ex: 2025-10-30T17:51:37.173961)
+    if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+      const t = new Date(s).getTime();
+      return isNaN(t) ? 0 : t;
+    }
+
+    // Formato dd/mm/yyyy ou dd/mm/yyyy HH:MM:SS
+    if (s.includes("/")) {
+      const [d, m, y] = s.split("/").map(Number);
+      const t = new Date(y, (m || 1) - 1, d).getTime();
+      return isNaN(t) ? 0 : t;
+    }
+
+    // fallback: tenta o parser do Date (lida com outros formatos)
+    const t = Date.parse(s);
+    return isNaN(t) ? 0 : t;
   };
+
+    const formatarData = (dataISO?: string) => {
+    if (!dataISO) return "";
+    const d = new Date(dataISO);
+    if (isNaN(d.getTime())) return dataISO;
+    return d.toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
 
   const handleSort = (column: "nome" | "ultimaAlteracao" | "usuario") => {
     setPage(0);
@@ -164,7 +193,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
       (filtroAtivo === "Todos" || emp.status === filtroAtivo) &&
       (emp.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.usuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.ultimaAlteracao.toLowerCase().includes(searchTerm.toLowerCase()))
+        (emp.ultimaAlteracao || "").toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const empreendimentosOrdenados = [...empreendimentosFiltrados].sort((a, b) => {
@@ -172,12 +201,6 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
       const ta = parseDateToTimestamp(a.ultimaAlteracao);
       const tb = parseDateToTimestamp(b.ultimaAlteracao);
       return orderAsc ? ta - tb : tb - ta;
-    }
-
-    if (orderBy === "nome") {
-      const numA = parseInt(a.nome.match(/\d+/)?.[0] || "0", 10);
-      const numB = parseInt(b.nome.match(/\d+/)?.[0] || "0", 10);
-      return orderAsc ? numA - numB : numB - numA;
     }
 
     const fa = a[orderBy].toLowerCase();
@@ -325,7 +348,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                   }}
                 >
                   <TableCell align="center">{empreendimento.nome}</TableCell>
-                  <TableCell align="center">{empreendimento.ultimaAlteracao}</TableCell>
+                  <TableCell align="center">{formatarData(empreendimento.ultimaAlteracao)}</TableCell>
                   <TableCell align="center">{empreendimento.versao}</TableCell>
                   <TableCell align="center">{empreendimento.usuario}</TableCell>
                   <TableCell align="center">
