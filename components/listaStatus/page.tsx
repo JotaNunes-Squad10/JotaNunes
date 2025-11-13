@@ -558,11 +558,11 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
 
               
               const mapStatus: Record<string, number> = {
-                Editando: 0,
-                Pendente: 1,
+                Aprovado: 1,
                 'Em revisão': 2,
-                Aprovado: 3,
-                Cancelado: 4,
+                Pendente: 3,
+                Editando: 4,
+                Cancelado: 5,
               };
 
               const novoStatusCode = mapStatus[novoStatusSelecionado] ?? 0;
