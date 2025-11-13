@@ -17,6 +17,12 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FirstPageIcon from "@mui/icons-material/FirstPage";
@@ -60,6 +66,8 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   // Novo estado para dropdown
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedEmp, setSelectedEmp] = useState<Empreendimento | null>(null);
+  const [openConfirmModal, setOpenConfirmModal] = useState(false);
+  const [novoStatusSelecionado, setNovoStatusSelecionado] = useState<string | null>(null);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, emp: Empreendimento) => {
     setAnchorEl(event.currentTarget);
@@ -417,7 +425,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                   key={opt}
                   onClick={() => {
                     if (opt === "Mudar status") {
-                      setSelectedEmp({ ...selectedEmp, showStatusChange: true });
+                      setSelectedEmp((prev) => prev ? { ...prev, showStatusChange: true } : selectedEmp);
                     } else {
                       handleMenuClose();
                     }
@@ -449,15 +457,15 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                   <MenuItem
                     key={novo}
                     onClick={() => {
-                      handleMenuClose();
+                      setNovoStatusSelecionado(novo);
+                      setOpenConfirmModal(true);
+                      setAnchorEl(null);
                     }}
                     sx={{
                       fontWeight: "bold",
                       borderBottom: "1px solid #d7d7d7",
                       "&:last-of-type": { borderBottom: "none" },
-                      "&:hover": {
-                        backgroundColor: "#e9e9e9",
-                      },
+                      "&:hover": { backgroundColor: "#e9e9e9" },
                     }}
                   >
                     {novo}
@@ -484,6 +492,50 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
           </IconButton>
         </Box>
       )}
+
+      {/* Modal de confirmação */}
+      <Dialog
+        open={openConfirmModal}
+        onClose={() => setOpenConfirmModal(false)}
+        PaperProps={{
+          sx: { borderRadius: "16px", p: 1, minWidth: 360 },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: "bold", textAlign: "center" }}>
+          Confirmar mudança de status
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ textAlign: "center" }}>
+            Deseja realmente mudar o empreendimento{" "}
+            <strong>{selectedEmp?.nome}</strong> de{" "}
+            <strong>{selectedEmp?.status}</strong> para{" "}
+            <strong>{novoStatusSelecionado}</strong>?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => setOpenConfirmModal(false)}
+            sx={{ borderRadius: "20px", px: 3 }}
+          >
+            Não
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => {
+              console.log(
+                `Confirmado: mudar ${selectedEmp?.nome} de ${selectedEmp?.status} para ${novoStatusSelecionado}`
+              );
+              setOpenConfirmModal(false);
+            }}
+            sx={{ borderRadius: "20px", px: 3 }}
+          >
+            Sim
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };
