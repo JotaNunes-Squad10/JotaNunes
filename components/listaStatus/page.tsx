@@ -83,10 +83,11 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   const getDropdownOptions = (status: string) => {
     switch (status) {
       case "Editando":
-      case "Em revisão":
         return ["Editar", "Mudar status"];
-      case "Pendente":
+      case "Em revisão":
         return ["Revisar", "Mudar status"];
+      case "Pendente":
+        return ["Verificar", "Mudar status"];
       case "Aprovado":
       case "Cancelado":
         return ["Visualizar", "Criar padrão"];
@@ -477,7 +478,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                     : status === "Em revisão"
                     ? ["Pendente"]
                     : status === "Pendente"
-                    ? ["Em revisão", "Aprovados"]
+                    ? ["Em revisão", "Aprovado"]
                     : [];
 
                 return opcoesStatus.map((novo) => (
