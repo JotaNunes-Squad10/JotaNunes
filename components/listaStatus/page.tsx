@@ -104,8 +104,8 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
 
   // Define quais status cada perfil pode editar
   const permissoes: Record<number, string[]> = {
-    1: ["Editando", "Pendente", "Revisão", "Aprovados", "Cancelados"], // Admin
-    2: ["Pendente", "Aprovados"], // Gestor
+    1: ["Editando", "Pendente", "Revisão", "Aprovado", "Cancelado"], // Admin
+    2: ["Pendente", "Aprovado"], // Gestor
     3: ["Editando", "Revisão"], // Operador
   };
 
@@ -192,16 +192,6 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
       </Box>
     </TableCell>
   );
-
-  if (userProfile === null && getCookie("accessToken")) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Skeleton width="100%" height="3rem" />
-        <Skeleton width="100%" height="3rem" />
-        <Skeleton width="100%" height="3rem" />
-      </Box>
-    );
-  }
 
   return (
     <Paper elevation={0} sx={{ p: 3, border: "none" }}>
@@ -328,9 +318,9 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                             ? "#FFD966"
                             : empreendimento.status === "Revisão"
                             ? "#FF9800"
-                            : empreendimento.status === "Aprovados"
+                            : empreendimento.status === "Aprovado"
                             ? "#4CAF50"
-                            : empreendimento.status === "Cancelados"
+                            : empreendimento.status === "Cancelado"
                             ? "#F44336"
                             : "#9E9E9E",
                         color: "white",

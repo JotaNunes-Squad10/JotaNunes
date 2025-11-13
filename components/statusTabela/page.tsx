@@ -33,9 +33,9 @@ const StatusTabela: React.FC = () => {
         const parsedData: Empreendimento[] = data.map((item: any) => ({
           id: item.id,
           nome: item.nome,
-          ultimaAlteracao: "-",
+          ultimaAlteracao: item.dataHoraAlteracao,
           versao: item.versao,
-          usuario: "-",
+          usuario: item.usuarioAlteracao,
           status: item.status,
         }));
 
