@@ -71,14 +71,12 @@ export default function EmpreendimentoEditor({
           return {
             topicoId: 3,
             posicao: t.posicao ?? ti + 1,
-            // ❌ NÃO ENVIAR topicoAmbientes
-            topicoMateriais:
-              Array.isArray(t.topicoMateriais) && t.topicoMateriais.length > 0
-                ? t.topicoMateriais.map((m: any) => ({
-                    materialId: Number(m.materialId),
-                    versoes: m.versoes ?? [], // garante compatibilidade
-                  }))
-                : [],
+            topicoAmbientes: [], // 🔥 OBRIGATÓRIO PARA NÃO QUEBRAR A API
+            topicoMateriais: Array.isArray(t.topicoMateriais)
+              ? t.topicoMateriais.map((m: any) => ({
+                  materialId: Number(m.materialId),
+                }))
+              : [],
           };
         }
 
