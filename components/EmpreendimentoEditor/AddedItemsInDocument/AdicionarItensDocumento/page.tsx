@@ -3,6 +3,7 @@ import { MultiSelect, MultiSelectChangeEvent } from "primereact/multiselect";
 import AdicionarNovoItem from "./AdicionarNovoItem/page";
 import {
   itemService,
+  MarcaMateriais,
   subTopicosAmbienteService,
   UpdateEmpreendimento,
 } from "@/lib/api";
@@ -12,6 +13,8 @@ interface Props {
   itemAmbienteSelecionado: string;
   empreendimento: UpdateEmpreendimento;
   itensDocumento: number[];
+  itemMarcaMateriais: MarcaMateriais[];
+  ambienteSelecionado: string;
   onAddItems: (ids: number[], topicoId: number, ambienteId: number) => void;
 }
 
@@ -25,6 +28,8 @@ export default function AdicionarItensDocumento({
   itemAmbienteSelecionado,
   empreendimento,
   onAddItems,
+  itemMarcaMateriais,
+  ambienteSelecionado,
 }: Props) {
   const [itensAmbiente, setItensAmbiente] = useState<AmbienteOption[]>([]);
   const [selectedAmbientes, setSelectedAmbientes] = useState<AmbienteOption[]>(
@@ -83,6 +88,19 @@ export default function AdicionarItensDocumento({
 
     if (itemAmbienteSelecionado) fetchItens();
   }, [itemAmbienteSelecionado, empreendimento]);
+
+  useEffect(() => {
+    if (ambienteSelecionado.toLocaleLowerCase() === "marcas") {
+      const itemMarcas: AmbienteOption[] = itemMarcaMateriais.map((item) => ({
+        name: item.marca.nome,
+        code: String(item.id),
+        descricao: item.material.nome,
+      }));
+
+      setItensAmbiente(itemMarcas);
+      setLoading(false);
+    }
+  }, [ambienteSelecionado]);
 
   const handleAddItems = async () => {
     if (selectedAmbientes.length === 0) return;

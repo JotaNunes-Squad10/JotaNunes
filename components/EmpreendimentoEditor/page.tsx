@@ -47,7 +47,7 @@ export default function EmpreendimentoEditor({
   >(undefined);
   const [loading, setLoading] = useState<boolean>(false);
   const toast = useRef<Toast | null>(null);
-  const [marcaMaterial, setMarcaMaterial] = useState<MarcaMateriais[]>();
+  const [marcaMaterial, setMarcaMaterial] = useState<MarcaMateriais[]>([]);
 
   // Get de Marcas Material
   useEffect(() => {
@@ -413,6 +413,7 @@ export default function EmpreendimentoEditor({
             setItemAmbienteSelecionado={setItemAmbienteSelecionado}
             empreendimento={empreendimento}
             itensDocumento={[]} // o componente lê do empreendimento
+            itemMarcaMateriais={marcaMaterial}
             onAddItems={handleAddItems}
           />
 

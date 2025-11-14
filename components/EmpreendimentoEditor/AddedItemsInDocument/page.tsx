@@ -1,7 +1,7 @@
 import SelecionaAmbiente from "./SelecionaAmbiente/page";
 import SelecioneItemAmbiente from "./SelecionaItemAmbiente/page";
 import AdicionarItensDocumento from "./AdicionarItensDocumento/page";
-import { UpdateEmpreendimento } from "@/lib/api";
+import { MarcaMateriais, UpdateEmpreendimento } from "@/lib/api";
 
 interface Props {
   ambienteSelecionado: any;
@@ -10,6 +10,7 @@ interface Props {
   setItemAmbienteSelecionado: (value: any) => void;
   empreendimento: UpdateEmpreendimento;
   itensDocumento: number[];
+  itemMarcaMateriais: MarcaMateriais[];
   onAddItems: (ids: number[], topicoId: number, ambienteId: number) => void;
 }
 
@@ -20,6 +21,7 @@ export default function AddedItemsInDocument({
   setItemAmbienteSelecionado,
   empreendimento,
   itensDocumento,
+  itemMarcaMateriais,
   onAddItems,
 }: Props) {
   return (
@@ -39,6 +41,8 @@ export default function AddedItemsInDocument({
         itemAmbienteSelecionado={itemAmbienteSelecionado}
         itensDocumento={itensDocumento}
         empreendimento={empreendimento}
+        itemMarcaMateriais={itemMarcaMateriais}
+        ambienteSelecionado={ambienteSelecionado}
         onAddItems={onAddItems}
       />
     </div>
