@@ -156,18 +156,45 @@ export interface Item {
 
 export const itemService = {
   async getItemById(id: number | string): Promise<Item | null> {
-    try {
-      const response = await authApi.get<{ data: Item }>(`/api/v1/items/GetItemById/${id}`, {
-        headers: { Authorization: getAuthToken() }
-      });
-      const respData = response.data;
-      if (!respData) return null;
-      if ('data' in respData) return (respData as { data: Item }).data || null;
-      return respData as unknown as Item;
-    } catch (err) {
-      console.error(`Erro ao buscar item por id ${id}:`, err);
-      return null;
+    // Implementa tentativas (retry) simples com backoff exponencial
+    const maxAttempts = 3;
+    const perRequestTimeout = 30000; // 30s por requisição
+    let attempt = 0;
+    let lastErr: unknown = null;
+
+    while (attempt < maxAttempts) {
+      try {
+        const response = await authApi.get<{ data: Item }>(`/api/v1/items/GetItemById/${id}`, {
+          headers: { Authorization: getAuthToken() },
+          timeout: perRequestTimeout,
+        });
+        const respData = response.data;
+        if (!respData) return null;
+        if ('data' in respData) return (respData as { data: Item }).data || null;
+        return respData as unknown as Item;
+      } catch (err) {
+        lastErr = err;
+        attempt += 1;
+        // decidir se devemos tentar novamente: falhas de rede/timeout ou 5xx do servidor
+        let status: number | null = null;
+        let code: string | null = null;
+        if (err && typeof err === 'object') {
+          const resp = (err as { response?: { status?: number } }).response;
+          status = resp && typeof resp.status === 'number' ? resp.status : null;
+          const c = (err as { code?: unknown }).code;
+          code = typeof c === 'string' ? c : null;
+        }
+        const shouldRetry = !status || (typeof status === 'number' && status >= 500) || code === 'ECONNABORTED';
+        if (!shouldRetry || attempt >= maxAttempts) break;
+
+        const backoff = 200 * Math.pow(2, attempt); // 400ms, 800ms, ...
+        // aguardar antes da próxima tentativa
+        await new Promise((res) => setTimeout(res, backoff));
+      }
     }
+
+    console.error(`Erro ao buscar item por id ${id} após ${maxAttempts} tentativas:`, lastErr);
+    return null;
   }
 };
 

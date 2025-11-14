@@ -6,6 +6,7 @@ import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import { empreendimentoService, Empreendimento, itemService, ambienteService, topicoService, marcaMaterialService } from '../../lib/services';
 import 'primereact/resources/themes/saga-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
+import { Button } from 'primereact/button';
 
 export default function DocRevisao() {
     const [options, setOptions] = useState<Array<{ label: string; value: Empreendimento }>>([]);
@@ -65,16 +66,24 @@ export default function DocRevisao() {
 
             if (ids.size === 0) return;
 
-            const promises = Array.from(ids).map((id) => itemService.getItemById(id));
-            const results = await Promise.allSettled(promises);
-            const map: Record<number, { nome?: string; descricao?: string }> = {};
-            results.forEach((r, idx) => {
-                const id = Array.from(ids)[idx];
-                if (r.status === 'fulfilled' && r.value) {
-                    map[id] = { nome: r.value.nome, descricao: r.value.descricao };
-                }
-            });
-            setItemsMap(map);
+            // Limitar concorrência: buscar em lotes (batch) para evitar sobrecarregar a API
+            const idsArray = Array.from(ids);
+            const BATCH_SIZE = 10;
+            const fetchedMap: Record<number, { nome?: string; descricao?: string }> = {};
+
+            for (let i = 0; i < idsArray.length; i += BATCH_SIZE) {
+                const batch = idsArray.slice(i, i + BATCH_SIZE);
+                const promises = batch.map((id) => itemService.getItemById(id));
+                const results = await Promise.allSettled(promises);
+                results.forEach((r, idx) => {
+                    const id = batch[idx];
+                    if (r.status === 'fulfilled' && r.value) {
+                        fetchedMap[id] = { nome: r.value.nome, descricao: r.value.descricao };
+                    }
+                });
+                // Atualizar incrementalmente para permitir render mais rápido
+                setItemsMap((prev) => ({ ...prev, ...fetchedMap }));
+            }
         } catch (err) {
             console.error('Erro ao buscar nomes de items:', err);
         }
@@ -300,6 +309,9 @@ export default function DocRevisao() {
                         placeholder="Selecione um empreendimento"
                         className="w-full"
                     />
+                </div>
+                <div className="mt-2 flex justify-end px-6">
+                    <Button label="Primary" />
                 </div>
                 <div className="mt-4">
                     {loadingDetalhe ? (

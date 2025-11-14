@@ -32,13 +32,15 @@ export interface AuthenticatePayload {
 // Configuração da API principal
 export const api = axios.create({
   baseURL: "https://jotanunesservice.onrender.com",
-  timeout: 10000,
+  // aumentar timeout global para 30s para evitar erros em requisições lentas
+  timeout: 30000,
 });
 
 // API para endpoints de autenticação (sempre produção)
 export const authApi = axios.create({
   baseURL: "https://jotanunesservice.onrender.com",
-  timeout: 10000,
+  // aumentar timeout global para 30s
+  timeout: 30000,
 });
 
 // Serviços de Autenticação
