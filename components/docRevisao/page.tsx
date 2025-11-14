@@ -23,6 +23,13 @@ export default function DocRevisao() {
         const [marcasMap, setMarcasMap] = useState<Record<number, string[]>>({});
         // Mapa materialId -> nome do material
         const [materialNamesMap, setMaterialNamesMap] = useState<Record<number, string>>({});
+        // Comentários locais (itemId -> { text, createdAt })
+        const [commentsMap, setCommentsMap] = useState<Record<number, { text: string; createdAt: string }>>({});
+        // Item atualmente selecionado para criar/editar comentário
+        const [selectedCommentItem, setSelectedCommentItem] = useState<number | null>(null);
+        // Posição da caixa flutuante {top, left}
+        const [commentBoxPos, setCommentBoxPos] = useState<{ top: number; left: number } | null>(null);
+        const [tempComment, setTempComment] = useState<string>('');
 
     useEffect(() => {
         const load = async () => {
@@ -147,14 +154,122 @@ export default function DocRevisao() {
         }
     };
 
+    // Abre a caixa de comentário para um item (clicado)
+    const handleOpenComment = (e: React.MouseEvent, itemId: number) => {
+        e.stopPropagation();
+        // posição baseada no retângulo do elemento clicado
+        const el = e.currentTarget as HTMLElement;
+        const rect = el.getBoundingClientRect();
+        const padding = 8;
+        // tenta posicionar à direita do elemento no viewport; se não couber, posiciona à esquerda
+        // getBoundingClientRect() retorna coordenadas relativas ao viewport,
+        // e como a caixa é position:fixed usaremos essas coordenadas (sem somar scroll)
+        let left = rect.right + padding;
+        const top = rect.top; // relativo ao viewport
+        const viewportWidth = window.innerWidth;
+        const estimatedBoxWidth = 320;
+
+        // se não couber à direita, posiciona à esquerda do elemento
+        if (left + estimatedBoxWidth > viewportWidth) {
+            left = Math.max(rect.left - estimatedBoxWidth - padding, padding);
+        } else {
+            // se houver muito espaço entre o início do elemento e o left calculado,
+            // aproximamos a caixa para ficar mais próxima da linha (sobrepondo levemente)
+            const gap = left - rect.left;
+            if (gap > estimatedBoxWidth * 0.4) {
+                left = Math.max(rect.right - Math.round(estimatedBoxWidth * 0.6), padding);
+            }
+        }
+        const finalLeft = left;
+
+        setSelectedCommentItem(itemId);
+        setCommentBoxPos({ top: top, left: finalLeft });
+        setTempComment(commentsMap[itemId]?.text ?? '');
+    };
+
+    const handleSaveComment = (itemId: number) => {
+        // Atualiza o mapa local e também persiste no localStorage por empreendimento
+        const key = `docRevisao_comments_${detalhe?.id ?? 'global'}`;
+        if (!tempComment || tempComment.trim() === '') {
+            // não salvar comentários vazios: excluir se existir
+            setCommentsMap((prev) => {
+                const copy = { ...prev };
+                delete copy[itemId];
+                try {
+                    // grava no localStorage
+                    const next = { ...copy };
+                    localStorage.setItem(key, JSON.stringify(next));
+                } catch (err) {
+                    console.warn('Erro ao salvar comentários no localStorage', err);
+                }
+                return copy;
+            });
+        } else {
+            const next = { ...commentsMap, [itemId]: { text: tempComment.trim(), createdAt: new Date().toISOString() } };
+            setCommentsMap(next);
+            try {
+                localStorage.setItem(key, JSON.stringify(next));
+            } catch (err) {
+                console.warn('Erro ao salvar comentários no localStorage', err);
+            }
+        }
+        setSelectedCommentItem(null);
+        setCommentBoxPos(null);
+        setTempComment('');
+    };
+
+    const handleDeleteComment = (itemId: number) => {
+        const key = `docRevisao_comments_${detalhe?.id ?? 'global'}`;
+        setCommentsMap((prev) => {
+            const copy = { ...prev };
+            delete copy[itemId];
+            try {
+                localStorage.setItem(key, JSON.stringify(copy));
+            } catch (err) {
+                console.warn('Erro ao salvar comentários no localStorage', err);
+            }
+            return copy;
+        });
+        setSelectedCommentItem(null);
+        setCommentBoxPos(null);
+        setTempComment('');
+    };
+
+    // Carrega comentários do localStorage quando um empreendimento (detalhe) é carregado
+    useEffect(() => {
+        try {
+            if (!detalhe?.id) {
+                setCommentsMap({});
+                return;
+            }
+            const key = `docRevisao_comments_${detalhe.id}`;
+            const raw = localStorage.getItem(key);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed && typeof parsed === 'object') setCommentsMap(parsed);
+            } else {
+                setCommentsMap({});
+            }
+        } catch (err) {
+            console.warn('Erro ao restaurar comentários do localStorage', err);
+        }
+    }, [detalhe?.id]);
+
+    const handleCloseComment = () => {
+        setSelectedCommentItem(null);
+        setCommentBoxPos(null);
+        setTempComment('');
+    };
+
     return (
         <div>
             <Header />
             <div className="p-4">
-                <label className="block mb-2 text-xl font-medium">Revisão de Empreendimento</label>
-                <Dropdown
-                    value={selected}
-                    onChange={async (e: DropdownChangeEvent) => {
+                <div className="max-w-4xl mx-auto flex flex-col items-center md:items-start gap-3 px-6">
+                    <label className="block mb-0 text-xl font-medium text-center md:text-left">Revisão de Empreendimento</label>
+                    <Dropdown
+                        value={selected}
+                        onChange={async (e: DropdownChangeEvent) => {
                         const emp = e.value as Empreendimento;
                         setSelected(emp);
                         setDetalhe(null);
@@ -179,19 +294,20 @@ export default function DocRevisao() {
                             setLoadingDetalhe(false);
                         }
                     }}
-                    options={options}
-                    optionLabel="label"
-                    filter
-                    placeholder="Selecione um empreendimento"
-                    className="w-150 md:w-20rem"
-                />
+                        options={options}
+                        optionLabel="label"
+                        filter
+                        placeholder="Selecione um empreendimento"
+                        className="w-full"
+                    />
+                </div>
                 <div className="mt-4">
                     {loadingDetalhe ? (
                         <p>Carregando detalhes do empreendimento...</p>
                     ) : erroDetalhe ? (
                         <p className="text-red-600">{erroDetalhe}</p>
                     ) : detalhe ? (
-                        <article className="p-6 border rounded bg-white">
+                        <article className="p-6 border rounded bg-white max-w-4xl mx-auto">
                             {/* Cabeçalho similar ao PDF: nome, local, descrição */}
                             <header className="mb-4">
                                 <h2 className="text-2xl font-bold">Empreendimento: {detalhe.nome || detalhe.name}</h2>
@@ -209,23 +325,7 @@ export default function DocRevisao() {
                                 <div><strong>Versão:</strong> {detalhe.versao ?? '-'}</div>
                             </section>
 
-                            {/* Empreendimentos relacionados — apresentamos como lista compacta */}
-                            {detalhe.empreendimentos && detalhe.empreendimentos.length > 0 && (
-                                <section className="mb-4">
-                                    <h3 className="text-lg font-semibold">Unidades / Empreendimentos</h3>
-                                    <div className="mt-2 grid gap-3">
-                                        {detalhe.empreendimentos.map((ep) => (
-                                            <div key={String(ep.id)} className="p-3 border rounded bg-gray-50">
-                                                <div className="flex justify-between">
-                                                    <strong>{ep.nome || ep.name || `#${ep.id}`}</strong>
-                                                    <span className="text-sm text-gray-600">Versão: {ep.versao ?? '-'}</span>
-                                                </div>
-                                                <p className="mt-1 text-sm">{ep.descricao || '-'}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
+                            {/* seção "Unidades / Empreendimentos" removida por conter duplicação dos dados do próprio empreendimento */}
 
                             {/* Tópicos -> Ambientes -> Itens: formatamos como seções com tabelas (Item | Versões) */}
                             {detalhe.empreendimentoTopicos && detalhe.empreendimentoTopicos.length > 0 && (
@@ -243,23 +343,33 @@ export default function DocRevisao() {
                                                         <div key={amb.id} className="mb-3">
                                                             <h5 className="font-medium">{ambientesMap[amb.ambienteId ?? 0]?.nome || `Ambiente ${amb.ambienteId ?? amb.id}`} — Versões: {Array.isArray(amb.versoes) ? amb.versoes.join(', ') : '-'}</h5>
                                                             {amb.ambienteItens && amb.ambienteItens.length > 0 ? (
-                                                                <table className="w-full text-sm border-collapse border border-black">
-                                                                    <thead>
-                                                                        <tr>
-                                                                            <th className="border border-black px-3 py-2 text-left bg-gray-100">Item</th>
-                                                                            <th className="border border-black px-3 py-2 text-left bg-gray-100">Descrição</th>
+                                                                <table className="w-full text-sm border-collapse table-fixed">
+                                                                    <thead className="hidden md:table-header-group">
+                                                                        <tr className="bg-gray-100 md:border-b md:border-gray-300">
+                                                                            <th className="px-3 py-2 text-left w-1/3">Item</th>
+                                                                            <th className="px-3 py-2 text-left w-2/3">Descrição</th>
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody>
                                                                         {amb.ambienteItens.map((item) => (
-                                                                            <tr key={item.id} className="align-top">
-                                                                                <td className="border border-black px-3 py-2 align-top">
-                                                                                    {itemsMap[item.itemId ?? 0]?.nome
-                                                                                        ? itemsMap[item.itemId ?? 0].nome
-                                                                                        : `Item #${item.itemId}`}
+                                                                            <tr
+                                                                                key={item.id}
+                                                                                onClick={(e) => handleOpenComment(e, item.id ?? 0)}
+                                                                                title={commentsMap[item.id ?? 0]?.text ?? ''}
+                                                                                className={
+                                                                                    `block md:table-row mb-3 md:mb-0 rounded md:rounded-none md:border-b md:border-gray-300 cursor-pointer transition-colors duration-150 ease-in-out ` +
+                                                                                    (commentsMap[item.id ?? 0]
+                                                                                        ? 'bg-yellow-50 md:bg-gradient-to-r md:from-yellow-200 md:to-orange-100 md:hover:opacity-95 hover:opacity-95'
+                                                                                        : 'bg-white md:bg-transparent hover:bg-gray-50')
+                                                                                }
+                                                                            >
+                                                                                <td className="block md:table-cell px-3 py-2 align-top md:pl-3">
+                                                                                    <span className="md:hidden inline-block w-28 font-semibold text-gray-700">Item:</span>
+                                                                                    <span>{itemsMap[item.itemId ?? 0]?.nome ? itemsMap[item.itemId ?? 0].nome : `Item #${item.itemId}`}</span>
                                                                                 </td>
-                                                                                <td className="border border-black px-3 py-2">
-                                                                                    {itemsMap[item.itemId ?? 0]?.descricao || '-'}
+                                                                                <td className="block md:table-cell px-3 py-2">
+                                                                                    <span className="md:hidden inline-block w-28 font-semibold text-gray-700">Descrição:</span>
+                                                                                    <span>{itemsMap[item.itemId ?? 0]?.descricao || '-'}</span>
                                                                                 </td>
                                                                             </tr>
                                                                         ))}
@@ -277,18 +387,24 @@ export default function DocRevisao() {
                                             {topico.topicoMateriais && topico.topicoMateriais.length > 0 && (
                                                 <div className="mt-2">
                                                     <h5 className="font-medium">Materiais</h5>
-                                                    <table className="w-full text-sm border-collapse border border-black">
-                                                        <thead>
-                                                            <tr>
-                                                                <th className="border border-black px-3 py-2 text-left bg-gray-100">Material</th>
-                                                                <th className="border border-black px-3 py-2 text-left bg-gray-100">Marcas</th>
+                                                    <table className="w-full text-sm border-collapse table-fixed mt-2">
+                                                        <thead className="hidden md:table-header-group">
+                                                            <tr className="bg-gray-100 md:border-b md:border-gray-300">
+                                                                <th className="px-3 py-2 text-left w-1/3">Material</th>
+                                                                <th className="px-3 py-2 text-left w-2/3">Marcas</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
                                                             {topico.topicoMateriais.map((mat) => (
-                                                                <tr key={mat.id}>
-                                                                    <td className="border border-black px-3 py-2">{materialNamesMap[mat.materialId ?? 0] || `Material #${mat.materialId}`}</td>
-                                                                    <td className="border border-black px-3 py-2">{marcasMap[mat.materialId ?? 0]?.join(', ') || '-'}</td>
+                                                                <tr key={mat.id} className="block md:table-row mb-3 md:mb-0 rounded md:rounded-none bg-white md:bg-transparent md:border-b md:border-gray-300">
+                                                                    <td className="block md:table-cell px-3 py-2">
+                                                                        <span className="md:hidden inline-block w-28 font-semibold text-gray-700">Material:</span>
+                                                                        <span>{materialNamesMap[mat.materialId ?? 0] || `Material #${mat.materialId}`}</span>
+                                                                    </td>
+                                                                    <td className="block md:table-cell px-3 py-2">
+                                                                        <span className="md:hidden inline-block w-28 font-semibold text-gray-700">Marcas:</span>
+                                                                        <span>{marcasMap[mat.materialId ?? 0]?.join(', ') || '-'}</span>
+                                                                    </td>
                                                                 </tr>
                                                             ))}
                                                         </tbody>
@@ -299,6 +415,24 @@ export default function DocRevisao() {
                                     ))}
                                 </section>
                             )}
+                                {/* Caixa flutuante de comentário (fixa, posicionada) */}
+                                {selectedCommentItem !== null && commentBoxPos && (
+                                    <div style={{ position: 'fixed', top: commentBoxPos.top, left: commentBoxPos.left, width: 340 }} className="z-50">
+                                        <div className="bg-white border rounded shadow-lg p-3 text-sm">
+                                            <label className="block text-xs font-semibold mb-1">Comentário</label>
+                                            <textarea
+                                                value={tempComment}
+                                                onChange={(ev) => setTempComment(ev.target.value)}
+                                                className="w-full h-28 p-2 border rounded text-sm resize-none"
+                                            />
+                                            <div className="mt-2 flex justify-end gap-2">
+                                                <button onClick={() => handleCloseComment()} className="px-3 py-1 text-sm border rounded bg-gray-100">Cancelar</button>
+                                                <button onClick={() => selectedCommentItem !== null && handleDeleteComment(selectedCommentItem)} className="px-3 py-1 text-sm border rounded bg-red-50 text-red-600">Excluir</button>
+                                                <button onClick={() => selectedCommentItem !== null && handleSaveComment(selectedCommentItem)} className="px-3 py-1 text-sm bg-yellow-400 hover:bg-yellow-500 rounded">Salvar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                         </article>
                     ) : null}
                 </div>
