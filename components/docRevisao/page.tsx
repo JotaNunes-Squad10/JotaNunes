@@ -463,10 +463,11 @@ export default function DocRevisao() {
                                             {topico.topicoAmbientes && topico.topicoAmbientes.length > 0 && (
                                                 <div className="mt-2">
                                                     {topico.topicoAmbientes.map((amb) => (
-                                                        <div key={amb.id} className="mb-3">
-                                                            <h5 className="font-medium">{ambientesMap[amb.ambienteId ?? 0]?.nome || `Ambiente ${amb.ambienteId ?? amb.id}`}</h5>
+                                                        <div key={amb.id} className="mb-3 bg-gray-100 md:bg-transparent p-3 md:p-0 rounded">
+                                                            <h5 className="font-medium bg-gray-300 md:bg-transparent px-2 py-1 rounded">{ambientesMap[amb.ambienteId ?? 0]?.nome || `Ambiente ${amb.ambienteId ?? amb.id}`}</h5>
                                                             {amb.ambienteItens && amb.ambienteItens.length > 0 ? (
-                                                                <table className="w-full text-sm border-collapse table-fixed">
+                                                                <div className="overflow-x-auto px-3 md:px-0">
+                                                                    <table className="w-full text-sm border-collapse">
                                                                     <thead className="hidden md:table-header-group">
                                                                         <tr className="bg-gray-100 md:border-b md:border-gray-300">
                                                                             <th className="px-3 py-2 text-left w-1/3">Item</th>
@@ -480,7 +481,7 @@ export default function DocRevisao() {
                                                                                 onClick={(e) => handleOpenComment(e, item.id ?? 0)}
                                                                                 title={commentsMap[item.id ?? 0]?.text ?? ''}
                                                                                 className={
-                                                                                    `block md:table-row mb-3 md:mb-0 rounded md:rounded-none md:border-b md:border-gray-300 cursor-pointer transition-colors duration-150 ease-in-out ` +
+                                                                                    `block md:table-row mb-3 md:mb-0 rounded md:rounded-none border-b border-gray-300 md:border-b md:border-gray-300 cursor-pointer transition-colors duration-150 ease-in-out ` +
                                                                                     (commentsMap[item.id ?? 0]
                                                                                         ? 'bg-yellow-50 md:bg-gradient-to-r md:from-yellow-200 md:to-orange-100 md:hover:opacity-95 hover:opacity-95'
                                                                                         : 'bg-white md:bg-transparent hover:bg-gray-50')
@@ -488,16 +489,17 @@ export default function DocRevisao() {
                                                                             >
                                                                                 <td className="block md:table-cell px-3 py-2 align-top md:pl-3">
                                                                                     <span className="md:hidden inline-block w-28 font-semibold text-gray-700">Item:</span>
-                                                                                    <span>{itemsMap[item.itemId ?? 0]?.nome ? itemsMap[item.itemId ?? 0].nome : `Item #${item.itemId}`}</span>
+                                                                                    <span className="block">{itemsMap[item.itemId ?? 0]?.nome ? itemsMap[item.itemId ?? 0].nome : `Item #${item.itemId}`}</span>
                                                                                 </td>
                                                                                 <td className="block md:table-cell px-3 py-2">
                                                                                     <span className="md:hidden inline-block w-28 font-semibold text-gray-700">Descrição:</span>
-                                                                                    <span>{itemsMap[item.itemId ?? 0]?.descricao || '-'}</span>
+                                                                                    <span className="block">{itemsMap[item.itemId ?? 0]?.descricao || '-'}</span>
                                                                                 </td>
                                                                             </tr>
                                                                         ))}
                                                                     </tbody>
-                                                                </table>
+                                                                    </table>
+                                                                </div>
                                                             ) : (
                                                                 <p className="text-sm text-gray-500">Nenhum item cadastrado neste ambiente.</p>
                                                             )}
@@ -510,7 +512,8 @@ export default function DocRevisao() {
                                             {topico.topicoMateriais && topico.topicoMateriais.length > 0 && (
                                                 <div className="mt-2">
                                                     <h5 className="font-medium">Materiais</h5>
-                                                    <table className="w-full text-sm border-collapse table-fixed mt-2">
+                                                    <div className="overflow-x-auto px-3 md:px-0">
+                                                    <table className="w-full text-sm border-collapse mt-2">
                                                         <thead className="hidden md:table-header-group">
                                                             <tr className="bg-gray-100 md:border-b md:border-gray-300">
                                                                 <th className="px-3 py-2 text-left w-1/3">Material</th>
@@ -519,19 +522,20 @@ export default function DocRevisao() {
                                                         </thead>
                                                         <tbody>
                                                             {topico.topicoMateriais.map((mat) => (
-                                                                <tr key={mat.id} className="block md:table-row mb-3 md:mb-0 rounded md:rounded-none bg-white md:bg-transparent md:border-b md:border-gray-300">
+                                                                <tr key={mat.id} className="block md:table-row mb-3 md:mb-0 rounded md:rounded-none border-b border-gray-200 bg-white md:bg-transparent md:border-b md:border-gray-300">
                                                                     <td className="block md:table-cell px-3 py-2">
                                                                         <span className="md:hidden inline-block w-28 font-semibold text-gray-700">Material:</span>
-                                                                        <span>{materialNamesMap[mat.materialId ?? 0] || `Material #${mat.materialId}`}</span>
+                                                                        <span className="block">{materialNamesMap[mat.materialId ?? 0] || `Material #${mat.materialId}`}</span>
                                                                     </td>
                                                                     <td className="block md:table-cell px-3 py-2">
                                                                         <span className="md:hidden inline-block w-28 font-semibold text-gray-700">Marcas:</span>
-                                                                        <span>{marcasMap[mat.materialId ?? 0]?.join(', ') || '-'}</span>
+                                                                            <span className="block">{marcasMap[mat.materialId ?? 0]?.join(', ') || '-'}</span>
                                                                     </td>
                                                                 </tr>
                                                             ))}
                                                         </tbody>
                                                     </table>
+                                                    </div>
                                                 </div>
                                             )}
                                         </section>
