@@ -2,16 +2,24 @@ import SelecionaAmbiente from "./SelecionaAmbiente/page";
 import SelecioneItemAmbiente from "./SelecionaItemAmbiente/page";
 import AdicionarItensDocumento from "./AdicionarItensDocumento/page";
 import { MarcaMateriais, UpdateEmpreendimento } from "@/lib/api";
+import { useEffect } from "react";
 
 interface Props {
-  ambienteSelecionado: any;
-  setAmbienteSelecionado: (value: any) => void;
-  itemAmbienteSelecionado: string;
-  setItemAmbienteSelecionado: (value: any) => void;
+  ambienteSelecionado: string; // tópico selecionado
+  setAmbienteSelecionado: (value: string) => void;
+
+  itemAmbienteSelecionado: string; // ambiente selecionado
+  setItemAmbienteSelecionado: (value: string) => void;
+
   empreendimento: UpdateEmpreendimento;
+
   itensDocumento: number[];
+
   itemMarcaMateriais: MarcaMateriais[];
+
+  // Handlers recebidos do EmpreendimentoEditor
   onAddItems: (ids: number[], topicoId: number, ambienteId: number) => void;
+  onAddMateriais: (ids: number[], topicoId: number) => void;
 }
 
 export default function AddedItemsInDocument({
@@ -23,7 +31,18 @@ export default function AddedItemsInDocument({
   itensDocumento,
   itemMarcaMateriais,
   onAddItems,
+  onAddMateriais,
 }: Props) {
+  const isMarcas = ambienteSelecionado.toUpperCase() === "MARCAS";
+  const TOPICO_MARCAS = 3;
+
+  // Se o usuário selecionou MARCAS, limpamos ambiente (ex: “Academia”, “Piscina”…)
+  useEffect(() => {
+    if (isMarcas) {
+      setItemAmbienteSelecionado(""); // desabilita ambiente
+    }
+  }, [ambienteSelecionado]);
+
   return (
     <div className="mt-5">
       <h3 className="mb-3 font-bold">Adicionar Itens</h3>
@@ -39,11 +58,20 @@ export default function AddedItemsInDocument({
       <h3 className="mb-3 font-bold">Itens</h3>
       <AdicionarItensDocumento
         itemAmbienteSelecionado={itemAmbienteSelecionado}
-        itensDocumento={itensDocumento}
         empreendimento={empreendimento}
+        itensDocumento={itensDocumento}
         itemMarcaMateriais={itemMarcaMateriais}
         ambienteSelecionado={ambienteSelecionado}
-        onAddItems={onAddItems}
+        onAddItems={(ids, topicoId, ambienteId) => {
+          // AMBIENTES NORMAIS
+          if (!isMarcas) {
+            onAddItems(ids, topicoId, ambienteId);
+            return;
+          }
+
+          // MARCAS (topico 3)
+          onAddMateriais(ids, TOPICO_MARCAS);
+        }}
       />
     </div>
   );

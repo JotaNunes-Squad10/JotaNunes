@@ -20,16 +20,9 @@ import {
 /**
  * EmpreendimentoEditor/page.tsx
  *
- * Versão corrigida e completa do componente principal:
- * - carrega documento
- * - edita localmente (add / remove) com optimistic updates
- * - monta payload defensivo compatível com a API
- * - faz PUT (updateEmpreendimento) e faz rollback em caso de falha
- * - exibe toasts para sucesso/erro/aviso
- *
- * Observações:
- * - A API mostrou-se sensível a fields nulos; por isso garantimos arrays vazios em vez de null.
- * - Se o backend eventualmente exigir `topicoMateriais: null` especificamente, adapte a função buildPayloadForApi.
+ * - Componente completo que trata ambientes e marcas (tópicoId = 3).
+ * - Todos os handlers retornam payloads compatíveis com UpdateEmpreendimentoRequest.
+ * - optimistic update + rollback.
  */
 
 interface EmpreendimentoEditorProps {
@@ -49,28 +42,21 @@ export default function EmpreendimentoEditor({
   const toast = useRef<Toast | null>(null);
   const [marcaMaterial, setMarcaMaterial] = useState<MarcaMateriais[]>([]);
 
-  // Get de Marcas Material
+  // Carrega marcas-materials (fonte para adicionar em MARCAS)
   useEffect(() => {
     const getMarcaMaterial = async () => {
       try {
         const response = await marcaService.getAllMarcaMateriais();
         setMarcaMaterial(response);
       } catch (error) {
-        console.error(error);
+        console.error("Erro ao buscar marca-material:", error);
       }
     };
 
     getMarcaMaterial();
   }, []);
 
-  /**
-   * buildPayloadForApi
-   * Recebe estado local e retorna um payload estritamente compatível com o contrato esperado pela API.
-   * Garante:
-   * - campos numéricos como number
-   * - strings não-nulas
-   * - topicoMateriais como array (não null) — a API já respondeu que espera o campo presente
-   */
+  // monta payload estritamente compatível com a API
   const buildPayloadForApi = (
     doc: UpdateEmpreendimento
   ): UpdateEmpreendimento => {
@@ -78,6 +64,27 @@ export default function EmpreendimentoEditor({
 
     const empreendTopicos =
       (doc.empreendimentoTopicos || []).map((t: any, ti: number) => {
+        // ============
+        // CASO MARCAS
+        // ============
+        if (Number(t.topicoId) === 3) {
+          return {
+            topicoId: 3,
+            posicao: t.posicao ?? ti + 1,
+            // ❌ NÃO ENVIAR topicoAmbientes
+            topicoMateriais:
+              Array.isArray(t.topicoMateriais) && t.topicoMateriais.length > 0
+                ? t.topicoMateriais.map((m: any) => ({
+                    materialId: Number(m.materialId),
+                    versoes: m.versoes ?? [], // garante compatibilidade
+                  }))
+                : [],
+          };
+        }
+
+        // ===========================
+        // TOPICOS NORMAIS (AMBIENTES)
+        // ===========================
         const topicoAmbientes =
           (t.topicoAmbientes || []).map((a: any, ai: number) => ({
             ambienteId: Number(a.ambienteId),
@@ -89,20 +96,17 @@ export default function EmpreendimentoEditor({
               })) || [],
           })) || [];
 
-        // Mantemos array (mesmo que vazio). Se a API quiser null, alterar aqui.
-        const topicoMateriais =
-          Array.isArray(t.topicoMateriais) && t.topicoMateriais.length > 0
-            ? t.topicoMateriais.map((m: any) => ({
-                materialId: Number(m.materialId),
-                ...(m.versoes ? { versoes: m.versoes } : {}),
-              }))
-            : [];
-
         return {
           topicoId: Number(t.topicoId),
           posicao: t.posicao ?? ti + 1,
           topicoAmbientes,
-          topicoMateriais,
+          topicoMateriais:
+            Array.isArray(t.topicoMateriais) && t.topicoMateriais.length > 0
+              ? t.topicoMateriais.map((m: any) => ({
+                  materialId: Number(m.materialId),
+                  versoes: m.versoes ?? [],
+                }))
+              : [],
         };
       }) || [];
 
@@ -117,7 +121,7 @@ export default function EmpreendimentoEditor({
     };
   };
 
-  // Carrega documento ao montar / quando documentId mudar
+  // Carrega documento
   useEffect(() => {
     let mounted = true;
     const loadDocument = async () => {
@@ -131,7 +135,7 @@ export default function EmpreendimentoEditor({
           return;
         }
 
-        // Normaliza o documento recebido para o formato UpdateEmpreendimento
+        // Normaliza a resposta em UpdateEmpreendimento (formato que usamos internamente)
         const normalized: UpdateEmpreendimento = {
           id: documentData.id,
           nome: documentData.nome ?? "",
@@ -158,8 +162,10 @@ export default function EmpreendimentoEditor({
                   Array.isArray(t.topicoMateriais) &&
                   t.topicoMateriais.length > 0
                     ? t.topicoMateriais.map((m: any) => ({
-                        materialId: Number(m.materialId),
-                        versoes: m.versoes || [],
+                        materialId: Number(
+                          m.materialId ?? m.material?.id ?? m.id ?? 0
+                        ),
+                        // se vier com 'versoes' adicione aqui: versoes: m.versoes || []
                       }))
                     : [],
               })
@@ -186,7 +192,7 @@ export default function EmpreendimentoEditor({
     };
   }, [documentId]);
 
-  // Atualiza campos simples (nome, localizacao, ...)
+  // Atualiza campos simples
   const updateEmpreendimento = (
     field: keyof UpdateEmpreendimento,
     value: any
@@ -194,19 +200,9 @@ export default function EmpreendimentoEditor({
     setEmpreendimento((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
 
-  /**
-   * handleAddItems
-   * - ids: array de ids a adicionar
-   * - topicoId / ambienteId: onde adicionar
-   *
-   * Fluxo:
-   *  - snapshot (before) para rollback
-   *  - aplica alteração no clone (optimistic)
-   *  - atualiza state local imediatamente
-   *  - monta payload defensivo e chama API
-   *  - em sucesso: atualiza state com o payload retornado (ou mantem clone)
-   *  - em erro: faz rollback e mostra toast
-   */
+  //
+  // ADICIONAR ITENS EM AMBIENTE (tópicos com topicoAmbientes)
+  //
   const handleAddItems = async (
     ids: number[],
     topicoId: number,
@@ -239,6 +235,7 @@ export default function EmpreendimentoEditor({
       clone.empreendimentoTopicos.push(topico);
     }
 
+    // ambienteId pode ser 0 in case of materials, but here it's for ambiente items
     let ambiente = (topico.topicoAmbientes || []).find(
       (a: any) => Number(a.ambienteId) === Number(ambienteId)
     ) as any;
@@ -276,13 +273,12 @@ export default function EmpreendimentoEditor({
     setEmpreendimento(clone);
 
     const payload = buildPayloadForApi(clone);
+    console.log("Payload gerado (ADD ITEMS em ambiente):", payload);
 
     try {
       setLoading(true);
-      console.log("📤 Payload enviado (PUT):", payload);
       await DocumentoService.updateEmpreendimento(payload);
-      // no retorno da API o backend não envia o recurso atualizado completo (depende do backend).
-      // Para manter o state consistente com o que foi enviado:
+      // mantém estado com o que foi enviado
       setEmpreendimento(payload);
       toast.current?.show?.({
         severity: "success",
@@ -291,7 +287,7 @@ export default function EmpreendimentoEditor({
         life: 3000,
       });
     } catch (err) {
-      console.error("❌ Erro ao salvar (add):", err);
+      console.error("Erro ao adicionar itens:", err);
       setEmpreendimento(before); // rollback
       toast.current?.show?.({
         severity: "error",
@@ -304,10 +300,9 @@ export default function EmpreendimentoEditor({
     }
   };
 
-  /**
-   * handleRemoveItem
-   * - optimistic update + PUT + rollback em erro
-   */
+  //
+  // REMOVER ITEM DE AMBIENTE
+  //
   const handleRemoveItem = async (
     itemId: number,
     topicoId: number,
@@ -358,10 +353,10 @@ export default function EmpreendimentoEditor({
     setEmpreendimento(clone);
 
     const payload = buildPayloadForApi(clone);
+    console.log("Payload gerado (REMOVE ITEM em ambiente):", payload);
 
     try {
       setLoading(true);
-      console.log("📤 Payload enviado (PUT):", payload);
       await DocumentoService.updateEmpreendimento(payload);
       setEmpreendimento(payload);
       toast.current?.show?.({
@@ -371,12 +366,156 @@ export default function EmpreendimentoEditor({
         life: 3000,
       });
     } catch (err) {
-      console.error("❌ Erro ao salvar (remove):", err);
-      setEmpreendimento(before); // rollback
+      console.error("Erro ao remover item:", err);
+      setEmpreendimento(before);
       toast.current?.show?.({
         severity: "error",
         summary: "Erro",
         detail: "Falha ao remover item no servidor. Revertendo.",
+        life: 5000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  //
+  // ADICIONAR MATERIAIS (TÓPICO = 3 — MARCAS)
+  // topicoMateriais é um array de { materialId: number }
+  //
+  const handleAddMateriais = async (ids: number[], topicoId: number) => {
+    if (!empreendimento) return;
+    if (!Array.isArray(ids) || ids.length === 0) return;
+
+    const before = JSON.parse(
+      JSON.stringify(empreendimento)
+    ) as UpdateEmpreendimento;
+    const clone = JSON.parse(
+      JSON.stringify(empreendimento)
+    ) as UpdateEmpreendimento;
+
+    if (!Array.isArray(clone.empreendimentoTopicos))
+      clone.empreendimentoTopicos = [];
+
+    let topico = clone.empreendimentoTopicos.find(
+      (t) => Number(t.topicoId) === Number(topicoId)
+    ) as any;
+
+    if (!topico) {
+      topico = {
+        topicoId: Number(topicoId),
+        posicao: (clone.empreendimentoTopicos || []).length + 1,
+        topicoAmbientes: [],
+        topicoMateriais: [],
+      };
+      clone.empreendimentoTopicos.push(topico);
+    }
+
+    // garantir que topicoMateriais é array
+    if (!Array.isArray(topico.topicoMateriais)) topico.topicoMateriais = [];
+
+    const existentes = (topico.topicoMateriais || []).map((m: any) =>
+      Number(m.materialId)
+    );
+    const novos = ids.filter((id) => !existentes.includes(Number(id)));
+    if (novos.length === 0) {
+      toast.current?.show?.({
+        severity: "warn",
+        summary: "Aviso",
+        detail: "Nenhum material novo para adicionar.",
+        life: 2500,
+      });
+      return;
+    }
+
+    novos.forEach((id) => {
+      topico.topicoMateriais.push({ materialId: Number(id) });
+    });
+
+    // optimistic update
+    setEmpreendimento(clone);
+
+    const payload = buildPayloadForApi(clone);
+    console.log("PAYLOAD GERADO (ADD MATERIAIS):", payload);
+
+    try {
+      setLoading(true);
+      await DocumentoService.updateEmpreendimento(payload);
+      setEmpreendimento(payload);
+      toast.current?.show?.({
+        severity: "success",
+        summary: "Sucesso",
+        detail: "Materiais adicionados!",
+        life: 3000,
+      });
+    } catch (err) {
+      console.error("Erro ao adicionar materiais:", err);
+      setEmpreendimento(before);
+      toast.current?.show?.({
+        severity: "error",
+        summary: "Erro",
+        detail: "Falha ao adicionar materiais. Revertendo.",
+        life: 5000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  //
+  // REMOVER MATERIAL (TÓPICO = 3)
+  //
+  const handleRemoveMaterial = async (materialId: number, topicoId: number) => {
+    if (!empreendimento) return;
+
+    const before = JSON.parse(
+      JSON.stringify(empreendimento)
+    ) as UpdateEmpreendimento;
+    const clone = JSON.parse(
+      JSON.stringify(empreendimento)
+    ) as UpdateEmpreendimento;
+
+    const topico = (clone.empreendimentoTopicos || []).find(
+      (t) => Number(t.topicoId) === Number(topicoId)
+    ) as any;
+
+    if (!topico) {
+      toast.current?.show?.({
+        severity: "warn",
+        summary: "Aviso",
+        detail: "Tópico não encontrado no documento.",
+        life: 3000,
+      });
+      return;
+    }
+
+    topico.topicoMateriais = (topico.topicoMateriais || []).filter(
+      (m: any) => Number(m.materialId) !== Number(materialId)
+    );
+
+    // optimistic update
+    setEmpreendimento(clone);
+
+    const payload = buildPayloadForApi(clone);
+    console.log("PAYLOAD GERADO (REMOVE MATERIAL):", payload);
+
+    try {
+      setLoading(true);
+      await DocumentoService.updateEmpreendimento(payload);
+      setEmpreendimento(payload);
+      toast.current?.show?.({
+        severity: "info",
+        summary: "Removido",
+        detail: "Material removido com sucesso!",
+        life: 3000,
+      });
+    } catch (err) {
+      console.error("Erro ao remover material:", err);
+      setEmpreendimento(before);
+      toast.current?.show?.({
+        severity: "error",
+        summary: "Erro",
+        detail: "Falha ao remover material. Revertendo.",
         life: 5000,
       });
     } finally {
@@ -412,9 +551,11 @@ export default function EmpreendimentoEditor({
             itemAmbienteSelecionado={itemAmbienteSelecionado}
             setItemAmbienteSelecionado={setItemAmbienteSelecionado}
             empreendimento={empreendimento}
-            itensDocumento={[]} // o componente lê do empreendimento
+            itensDocumento={[]} // componente lê do empreendimento
             itemMarcaMateriais={marcaMaterial}
+            // handlers: itens ambientes e materiais (marcas)
             onAddItems={handleAddItems}
+            onAddMateriais={handleAddMateriais}
           />
 
           <div className="w-full overflow-x-auto">
@@ -423,6 +564,7 @@ export default function EmpreendimentoEditor({
               topicoSelecionado={ambienteSelecionado}
               ambienteSelecionado={itemAmbienteSelecionado}
               onRemoveItem={handleRemoveItem}
+              onRemoveMaterial={handleRemoveMaterial}
             />
           </div>
 

@@ -105,7 +105,37 @@ export default function AdicionarItensDocumento({
   const handleAddItems = async () => {
     if (selectedAmbientes.length === 0) return;
 
+    // ============================
+    // 🔥 CASO ESPECIAL: MARCAS
+    // ============================
+    if (ambienteSelecionado.toUpperCase() === "MARCAS") {
+      const TOPICO_MARCAS = 3;
+
+      // selectedAmbientes[].code atualmente contém item.id (id do relacionamento)
+      // precisamos converter para materialId real
+      const idsToAdd = selectedAmbientes
+        .map((sel) => {
+          const found = itemMarcaMateriais.find(
+            (mm) => mm.id === Number(sel.code)
+          );
+          return found?.material.id; // isso é o materialId
+        })
+        .filter(Boolean) as number[];
+
+      if (idsToAdd.length === 0) return;
+
+      // ambienteId não existe → mandamos 0
+      onAddItems(idsToAdd, TOPICO_MARCAS, 0);
+
+      setSelectedAmbientes([]);
+      return;
+    }
+
+    // ============================
+    // 🔹 CASO NORMAL (item de ambientes)
+    // ============================
     const ambientes = await subTopicosAmbienteService.getAllAmbiente();
+
     const ambiente = ambientes.find(
       (a: any) => a.nome === itemAmbienteSelecionado
     );
