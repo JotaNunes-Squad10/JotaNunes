@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Header from "../../components/gerenciamentoUser/headerUser/page";
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import { empreendimentoService, Empreendimento, itemService, ambienteService, topicoService, marcaMaterialService } from '../../lib/services';
 import 'primereact/resources/themes/saga-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
-import { Button } from 'primereact/button';
+// Button import removido — usamos botão nativo e menu customizado
 
 export default function DocRevisao() {
     const [options, setOptions] = useState<Array<{ label: string; value: Empreendimento }>>([]);
@@ -31,6 +31,69 @@ export default function DocRevisao() {
         // Posição da caixa flutuante {top, left}
         const [commentBoxPos, setCommentBoxPos] = useState<{ top: number; left: number } | null>(null);
         const [tempComment, setTempComment] = useState<string>('');
+
+        // Status options e cores
+        const statusOptions: Array<{ label: string; value: string; color: string }> = [
+            { label: 'Pendente', value: 'Pendente', color: '#FFD966' },
+            { label: 'Revisao', value: 'Revisao', color: '#FF9800' },
+            { label: 'Aprovado', value: 'Aprovado', color: '#4CAF50' },
+            { label: 'Cancelado', value: 'Cancelado', color: '#F44336' },
+        ];
+
+        const [selectedStatus, setSelectedStatus] = useState<string>('Pendente');
+        const [showStatusMenu, setShowStatusMenu] = useState<boolean>(false);
+        const statusMenuRef = useRef<HTMLDivElement | null>(null);
+
+        // Sincroniza status inicial com o detalhe quando carregado
+        useEffect(() => {
+            setSelectedStatus(detalhe?.status ?? 'Pendente');
+        }, [detalhe?.status]);
+
+        // Fecha o menu de status ao clicar fora
+        useEffect(() => {
+            if (!showStatusMenu) return;
+            const onDocClick = (ev: MouseEvent) => {
+                const target = ev.target as Node;
+                if (statusMenuRef.current && !statusMenuRef.current.contains(target)) {
+                    setShowStatusMenu(false);
+                }
+            };
+            document.addEventListener('mousedown', onDocClick);
+            return () => document.removeEventListener('mousedown', onDocClick);
+        }, [showStatusMenu]);
+
+        const getColorForStatus = (s: string) => {
+            const found = statusOptions.find((o) => o.value === s || o.label === s);
+            return found ? found.color : '#FFD966';
+        };
+
+        const hexToRgb = (hex: string) => {
+            const h = hex.replace('#', '');
+            const bigint = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+            return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+        };
+
+        const getTextColorForBg = (hex: string) => {
+            try {
+                const { r, g, b } = hexToRgb(hex);
+                // relative luminance
+                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                return luminance > 0.6 ? '#000000' : '#ffffff';
+            } catch {
+                return '#000000';
+            }
+        };
+
+        const handleSelectStatus = (status: string) => {
+            setSelectedStatus(status);
+            setShowStatusMenu(false);
+            // Atualiza detalhe localmente (não persiste no backend automaticamente)
+            setDetalhe((prev) => {
+                if (!prev) return prev;
+                return { ...prev, status } as Empreendimento;
+            });
+        };
+
 
     useEffect(() => {
         const load = async () => {
@@ -310,12 +373,61 @@ export default function DocRevisao() {
                         className="w-full"
                     />
                 </div>
-                <div className="mt-2 flex justify-end px-6">
-                    <Button label="Primary" />
+                {/* Botões abaixo do input, alinhados à direita dentro do mesmo container do input */}
+                <div className="mt-2 max-w-4xl mx-auto px-6">
+                    <div className="w-full">
+                        <div className="md:fixed md:left-1/2 md:-translate-x-1/2 md:transform w-full max-w-4xl md:top-20 md:z-50 py-0">
+                            <div className="max-w-4xl mx-auto px-0 flex justify-end">
+                                <div className="w-full md:w-80">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <div className="relative">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowStatusMenu((s) => !s)}
+                                                className="w-full px-3 py-1 rounded font-semibold border text-center"
+                                                style={{
+                                                    backgroundColor: getColorForStatus(detalhe?.status ?? selectedStatus),
+                                                    color: getTextColorForBg(getColorForStatus(detalhe?.status ?? selectedStatus)),
+                                                    borderColor: 'rgba(0,0,0,0.08)'
+                                                }}
+                                            >
+                                                {detalhe?.status ?? selectedStatus}
+                                            </button>
+
+                                            {showStatusMenu && (
+                                                <div ref={statusMenuRef} className="absolute right-0 mt-2 w-44 bg-white border rounded shadow z-50">
+                                                    {statusOptions.map((opt) => (
+                                                        <button
+                                                            key={opt.value}
+                                                            onClick={() => handleSelectStatus(opt.value)}
+                                                            className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-3"
+                                                        >
+                                                            <span style={{ width: 12, height: 12, backgroundColor: opt.color, borderRadius: 4, display: 'inline-block' }} />
+                                                            <span className="flex-1">{opt.label}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <button
+                                                type="button"
+                                                className="w-full px-3 py-1 rounded font-medium border bg-blue-600 text-white hover:bg-blue-700"
+                                            >
+                                                Salvar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+                <div className="h-0 md:h-0" />
                 <div className="mt-4">
                     {loadingDetalhe ? (
-                        <p>Carregando detalhes do empreendimento...</p>
+                        <p className="flex justify-center">Carregando detalhes do empreendimento...</p>
                     ) : erroDetalhe ? (
                         <p className="text-red-600">{erroDetalhe}</p>
                     ) : detalhe ? (
@@ -346,14 +458,13 @@ export default function DocRevisao() {
                                     {detalhe.empreendimentoTopicos.map((topico, idx) => (
                                         <section key={topico.id ?? idx} className="mb-4">
                                             <h4 className="font-semibold">{topicosMap[topico.topicoId ?? 0]?.nome || `Tópico ${topico.topicoId ?? topico.id}`}</h4>
-                                            <p className="text-sm text-gray-600">Posição: {topico.posicao ?? '-' } — Versões: {Array.isArray(topico.versoes) ? topico.versoes.join(', ') : '-'}</p>
 
                                             {/* Ambientes */}
                                             {topico.topicoAmbientes && topico.topicoAmbientes.length > 0 && (
                                                 <div className="mt-2">
                                                     {topico.topicoAmbientes.map((amb) => (
                                                         <div key={amb.id} className="mb-3">
-                                                            <h5 className="font-medium">{ambientesMap[amb.ambienteId ?? 0]?.nome || `Ambiente ${amb.ambienteId ?? amb.id}`} — Versões: {Array.isArray(amb.versoes) ? amb.versoes.join(', ') : '-'}</h5>
+                                                            <h5 className="font-medium">{ambientesMap[amb.ambienteId ?? 0]?.nome || `Ambiente ${amb.ambienteId ?? amb.id}`}</h5>
                                                             {amb.ambienteItens && amb.ambienteItens.length > 0 ? (
                                                                 <table className="w-full text-sm border-collapse table-fixed">
                                                                     <thead className="hidden md:table-header-group">
