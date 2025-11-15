@@ -28,6 +28,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import FirstPageIcon from "@mui/icons-material/FirstPage";
 import LastPageIcon from "@mui/icons-material/LastPage";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import axios from "axios";
 import { Skeleton } from "primereact/skeleton";
 import { getCookie } from "cookies-next";
 import { jwtDecode } from "jwt-decode";
@@ -186,34 +187,25 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   };
 
   const atualizarStatusEmpreendimento = async (id: string, status: number) => {
-  try {
-    const token = getCookie("accessToken");
-    const response = await fetch(
-      "https://jotanunesservice.onrender.com/api/v1/empreendimento/UpdateEmpreendimentoStatus",
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json-patch+json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ id, status }),
-      }
-    );
+    try {
+      const token = getCookie("accessToken");
 
+      const response = await axios.patch(
+        "https://jotanunesservice.onrender.com/api/v1/empreendimento/UpdateEmpreendimentoStatus",
+        { id, status },
+        {
+          headers: {
+            "Content-Type": "application/json-patch+json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Erro ao atualizar status: ${text}`);
+      return response.data;
+    } catch (error: any) {
+      alert("Falha ao atualizar o status do empreendimento.");
     }
-
-    const data = await response.json();
-    console.log("Status atualizado com sucesso:", data);
-    return data;
-  } catch (error) {
-    console.error("Falha ao atualizar status:", error);
-    alert("Falha ao atualizar o status do empreendimento.");
-  }
-};
+  };
 
   const handleSort = (column: "nome" | "ultimaAlteracao" | "usuario") => {
     setPage(0);
