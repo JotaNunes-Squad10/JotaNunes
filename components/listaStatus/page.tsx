@@ -29,6 +29,7 @@ import FirstPageIcon from "@mui/icons-material/FirstPage";
 import LastPageIcon from "@mui/icons-material/LastPage";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 import { Skeleton } from "primereact/skeleton";
 import { getCookie } from "cookies-next";
 import { jwtDecode } from "jwt-decode";
@@ -58,6 +59,9 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   onSearchChange,
   loading = false,
 }) => {
+
+  const router = useRouter();
+
   const [page, setPage] = useState(0);
   const [userProfile, setUserProfile] = useState<number | null>(null);
   const rowsPerPage = 10;
@@ -444,6 +448,12 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                 <MenuItem
                   key={opt}
                   onClick={() => {
+                    
+                    if (opt === "Verificar") {
+                      router.push(`/revisao`);
+                      return;
+                    }
+
                     if (opt === "Mudar status") {
                       setSelectedEmp((prev) => prev ? { ...prev, showStatusChange: true } : selectedEmp);
                     } else {
