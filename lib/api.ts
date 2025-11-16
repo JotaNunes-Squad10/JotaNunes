@@ -219,6 +219,41 @@ export const empreendimentoService = {
 
     return response.data.data;
   },
+    async getEmpreendimentoById(id: string): Promise<any> {
+    try {
+      const response = await axios.get(
+        `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${id}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar empreendimento por ID:", error);
+      throw error;
+    }
+  },
+      async createEmpreendimento(payload: any): Promise<any> {
+    try {
+      const response = await axios.post(
+        "https://jotanunesservice.onrender.com/api/v1/empreendimento/CreateEmpreendimento",
+        payload
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao criar empreendimento:", error);
+      throw error;
+    }
+  },
+  async getEmpreendimentoByVersion(id: string, versionNumber: number): Promise<any> {
+    try {
+      const response = await axios.get(
+        `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoByVersion/${id}/${versionNumber}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar empreendimento por versão:", error);
+      throw error;
+    }
+  },
+
 };
 
 // Configuração da API do Documento
@@ -243,4 +278,5 @@ export const DocumentoService = {
 
     return null;
   },
+
 };

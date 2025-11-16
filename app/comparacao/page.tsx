@@ -60,6 +60,7 @@ export default function Comparacao({ ambienteSelecionado, setAmbienteSelecionado
   const handleChangeEmpreendimento = async (e: DropdownChangeEvent) => {
     const empreendimentoSelecionado = e.value as TituloEmpreendimento;
     setSelectedTitulo(empreendimentoSelecionado);
+    
     setAmbienteSelecionado?.(empreendimentoSelecionado);
 
     const versoesArray = Array.from({ length: empreendimentoSelecionado.versao }, (_, i) => empreendimentoSelecionado.versao - i);
@@ -76,6 +77,7 @@ export default function Comparacao({ ambienteSelecionado, setAmbienteSelecionado
 
       console.log("📄 Documento atual (versão mais recente):", responseAtual);
       setDocumentoAtual(responseAtual.data);
+      
     } catch (error) {
       console.error("Erro ao gerar documento atual:", error);
     }
