@@ -37,6 +37,7 @@ export default function AdicionarItensDocumento({
     []
   );
   const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(false);
 
   useEffect(() => {
     if (!itemAmbienteSelecionado) return;
@@ -89,7 +90,16 @@ export default function AdicionarItensDocumento({
     };
 
     fetchItens();
-  }, [itemAmbienteSelecionado, empreendimento]);
+  }, [
+    itemAmbienteSelecionado,
+    empreendimento,
+    refreshTrigger,
+    ambienteSelecionado,
+  ]);
+
+  const handleRefresh = () => {
+    setRefreshTrigger((prev) => !prev);
+  };
 
   // =========================
   //  FILTRAR E EXIBIR MARCAS
@@ -195,7 +205,7 @@ export default function AdicionarItensDocumento({
             filter
           />
         </div>
-        <AdicionarNovoItem onReload={() => {}} />
+        <AdicionarNovoItem onReload={handleRefresh} />
       </div>
 
       <div className="flex mt-3 w-[50%] gap-5">

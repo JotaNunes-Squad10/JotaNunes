@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Dialog } from "primereact/dialog";
 import { Item, ItemsServie } from "@/lib/api";
+import { Toast } from "primereact/toast";
 
 interface Props {
   onReload: () => void;
@@ -10,6 +11,16 @@ export default function AdicionarNovoItem({ onReload }: Props) {
   const [visible, setVisible] = useState<boolean>(false);
   const [nomeItem, setNomeItem] = useState<string>("");
   const [descricaoItem, setDescricaoItem] = useState<string>("");
+  const toast = useRef<Toast>(null);
+
+  const showSuccess = () => {
+    toast.current?.show({
+      severity: "success",
+      summary: "Success",
+      detail: "Item criado com sucesso!",
+      life: 3000,
+    });
+  };
 
   const handleCreateNewItem = async () => {
     try {
@@ -17,9 +28,14 @@ export default function AdicionarNovoItem({ onReload }: Props) {
         nome: nomeItem,
         descricao: descricaoItem,
       };
+
+      console.log(newItem);
       const createdItem = await ItemsServie.createItem(newItem);
+
       console.log("Item criado com sucesso:", createdItem);
+
       onReload();
+      showSuccess();
       setVisible(false);
     } catch (error) {
       console.error("Erro ao criar novo item:", error);
@@ -28,6 +44,7 @@ export default function AdicionarNovoItem({ onReload }: Props) {
 
   return (
     <div className="card flex justify-content-center">
+      <Toast ref={toast} />
       <button
         onClick={() => setVisible(true)}
         className="px-4 py-3 border border-gray-300 rounded-lg text-[#0f582a] cursor-pointer hover:bg-gray-100"
