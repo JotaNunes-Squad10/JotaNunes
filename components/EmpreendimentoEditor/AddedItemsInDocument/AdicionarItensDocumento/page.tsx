@@ -22,6 +22,7 @@ interface AmbienteOption {
   name: string;
   code: string;
   descricao: string;
+  materialId?: number;
 }
 
 export default function AdicionarItensDocumento({
@@ -38,22 +39,23 @@ export default function AdicionarItensDocumento({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!itemAmbienteSelecionado) return;
+
     const fetchItens = async () => {
       setLoading(true);
       try {
         const data = await itemService.getAllItem();
-        const todosItens = data || data;
-        const itensFormatados = todosItens.map((item: any) => ({
+        const itensFormatados = data.map((item: any) => ({
           name: item.nome,
           code: String(item.id),
           descricao: item.descricao,
         }));
 
-        // 🔹 pegar o ambiente selecionado e topico correspondente
         const ambientes = await subTopicosAmbienteService.getAllAmbiente();
         const ambiente = ambientes.find(
           (a: any) => a.nome === itemAmbienteSelecionado
         );
+
         if (!ambiente) {
           setItensAmbiente(itensFormatados);
           return;
@@ -65,7 +67,8 @@ export default function AdicionarItensDocumento({
         const topico = empreendimento.empreendimentoTopicos.find(
           (t) => t.topicoId === topicoId
         );
-        const ambienteExistente = topico?.topicoAmbientes.find(
+
+        const ambienteExistente = topico?.topicoAmbientes?.find(
           (a: any) => a.ambienteId === ambienteId
         );
 
@@ -73,7 +76,6 @@ export default function AdicionarItensDocumento({
           ? ambienteExistente.ambienteItens.map((i: any) => i.itemId)
           : [];
 
-        // 🔹 filtra itens que ainda não estão no documento
         const filtrados = itensFormatados.filter(
           (i) => !itensExistentes.includes(Number(i.code))
         );
@@ -86,54 +88,77 @@ export default function AdicionarItensDocumento({
       }
     };
 
-    if (itemAmbienteSelecionado) fetchItens();
+    fetchItens();
   }, [itemAmbienteSelecionado, empreendimento]);
 
+  // =========================
+  //  FILTRAR E EXIBIR MARCAS
+  // =========================
   useEffect(() => {
-    if (ambienteSelecionado.toLocaleLowerCase() === "marcas") {
-      const itemMarcas: AmbienteOption[] = itemMarcaMateriais.map((item) => ({
-        name: item.marca.nome,
-        code: String(item.id),
-        descricao: item.material.nome,
-      }));
+    if (ambienteSelecionado.toLowerCase() !== "marcas") return;
 
-      setItensAmbiente(itemMarcas);
-      setLoading(false);
-    }
-  }, [ambienteSelecionado]);
+    const topicoMarcas = empreendimento.empreendimentoTopicos.find(
+      (t: any) => t.topicoId === 3
+    );
 
+    const materiaisExistentes = topicoMarcas?.topicoMateriais
+      ? topicoMarcas.topicoMateriais.map((m: any) => m.materialId)
+      : [];
+
+    const todasMarcas: AmbienteOption[] = itemMarcaMateriais.map((item) => ({
+      name: item.marca.nome,
+      code: String(item.id),
+      descricao: item.material.nome,
+      materialId: item.material.id,
+    }));
+
+    const filtrado = todasMarcas.filter(
+      (m) => !materiaisExistentes.includes(m.materialId!)
+    );
+
+    setItensAmbiente(filtrado);
+    setLoading(false);
+  }, [ambienteSelecionado, empreendimento, itemMarcaMateriais]);
+
+  // =========================
+  //  ADICIONAR ITENS / MARCAS
+  // =========================
   const handleAddItems = async () => {
     if (selectedAmbientes.length === 0) return;
 
-    // ============================
-    // 🔥 CASO ESPECIAL: MARCAS
-    // ============================
+    // -----------------------
+    //  CASO ESPECIAL: MARCAS
+    // -----------------------
     if (ambienteSelecionado.toUpperCase() === "MARCAS") {
       const TOPICO_MARCAS = 3;
 
-      // selectedAmbientes[].code atualmente contém item.id (id do relacionamento)
-      // precisamos converter para materialId real
       const idsToAdd = selectedAmbientes
         .map((sel) => {
           const found = itemMarcaMateriais.find(
             (mm) => mm.id === Number(sel.code)
           );
-          return found?.material.id; // isso é o materialId
+          return found?.material.id;
         })
         .filter(Boolean) as number[];
 
       if (idsToAdd.length === 0) return;
 
-      // ambienteId não existe → mandamos 0
       onAddItems(idsToAdd, TOPICO_MARCAS, 0);
+
+      // 🔥 REMOVER MARCAS ADICIONADAS DO MULTISELECT
+      setItensAmbiente((prev) =>
+        prev.filter(
+          (item) => !selectedAmbientes.some((sel) => sel.code === item.code)
+        )
+      );
 
       setSelectedAmbientes([]);
       return;
     }
 
-    // ============================
-    // 🔹 CASO NORMAL (item de ambientes)
-    // ============================
+    // ------------------------
+    //  CASO NORMAL (ITENS)
+    // ------------------------
     const ambientes = await subTopicosAmbienteService.getAllAmbiente();
 
     const ambiente = ambientes.find(
