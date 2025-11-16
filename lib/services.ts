@@ -236,6 +236,21 @@ export const empreendimentoService = {
       return null;
     }
   },
+  // Atualizar status do empreendimento (id:string, status:number)
+  async updateStatus(id: string | number, status: number): Promise<void> {
+    try {
+      // Usar PATCH seguindo o padrão de outros endpoints de atualização neste projeto
+      await authApi.patch(
+        "/api/v1/empreendimento/UpdateEmpreendimentoStatus",
+        { id: String(id), status },
+        { headers: { Authorization: getAuthToken() } }
+      );
+    } catch (err) {
+      console.error(`Erro ao atualizar status do empreendimento ${id}:`, err);
+      // repassa o erro para o chamador lidar
+      throw err;
+    }
+  },
 };
 
 export interface Ambiente {

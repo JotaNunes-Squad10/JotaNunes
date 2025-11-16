@@ -3,6 +3,10 @@
 import React, { useEffect, useState, useRef } from "react";
 import Header from "../../components/gerenciamentoUser/headerUser/page";
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
+import { Toast } from 'primereact/toast';
+import { Dialog } from 'primereact/dialog';
+import { Button } from 'primereact/button';
+import { useRouter } from 'next/navigation';
 import { empreendimentoService, Empreendimento, itemService, ambienteService, topicoService, marcaMaterialService } from '../../lib/services';
 import 'primereact/resources/themes/saga-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
@@ -34,7 +38,6 @@ export default function DocRevisao() {
 
         // Status options e cores
         const statusOptions: Array<{ label: string; value: string; color: string }> = [
-            { label: 'Pendente', value: 'Pendente', color: '#FFD966' },
             { label: 'Revisao', value: 'Revisao', color: '#FF9800' },
             { label: 'Aprovado', value: 'Aprovado', color: '#4CAF50' },
             { label: 'Cancelado', value: 'Cancelado', color: '#F44336' },
@@ -43,6 +46,12 @@ export default function DocRevisao() {
         const [selectedStatus, setSelectedStatus] = useState<string>('Pendente');
         const [showStatusMenu, setShowStatusMenu] = useState<boolean>(false);
         const statusMenuRef = useRef<HTMLDivElement | null>(null);
+        const [savingStatus, setSavingStatus] = useState<boolean>(false);
+        const [statusError, setStatusError] = useState<string | null>(null);
+        const toast = useRef<Toast | null>(null);
+        const router = useRouter();
+        const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
+        const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
         // Sincroniza status inicial com o detalhe quando carregado
         useEffect(() => {
@@ -84,35 +93,86 @@ export default function DocRevisao() {
             }
         };
 
-        const handleSelectStatus = (status: string) => {
-            setSelectedStatus(status);
+        const mapStatusToNumber = (s: string) => {
+            const normalized = (s || '').toLowerCase().trim();
+            if (normalized === 'aprovado' || normalized === 'aprovados') return 1;
+            if (normalized === 'revisao' || normalized === 'em revisão' || normalized === 'em revisao' || normalized === 'revisão') return 2;
+            if (normalized === 'pendente') return 3;
+            if (normalized === 'cancelado') return 5;
+            return 3;
+        };
+
+        const handleSelectStatus = async (status: string) => {
             setShowStatusMenu(false);
-            // Atualiza detalhe localmente (não persiste no backend automaticamente)
-            setDetalhe((prev) => {
-                if (!prev) return prev;
-                return { ...prev, status } as Empreendimento;
-            });
+            setStatusError(null);
+            setSavingStatus(true);
+            try {
+                await empreendimentoService.updateStatus(detalhe?.id ?? selected?.id ?? '', mapStatusToNumber(status));
+
+                // atualiza estado localmente
+                setSelectedStatus(status);
+                setDetalhe((prev) => {
+                    if (!prev) return prev;
+                    return { ...prev, status } as Empreendimento;
+                });
+
+                // informar o usuário com Toast
+                toast.current?.show({ severity: 'success', summary: 'Status atualizado', detail: `Status alterado para ${status}`, life: 3000 });
+
+                // Remover o empreendimento atualizado da lista local de opções (apenas Pendente deve aparecer)
+                const updatedId = detalhe?.id ?? selected?.id;
+                if (updatedId) {
+                    setOptions((prev) => prev.filter((o) => String(o.value?.id) !== String(updatedId)));
+                }
+
+                // limpar seleção/detalhe e comentários locais relacionados
+                setSelected(null);
+                setDetalhe(null);
+                setCommentsMap({});
+
+                // Forçar refresh leve (opcional) — mantemos por compatibilidade
+                try { router.refresh(); } catch {}
+            } catch (err: unknown) {
+                console.error('Erro ao atualizar status no servidor', err);
+                const msg = err instanceof Error ? err.message : String(err);
+                setStatusError(msg || 'Erro ao atualizar status');
+                try { window.alert('Não foi possível atualizar o status: ' + msg); } catch {}
+            } finally {
+                setSavingStatus(false);
+            }
+        };
+
+        // Aplica o status pendente (chamado ao confirmar no modal)
+        const applyPendingStatus = async () => {
+            if (!pendingStatus) {
+                setShowConfirmModal(false);
+                return;
+            }
+            // reutiliza a rotina existente
+            await handleSelectStatus(pendingStatus);
+            setPendingStatus(null);
+            setShowConfirmModal(false);
+        };
+
+        const cancelPendingStatus = () => {
+            setPendingStatus(null);
+            setShowConfirmModal(false);
         };
 
 
     useEffect(() => {
-        const load = async () => {
+        // carregar empreendimentos
+        (async () => {
             try {
                 const data = await empreendimentoService.getAllEmpreendimentos();
-                // Filtrar apenas empreendimentos com status "Pendente"
                 const filtered = data.filter((e) => e.status === 'Pendente');
-                const mapped = filtered.map((e) => ({
-                    label: e.nome || e.name || e.descricao || String(e.id),
-                    value: e,
-                }));
+                const mapped = filtered.map((e) => ({ label: e.nome || e.name || e.descricao || String(e.id), value: e }));
                 mapped.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' }));
                 setOptions(mapped);
             } catch (err) {
                 console.error('Erro ao carregar empreendimentos', err);
             }
-        };
-
-        load();
+        })();
     }, []);
 
     // Busca os nomes dos itens referenciados no detalhe (ambienteItens)
@@ -336,6 +396,7 @@ export default function DocRevisao() {
     return (
         <div>
             <Header />
+            <Toast ref={toast} />
             <div className="p-4">
                 <div className="max-w-4xl mx-auto flex flex-col items-center md:items-start gap-3 px-6">
                     <label className="block mb-0 text-xl font-medium text-center md:text-left">Revisão de Empreendimento</label>
@@ -380,35 +441,51 @@ export default function DocRevisao() {
                             <div className="max-w-4xl mx-auto px-0 flex justify-end">
                                 <div className="w-full md:w-80">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                        <div className="relative">
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowStatusMenu((s) => !s)}
-                                                className="w-full px-3 py-1 rounded font-semibold border text-center"
-                                                style={{
-                                                    backgroundColor: getColorForStatus(detalhe?.status ?? selectedStatus),
-                                                    color: getTextColorForBg(getColorForStatus(detalhe?.status ?? selectedStatus)),
-                                                    borderColor: 'rgba(0,0,0,0.08)'
-                                                }}
-                                            >
-                                                {detalhe?.status ?? selectedStatus}
-                                            </button>
+                                            {detalhe ? (
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowStatusMenu((s) => !s)}
+                                                        className="w-full px-3 py-1 rounded font-semibold border text-center"
+                                                        style={{
+                                                            backgroundColor: getColorForStatus(detalhe?.status ?? selectedStatus),
+                                                            color: getTextColorForBg(getColorForStatus(detalhe?.status ?? selectedStatus)),
+                                                            borderColor: 'rgba(0,0,0,0.08)'
+                                                        }}
+                                                        disabled={savingStatus}
+                                                    >
+                                                        {savingStatus ? (
+                                                            <>
+                                                                <i className="pi pi-spin pi-spinner mr-2" />
+                                                                Atualizando
+                                                            </>
+                                                        ) : (detalhe?.status ?? selectedStatus)}
+                                                    </button>
 
-                                            {showStatusMenu && (
-                                                <div ref={statusMenuRef} className="absolute right-0 mt-2 w-44 bg-white border rounded shadow z-50">
-                                                    {statusOptions.map((opt) => (
-                                                        <button
-                                                            key={opt.value}
-                                                            onClick={() => handleSelectStatus(opt.value)}
-                                                            className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-3"
-                                                        >
-                                                            <span style={{ width: 12, height: 12, backgroundColor: opt.color, borderRadius: 4, display: 'inline-block' }} />
-                                                            <span className="flex-1">{opt.label}</span>
-                                                        </button>
-                                                    ))}
+                                                    {showStatusMenu && (
+                                                        <div ref={statusMenuRef} className="absolute right-0 mt-2 w-44 bg-white border rounded shadow z-50">
+                                                            {statusOptions.map((opt) => (
+                                                                <button
+                                                                    key={opt.value}
+                                                                    onClick={() => {
+                                                                        // abrir modal de confirmação
+                                                                        setPendingStatus(opt.value);
+                                                                        setShowStatusMenu(false);
+                                                                        setShowConfirmModal(true);
+                                                                    }}
+                                                                    className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-3"
+                                                                >
+                                                                    <span style={{ width: 12, height: 12, backgroundColor: opt.color, borderRadius: 4, display: 'inline-block' }} />
+                                                                    <span className="flex-1">{opt.label}</span>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
+                                            ) : (
+                                                // quando não há detalhe selecionado, mostra um espaço vazio para alinhamento
+                                                <div />
                                             )}
-                                        </div>
 
                                         <div>
                                             <button
@@ -424,6 +501,11 @@ export default function DocRevisao() {
                         </div>
                     </div>
                 </div>
+                {statusError && (
+                    <div className="max-w-4xl mx-auto px-6 mt-2">
+                        <p className="text-sm text-red-600">{statusError}</p>
+                    </div>
+                )}
                 <div className="h-0 md:h-0" />
                 <div className="mt-4">
                     {loadingDetalhe ? (
@@ -563,6 +645,33 @@ export default function DocRevisao() {
                         </article>
                     ) : null}
                 </div>
+                {/* Modal de confirmação de alteração de status (PrimeReact Dialog) */}
+                <Dialog
+                    header="Confirmar alteração de status"
+                    visible={showConfirmModal}
+                    style={{ width: '90%', maxWidth: '520px' }}
+                    modal
+                    onHide={cancelPendingStatus}
+                    footer={
+                        <div className="flex justify-end gap-2">
+                            <Button label="Cancelar" onClick={cancelPendingStatus} className="p-button-secondary" />
+                            <Button
+                                label={savingStatus ? 'Atualizando' : 'Confirmar'}
+                                icon={savingStatus ? 'pi pi-spin pi-spinner' : undefined}
+                                iconPos="left"
+                                onClick={applyPendingStatus}
+                                disabled={savingStatus}
+                                className="p-button-danger"
+                            />
+                        </div>
+                    }
+                >
+                    <div className="px-1 py-2 text-sm">
+                        <p>
+                            Deseja alterar o status do empreendimento <strong>{detalhe?.nome || selected?.nome || selected?.name || detalhe?.id}</strong> para <strong>{pendingStatus}</strong>?
+                        </p>
+                    </div>
+                </Dialog>
             </div>
         </div>
     );
