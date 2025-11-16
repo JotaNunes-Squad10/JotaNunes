@@ -431,7 +431,7 @@ export default function DocRevisao() {
                         optionLabel="label"
                         filter
                         placeholder="Selecione um empreendimento"
-                        className="w-full"
+                        className="w-full md:w-[54.5rem]"
                     />
                 </div>
                 {/* Botões abaixo do input, alinhados à direita dentro do mesmo container do input */}
