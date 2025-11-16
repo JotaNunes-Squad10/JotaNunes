@@ -154,25 +154,56 @@ export default function Comparacao({ ambienteSelecionado, setAmbienteSelecionado
             {documentoAtual && (
             <div className="mt-10 w-full flex flex-col gap-6">
 
-                <div className="flex gap-4 font-bold text-lg">
-                <p className="flex-1 text-center">Versão Atual (mais recente)</p>
-                {documentoComparado && <p className="flex-1 text-center">Versão Selecionada</p>}
-                </div>
+                {/* <div className="flex gap-4 font-bold text-lg">
+                  <p className="flex-1 text-center">Versão Atual (mais recente)</p>
+                  {documentoComparado && <p className="flex-1 text-center">Versão Selecionada</p>}
+                </div> */}
 
-                <div className={`flex gap-6 ${documentoComparado ? "flex-row" : "justify-center"}`}>
-                
-                <iframe
-                    className="flex-1 h-[80vh] border rounded"
-                    src={`data:application/pdf;base64,${documentoAtual}`}
-                />
+<div
+  className={`flex gap-6 ${
+    documentoComparado ? "flex-col md:flex-row" : "justify-center"
+  }`}
+>
 
-                {documentoComparado && (
-                    <iframe
-                    className="flex-1 h-[80vh] border rounded"
-                    src={`data:application/pdf;base64,${documentoComparado}`}
-                    />
-                )}
-                </div>
+  <div className="w-full md:flex-1">
+
+    <p className="block md:hidden text-center mb-2 font-bold text-lg">
+      Versão Atual (mais recente)
+    </p>
+
+
+    <p className="hidden md:block text-center mb-2 font-bold text-lg">
+      Versão Atual (mais recente)
+    </p>
+
+    <iframe
+      className="w-full h-[500px] md:h-[80vh] border rounded"
+      src={`data:application/pdf;base64,${documentoAtual}`}
+    />
+  </div>
+
+
+  {documentoComparado && (
+    <div className="w-full md:flex-1">
+
+      <p className="block md:hidden text-center mb-2 font-bold text-lg">
+        Versão Selecionada
+      </p>
+
+
+      <p className="hidden md:block text-center mb-2 font-bold text-lg">
+        Versão Selecionada
+      </p>
+
+      <iframe
+        className="w-full h-[500px] md:h-[80vh] border rounded"
+        src={`data:application/pdf;base64,${documentoComparado}`}
+      />
+    </div>
+  )}
+</div>
+
+
             </div>
             )}
         </div>
