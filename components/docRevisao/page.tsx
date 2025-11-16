@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
+import { createPortal } from 'react-dom';
 import Header from "../../components/gerenciamentoUser/headerUser/page";
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
@@ -10,7 +11,6 @@ import { useRouter } from 'next/navigation';
 import { empreendimentoService, Empreendimento, itemService, ambienteService, topicoService, marcaMaterialService } from '../../lib/services';
 import 'primereact/resources/themes/saga-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
-// Button import removido — usamos botão nativo e menu customizado
 
 export default function DocRevisao() {
     const [options, setOptions] = useState<Array<{ label: string; value: Empreendimento }>>([]);
@@ -18,150 +18,127 @@ export default function DocRevisao() {
     const [detalhe, setDetalhe] = useState<Empreendimento | null>(null);
     const [loadingDetalhe, setLoadingDetalhe] = useState(false);
     const [erroDetalhe, setErroDetalhe] = useState<string | null>(null);
-    // Mapa de itemId -> dados do item (nome, descricao)
     const [itemsMap, setItemsMap] = useState<Record<number, { nome?: string; descricao?: string }>>({});
-        // Mapa de ambienteId -> dados (nome, descricao)
-        const [ambientesMap, setAmbientesMap] = useState<Record<number, { nome?: string; descricao?: string }>>({});
-        // Mapa de topicoId -> dados (nome, descricao)
-        const [topicosMap, setTopicosMap] = useState<Record<number, { nome?: string; descricao?: string }>>({});
-        // Mapa materialId -> marcas (array de nomes)
-        const [marcasMap, setMarcasMap] = useState<Record<number, string[]>>({});
-        // Mapa materialId -> nome do material
-        const [materialNamesMap, setMaterialNamesMap] = useState<Record<number, string>>({});
-        // Comentários locais (itemId -> { text, createdAt })
-        const [commentsMap, setCommentsMap] = useState<Record<number, { text: string; createdAt: string }>>({});
-        // Item atualmente selecionado para criar/editar comentário
-        const [selectedCommentItem, setSelectedCommentItem] = useState<number | null>(null);
-        // Posição da caixa flutuante {top, left}
-        const [commentBoxPos, setCommentBoxPos] = useState<{ top: number; left: number } | null>(null);
-        const [tempComment, setTempComment] = useState<string>('');
+    const [ambientesMap, setAmbientesMap] = useState<Record<number, { nome?: string; descricao?: string }>>({});
+    const [topicosMap, setTopicosMap] = useState<Record<number, { nome?: string; descricao?: string }>>({});
+    const [marcasMap, setMarcasMap] = useState<Record<number, string[]>>({});
+    const [materialNamesMap, setMaterialNamesMap] = useState<Record<number, string>>({});
+    const [commentsMap, setCommentsMap] = useState<Record<string, { text: string; createdAt: string }>>({});
+    const [selectedCommentKey, setSelectedCommentKey] = useState<string | null>(null);
+    const [commentBoxPos, setCommentBoxPos] = useState<{ top: number; left: number } | null>(null);
+    const [tempComment, setTempComment] = useState<string>('');
 
-        // Status options e cores
-        const statusOptions: Array<{ label: string; value: string; color: string }> = [
-            { label: 'Revisao', value: 'Revisao', color: '#FF9800' },
-            { label: 'Aprovado', value: 'Aprovado', color: '#4CAF50' },
-            { label: 'Cancelado', value: 'Cancelado', color: '#F44336' },
-        ];
+    const statusOptions: Array<{ label: string; value: string; color: string }> = [
+        { label: 'Revisao', value: 'Revisao', color: '#FF9800' },
+        { label: 'Aprovado', value: 'Aprovado', color: '#4CAF50' },
+        { label: 'Cancelado', value: 'Cancelado', color: '#F44336' },
+    ];
 
-        const [selectedStatus, setSelectedStatus] = useState<string>('Pendente');
-        const [showStatusMenu, setShowStatusMenu] = useState<boolean>(false);
-        const statusMenuRef = useRef<HTMLDivElement | null>(null);
-        const [savingStatus, setSavingStatus] = useState<boolean>(false);
-        const [statusError, setStatusError] = useState<string | null>(null);
-        const toast = useRef<Toast | null>(null);
-        const router = useRouter();
-        const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
-        const [pendingStatus, setPendingStatus] = useState<string | null>(null);
-
-        // Sincroniza status inicial com o detalhe quando carregado
-        useEffect(() => {
-            setSelectedStatus(detalhe?.status ?? 'Pendente');
-        }, [detalhe?.status]);
-
-        // Fecha o menu de status ao clicar fora
-        useEffect(() => {
-            if (!showStatusMenu) return;
-            const onDocClick = (ev: MouseEvent) => {
-                const target = ev.target as Node;
-                if (statusMenuRef.current && !statusMenuRef.current.contains(target)) {
-                    setShowStatusMenu(false);
-                }
-            };
-            document.addEventListener('mousedown', onDocClick);
-            return () => document.removeEventListener('mousedown', onDocClick);
-        }, [showStatusMenu]);
-
-        const getColorForStatus = (s: string) => {
-            const found = statusOptions.find((o) => o.value === s || o.label === s);
-            return found ? found.color : '#FFD966';
-        };
-
-        const hexToRgb = (hex: string) => {
-            const h = hex.replace('#', '');
-            const bigint = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
-            return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
-        };
-
-        const getTextColorForBg = (hex: string) => {
-            try {
-                const { r, g, b } = hexToRgb(hex);
-                // relative luminance
-                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                return luminance > 0.6 ? '#000000' : '#ffffff';
-            } catch {
-                return '#000000';
-            }
-        };
-
-        const mapStatusToNumber = (s: string) => {
-            const normalized = (s || '').toLowerCase().trim();
-            if (normalized === 'aprovado' || normalized === 'aprovados') return 1;
-            if (normalized === 'revisao' || normalized === 'em revisão' || normalized === 'em revisao' || normalized === 'revisão') return 2;
-            if (normalized === 'pendente') return 3;
-            if (normalized === 'cancelado') return 5;
-            return 3;
-        };
-
-        const handleSelectStatus = async (status: string) => {
-            setShowStatusMenu(false);
-            setStatusError(null);
-            setSavingStatus(true);
-            try {
-                await empreendimentoService.updateStatus(detalhe?.id ?? selected?.id ?? '', mapStatusToNumber(status));
-
-                // atualiza estado localmente
-                setSelectedStatus(status);
-                setDetalhe((prev) => {
-                    if (!prev) return prev;
-                    return { ...prev, status } as Empreendimento;
-                });
-
-                // informar o usuário com Toast
-                toast.current?.show({ severity: 'success', summary: 'Status atualizado', detail: `Status alterado para ${status}`, life: 3000 });
-
-                // Remover o empreendimento atualizado da lista local de opções (apenas Pendente deve aparecer)
-                const updatedId = detalhe?.id ?? selected?.id;
-                if (updatedId) {
-                    setOptions((prev) => prev.filter((o) => String(o.value?.id) !== String(updatedId)));
-                }
-
-                // limpar seleção/detalhe e comentários locais relacionados
-                setSelected(null);
-                setDetalhe(null);
-                setCommentsMap({});
-
-                // Forçar refresh leve (opcional) — mantemos por compatibilidade
-                try { router.refresh(); } catch {}
-            } catch (err: unknown) {
-                console.error('Erro ao atualizar status no servidor', err);
-                const msg = err instanceof Error ? err.message : String(err);
-                setStatusError(msg || 'Erro ao atualizar status');
-                try { window.alert('Não foi possível atualizar o status: ' + msg); } catch {}
-            } finally {
-                setSavingStatus(false);
-            }
-        };
-
-        // Aplica o status pendente (chamado ao confirmar no modal)
-        const applyPendingStatus = async () => {
-            if (!pendingStatus) {
-                setShowConfirmModal(false);
-                return;
-            }
-            // reutiliza a rotina existente
-            await handleSelectStatus(pendingStatus);
-            setPendingStatus(null);
-            setShowConfirmModal(false);
-        };
-
-        const cancelPendingStatus = () => {
-            setPendingStatus(null);
-            setShowConfirmModal(false);
-        };
-
+    const [selectedStatus, setSelectedStatus] = useState<string>('Pendente');
+    const [showStatusMenu, setShowStatusMenu] = useState<boolean>(false);
+    const statusMenuRef = useRef<HTMLDivElement | null>(null);
+    const [savingStatus, setSavingStatus] = useState<boolean>(false);
+    const [statusError, setStatusError] = useState<string | null>(null);
+    const toast = useRef<Toast | null>(null);
+    const router = useRouter();
+    const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
+    const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
     useEffect(() => {
-        // carregar empreendimentos
+        setSelectedStatus(detalhe?.status ?? 'Pendente');
+    }, [detalhe?.status]);
+
+    useEffect(() => {
+        if (!showStatusMenu) return;
+        const onDocClick = (ev: MouseEvent) => {
+            const target = ev.target as Node;
+            if (statusMenuRef.current && !statusMenuRef.current.contains(target)) {
+                setShowStatusMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', onDocClick);
+        return () => document.removeEventListener('mousedown', onDocClick);
+    }, [showStatusMenu]);
+
+    const getColorForStatus = (s: string) => {
+        const found = statusOptions.find((o) => o.value === s || o.label === s);
+        return found ? found.color : '#FFD966';
+    };
+
+    const hexToRgb = (hex: string) => {
+        const h = hex.replace('#', '');
+        const bigint = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+        return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+    };
+
+    const getTextColorForBg = (hex: string) => {
+        try {
+            const { r, g, b } = hexToRgb(hex);
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            return luminance > 0.6 ? '#000000' : '#ffffff';
+        } catch {
+            return '#000000';
+        }
+    };
+
+    const mapStatusToNumber = (s: string) => {
+        const normalized = (s || '').toLowerCase().trim();
+        if (normalized === 'aprovado' || normalized === 'aprovados') return 1;
+        if (normalized === 'revisao' || normalized === 'em revisão' || normalized === 'em revisao' || normalized === 'revisão') return 2;
+        if (normalized === 'pendente') return 3;
+        if (normalized === 'cancelado') return 5;
+        return 3;
+    };
+
+    const handleSelectStatus = async (status: string) => {
+        setShowStatusMenu(false);
+        setStatusError(null);
+        setSavingStatus(true);
+        try {
+            await empreendimentoService.updateStatus(detalhe?.id ?? selected?.id ?? '', mapStatusToNumber(status));
+
+            setSelectedStatus(status);
+            setDetalhe((prev) => {
+                if (!prev) return prev;
+                return { ...prev, status } as Empreendimento;
+            });
+
+            toast.current?.show({ severity: 'success', summary: 'Status atualizado', detail: `Status alterado para ${status}`, life: 3000 });
+
+            const updatedId = detalhe?.id ?? selected?.id;
+            if (updatedId) {
+                setOptions((prev) => prev.filter((o) => String(o.value?.id) !== String(updatedId)));
+            }
+
+            setSelected(null);
+            setDetalhe(null);
+            setCommentsMap({});
+
+            try { router.refresh(); } catch {}
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            setStatusError(msg || 'Erro ao atualizar status');
+        } finally {
+            setSavingStatus(false);
+        }
+    };
+
+    const applyPendingStatus = async () => {
+        if (!pendingStatus) {
+            setShowConfirmModal(false);
+            return;
+        }
+        await handleSelectStatus(pendingStatus);
+        setPendingStatus(null);
+        setShowConfirmModal(false);
+    };
+
+    const cancelPendingStatus = () => {
+        setPendingStatus(null);
+        setShowConfirmModal(false);
+    };
+
+    useEffect(() => {
         (async () => {
             try {
                 const data = await empreendimentoService.getAllEmpreendimentos();
@@ -169,13 +146,12 @@ export default function DocRevisao() {
                 const mapped = filtered.map((e) => ({ label: e.nome || e.name || e.descricao || String(e.id), value: e }));
                 mapped.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' }));
                 setOptions(mapped);
-            } catch (err) {
-                console.error('Erro ao carregar empreendimentos', err);
+            } catch {
+                // falha ao carregar lista; mantemos opções vazias
             }
         })();
     }, []);
 
-    // Busca os nomes dos itens referenciados no detalhe (ambienteItens)
     const fetchItemsNames = async (d: Empreendimento) => {
         try {
             const ids = new Set<number>();
@@ -189,30 +165,27 @@ export default function DocRevisao() {
 
             if (ids.size === 0) return;
 
-            // Limitar concorrência: buscar em lotes (batch) para evitar sobrecarregar a API
             const idsArray = Array.from(ids);
             const BATCH_SIZE = 10;
-            const fetchedMap: Record<number, { nome?: string; descricao?: string }> = {};
 
             for (let i = 0; i < idsArray.length; i += BATCH_SIZE) {
                 const batch = idsArray.slice(i, i + BATCH_SIZE);
                 const promises = batch.map((id) => itemService.getItemById(id));
                 const results = await Promise.allSettled(promises);
+                const fetchedMap: Record<number, { nome?: string; descricao?: string }> = {};
                 results.forEach((r, idx) => {
                     const id = batch[idx];
                     if (r.status === 'fulfilled' && r.value) {
                         fetchedMap[id] = { nome: r.value.nome, descricao: r.value.descricao };
                     }
                 });
-                // Atualizar incrementalmente para permitir render mais rápido
                 setItemsMap((prev) => ({ ...prev, ...fetchedMap }));
             }
-        } catch (err) {
-            console.error('Erro ao buscar nomes de items:', err);
+        } catch {
+            // ignora erro de fetch de nomes de items
         }
     };
-    
-    // Busca nomes de ambientes, tópicos e marcas (materiais)
+
     const fetchAuxNames = async (d: Empreendimento) => {
         try {
             const ambienteIds = new Set<number>();
@@ -229,7 +202,6 @@ export default function DocRevisao() {
                 });
             });
 
-            // Topicos
             if (topicoIds.size > 0) {
                 const topPromises = Array.from(topicoIds).map((id) => topicoService.getTopicoById(id));
                 const topResults = await Promise.allSettled(topPromises);
@@ -241,7 +213,6 @@ export default function DocRevisao() {
                 setTopicosMap(tMap);
             }
 
-            // Ambientes
             if (ambienteIds.size > 0) {
                 const ambPromises = Array.from(ambienteIds).map((id) => ambienteService.getAmbienteById(id));
                 const ambResults = await Promise.allSettled(ambPromises);
@@ -253,7 +224,6 @@ export default function DocRevisao() {
                 setAmbientesMap(aMap);
             }
 
-            // Marcas por material
             if (materialIds.size > 0) {
                 const matPromises = Array.from(materialIds).map((id) => marcaMaterialService.getAllMarcasByMaterialId(id));
                 const matResults = await Promise.allSettled(matPromises);
@@ -262,7 +232,6 @@ export default function DocRevisao() {
                 matResults.forEach((r, idx) => {
                     const id = Array.from(materialIds)[idx];
                     if (r.status === 'fulfilled' && r.value) {
-                        // r.value is MarcaMaterialResult | string[] | null depending on service
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const val: any = r.value;
                         if (val) {
@@ -272,7 +241,6 @@ export default function DocRevisao() {
                                 mMap[id] = val.marcas as string[];
                                 if (val.material) materialNameMap[id] = String(val.material);
                             } else {
-                                // fallback: try to map array-like
                                 mMap[id] = Array.isArray(val) ? val.map(String) : [];
                             }
                         }
@@ -281,99 +249,84 @@ export default function DocRevisao() {
                 setMarcasMap(mMap);
                 setMaterialNamesMap(materialNameMap);
             }
-        } catch (err) {
-            console.error('Erro ao buscar nomes auxiliares (topicos/ambientes/marcas):', err);
+        } catch {
+            // ignora erro de fetch auxiliar
         }
     };
 
-    // Abre a caixa de comentário para um item (clicado)
-    const handleOpenComment = (e: React.MouseEvent, itemId: number) => {
+    const handleOpenComment = (e: React.MouseEvent, key: string) => {
         e.stopPropagation();
-        // posição baseada no retângulo do elemento clicado
         const el = e.currentTarget as HTMLElement;
         const rect = el.getBoundingClientRect();
         const padding = 8;
-        // tenta posicionar à direita do elemento no viewport; se não couber, posiciona à esquerda
-        // getBoundingClientRect() retorna coordenadas relativas ao viewport,
-        // e como a caixa é position:fixed usaremos essas coordenadas (sem somar scroll)
         let left = rect.right + padding;
-        const top = rect.top; // relativo ao viewport
-        const viewportWidth = window.innerWidth;
-        const estimatedBoxWidth = 320;
 
-        // se não couber à direita, posiciona à esquerda do elemento
-        if (left + estimatedBoxWidth > viewportWidth) {
-            left = Math.max(rect.left - estimatedBoxWidth - padding, padding);
+        const ESTIMATED_BOX_WIDTH = 320;
+        const ESTIMATED_BOX_HEIGHT = 220; // altura estimada do box (textarea + controles)
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        // horizontal: tenta posicionar à direita, senão à esquerda, com ajustes
+        if (left + ESTIMATED_BOX_WIDTH > viewportWidth) {
+            left = Math.max(rect.left - ESTIMATED_BOX_WIDTH - padding, padding);
         } else {
-            // se houver muito espaço entre o início do elemento e o left calculado,
-            // aproximamos a caixa para ficar mais próxima da linha (sobrepondo levemente)
             const gap = left - rect.left;
-            if (gap > estimatedBoxWidth * 0.4) {
-                left = Math.max(rect.right - Math.round(estimatedBoxWidth * 0.6), padding);
+            if (gap > ESTIMATED_BOX_WIDTH * 0.4) {
+                left = Math.max(rect.right - Math.round(ESTIMATED_BOX_WIDTH * 0.6), padding);
             }
         }
-        const finalLeft = left;
 
-        setSelectedCommentItem(itemId);
-        setCommentBoxPos({ top: top, left: finalLeft });
-        setTempComment(commentsMap[itemId]?.text ?? '');
+        // vertical: abre abaixo se couber, senão acima; fallback para ficar dentro da viewport
+        let top: number;
+        const spaceBelow = viewportHeight - rect.bottom;
+        if (spaceBelow >= ESTIMATED_BOX_HEIGHT + padding) {
+            top = rect.bottom + padding;
+        } else if (rect.top >= ESTIMATED_BOX_HEIGHT + padding) {
+            top = rect.top - ESTIMATED_BOX_HEIGHT - padding;
+        } else {
+            // fallback: tenta manter dentro da viewport
+            top = Math.max(padding, Math.min(rect.top, viewportHeight - ESTIMATED_BOX_HEIGHT - padding));
+        }
+
+        setSelectedCommentKey(key);
+        setCommentBoxPos({ top, left });
+        setTempComment(commentsMap[key]?.text ?? '');
     };
-
-    const handleSaveComment = (itemId: number) => {
-        // Atualiza o mapa local e também persiste no localStorage por empreendimento
-        const key = `docRevisao_comments_${detalhe?.id ?? 'global'}`;
+    const handleSaveComment = (itemKey: string) => {
+        const storageKey = `docRevisao_comments_${detalhe?.id ?? 'global'}`;
         if (!tempComment || tempComment.trim() === '') {
-            // não salvar comentários vazios: excluir se existir
             setCommentsMap((prev) => {
                 const copy = { ...prev };
-                delete copy[itemId];
-                try {
-                    // grava no localStorage
-                    const next = { ...copy };
-                    localStorage.setItem(key, JSON.stringify(next));
-                } catch (err) {
-                    console.warn('Erro ao salvar comentários no localStorage', err);
-                }
+                delete copy[itemKey];
+                try { localStorage.setItem(storageKey, JSON.stringify(copy)); } catch {}
                 return copy;
             });
         } else {
-            const next = { ...commentsMap, [itemId]: { text: tempComment.trim(), createdAt: new Date().toISOString() } };
+            const next = { ...commentsMap, [itemKey]: { text: tempComment.trim(), createdAt: new Date().toISOString() } };
             setCommentsMap(next);
-            try {
-                localStorage.setItem(key, JSON.stringify(next));
-            } catch (err) {
-                console.warn('Erro ao salvar comentários no localStorage', err);
-            }
+            try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
         }
-        setSelectedCommentItem(null);
+        setSelectedCommentKey(null);
         setCommentBoxPos(null);
         setTempComment('');
     };
 
-    const handleDeleteComment = (itemId: number) => {
-        const key = `docRevisao_comments_${detalhe?.id ?? 'global'}`;
+    const handleDeleteComment = (itemKey: string) => {
+        const storageKey = `docRevisao_comments_${detalhe?.id ?? 'global'}`;
         setCommentsMap((prev) => {
             const copy = { ...prev };
-            delete copy[itemId];
-            try {
-                localStorage.setItem(key, JSON.stringify(copy));
-            } catch (err) {
-                console.warn('Erro ao salvar comentários no localStorage', err);
-            }
+            delete copy[itemKey];
+            try { localStorage.setItem(storageKey, JSON.stringify(copy)); } catch {}
             return copy;
         });
-        setSelectedCommentItem(null);
+        setSelectedCommentKey(null);
         setCommentBoxPos(null);
         setTempComment('');
     };
 
-    // Carrega comentários do localStorage quando um empreendimento (detalhe) é carregado
     useEffect(() => {
         try {
-            if (!detalhe?.id) {
-                setCommentsMap({});
-                return;
-            }
+            if (!detalhe?.id) { setCommentsMap({}); return; }
             const key = `docRevisao_comments_${detalhe.id}`;
             const raw = localStorage.getItem(key);
             if (raw) {
@@ -382,16 +335,27 @@ export default function DocRevisao() {
             } else {
                 setCommentsMap({});
             }
-        } catch (err) {
-            console.warn('Erro ao restaurar comentários do localStorage', err);
-        }
+    } catch { /* ignore */ }
     }, [detalhe?.id]);
 
     const handleCloseComment = () => {
-        setSelectedCommentItem(null);
+        setSelectedCommentKey(null);
         setCommentBoxPos(null);
         setTempComment('');
     };
+
+    // portal element para a caixa de comentário (evita clipping por ancestors com transform/overflow)
+    const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
+    useEffect(() => {
+        const el = document.createElement('div');
+        el.setAttribute('id', 'docRevisao-comment-portal');
+        document.body.appendChild(el);
+        setPortalEl(el);
+        return () => {
+            try { document.body.removeChild(el); } catch {}
+            setPortalEl(null);
+        };
+    }, []);
 
     return (
         <div>
@@ -413,15 +377,12 @@ export default function DocRevisao() {
                             const resp = await empreendimentoService.getEmpreendimentoById(emp.id as string | number);
                             if (resp) {
                                 setDetalhe(resp);
-                                // Buscar nomes dos itens referenciados (se houver)
                                 fetchItemsNames(resp);
-                                // Buscar nomes auxiliares: tópicos, ambientes e marcas
                                 fetchAuxNames(resp);
                             } else {
                                 setErroDetalhe('Não foi possível obter os dados do empreendimento.');
                             }
-                        } catch (err) {
-                            console.error('Erro ao buscar detalhe do empreendimento', err);
+                        } catch {
                             setErroDetalhe('Erro ao buscar detalhe do empreendimento');
                         } finally {
                             setLoadingDetalhe(false);
@@ -531,8 +492,6 @@ export default function DocRevisao() {
                                 <div><strong>Versão:</strong> {detalhe.versao ?? '-'}</div>
                             </section>
 
-                            {/* seção "Unidades / Empreendimentos" removida por conter duplicação dos dados do próprio empreendimento */}
-
                             {/* Tópicos -> Ambientes -> Itens: formatamos como seções com tabelas (Item | Versões) */}
                             {detalhe.empreendimentoTopicos && detalhe.empreendimentoTopicos.length > 0 && (
                                 <section>
@@ -560,18 +519,20 @@ export default function DocRevisao() {
                                                                         {amb.ambienteItens.map((item) => (
                                                                             <tr
                                                                                 key={item.id}
-                                                                                onClick={(e) => handleOpenComment(e, item.id ?? 0)}
-                                                                                title={commentsMap[item.id ?? 0]?.text ?? ''}
+                                                                                onClick={(e) => handleOpenComment(e, `item:${item.id ?? 0}`)}
+                                                                                title={commentsMap[`item:${item.id ?? 0}`]?.text ?? ''}
                                                                                 className={
                                                                                     `block md:table-row mb-3 md:mb-0 rounded md:rounded-none border-b border-gray-300 md:border-b md:border-gray-300 cursor-pointer transition-colors duration-150 ease-in-out ` +
-                                                                                    (commentsMap[item.id ?? 0]
+                                                                                    (commentsMap[`item:${item.id ?? 0}`]
                                                                                         ? 'bg-yellow-50 md:bg-gradient-to-r md:from-yellow-200 md:to-orange-100 md:hover:opacity-95 hover:opacity-95'
                                                                                         : 'bg-white md:bg-transparent hover:bg-gray-50')
                                                                                 }
                                                                             >
                                                                                 <td className="block md:table-cell px-3 py-2 align-top md:pl-3">
                                                                                     <span className="md:hidden inline-block w-28 font-semibold text-gray-700">Item:</span>
-                                                                                    <span className="block">{itemsMap[item.itemId ?? 0]?.nome ? itemsMap[item.itemId ?? 0].nome : `Item #${item.itemId}`}</span>
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <span className="block">{itemsMap[item.itemId ?? 0]?.nome ? itemsMap[item.itemId ?? 0].nome : `Item #${item.itemId}`}</span>
+                                                                                    </div>
                                                                                 </td>
                                                                                 <td className="block md:table-cell px-3 py-2">
                                                                                     <span className="md:hidden inline-block w-28 font-semibold text-gray-700">Descrição:</span>
@@ -604,14 +565,26 @@ export default function DocRevisao() {
                                                         </thead>
                                                         <tbody>
                                                             {topico.topicoMateriais.map((mat) => (
-                                                                <tr key={mat.id} className="block md:table-row mb-3 md:mb-0 rounded md:rounded-none border-b border-gray-200 bg-white md:bg-transparent md:border-b md:border-gray-300">
+                                                                <tr
+                                                                    key={mat.id}
+                                                                    onClick={(e) => handleOpenComment(e, `material:${mat.materialId ?? mat.id ?? 0}`)}
+                                                                    title={commentsMap[`material:${mat.materialId ?? mat.id ?? 0}`]?.text ?? ''}
+                                                                    className={
+                                                                        `block md:table-row mb-3 md:mb-0 rounded md:rounded-none border-b border-gray-200 bg-white md:bg-transparent md:border-b md:border-gray-300 cursor-pointer transition-colors duration-150 ease-in-out ` +
+                                                                        (commentsMap[`material:${mat.materialId ?? mat.id ?? 0}`]
+                                                                            ? 'bg-yellow-50 md:bg-gradient-to-r md:from-yellow-200 md:to-orange-100 md:hover:opacity-95 hover:opacity-95'
+                                                                            : 'bg-white md:bg-transparent hover:bg-gray-50')
+                                                                    }
+                                                                >
                                                                     <td className="block md:table-cell px-3 py-2">
                                                                         <span className="md:hidden inline-block w-28 font-semibold text-gray-700">Material:</span>
                                                                         <span className="block">{materialNamesMap[mat.materialId ?? 0] || `Material #${mat.materialId}`}</span>
                                                                     </td>
                                                                     <td className="block md:table-cell px-3 py-2">
                                                                         <span className="md:hidden inline-block w-28 font-semibold text-gray-700">Marcas:</span>
+                                                                        <div className="flex items-center gap-2">
                                                                             <span className="block">{marcasMap[mat.materialId ?? 0]?.join(', ') || '-'}</span>
+                                                                        </div>
                                                                     </td>
                                                                 </tr>
                                                             ))}
@@ -625,8 +598,8 @@ export default function DocRevisao() {
                                 </section>
                             )}
                                 {/* Caixa flutuante de comentário (fixa, posicionada) */}
-                                {selectedCommentItem !== null && commentBoxPos && (
-                                    <div style={{ position: 'fixed', top: commentBoxPos.top, left: commentBoxPos.left, width: 340 }} className="z-50">
+                                {selectedCommentKey !== null && commentBoxPos && portalEl && createPortal(
+                                    <div style={{ position: 'fixed', top: commentBoxPos.top, left: commentBoxPos.left, width: 340, zIndex: 9999 }}>
                                         <div className="bg-white border rounded shadow-lg p-3 text-sm">
                                             <label className="block text-xs font-semibold mb-1">Comentário</label>
                                             <textarea
@@ -635,12 +608,13 @@ export default function DocRevisao() {
                                                 className="w-full h-28 p-2 border rounded text-sm resize-none"
                                             />
                                             <div className="mt-2 flex justify-end gap-2">
-                                                <button onClick={() => handleCloseComment()} className="px-3 py-1 text-sm border rounded bg-gray-100">Cancelar</button>
-                                                <button onClick={() => selectedCommentItem !== null && handleDeleteComment(selectedCommentItem)} className="px-3 py-1 text-sm border rounded bg-red-50 text-red-600">Excluir</button>
-                                                <button onClick={() => selectedCommentItem !== null && handleSaveComment(selectedCommentItem)} className="px-3 py-1 text-sm bg-yellow-400 hover:bg-yellow-500 rounded">Salvar</button>
+                                                <button onClick={() => handleCloseComment()} className="px-3 py-1 text-sm border rounded hover:bg-gray-200 bg-gray-100">Cancelar</button>
+                                                <button onClick={() => selectedCommentKey !== null && handleDeleteComment(selectedCommentKey)} className="px-3 py-1 text-sm border rounded hover:bg-red-600 bg-red-400">Excluir</button>
+                                                <button onClick={() => selectedCommentKey !== null && handleSaveComment(selectedCommentKey)} className="px-3 py-1 text-sm bg-yellow-400 hover:bg-yellow-600 rounded">Salvar</button>
                                             </div>
                                         </div>
-                                    </div>
+                                    </div>,
+                                    portalEl
                                 )}
                         </article>
                     ) : null}
@@ -668,7 +642,7 @@ export default function DocRevisao() {
                 >
                     <div className="px-1 py-2 text-sm">
                         <p>
-                            Deseja alterar o status do empreendimento <strong>{detalhe?.nome || selected?.nome || selected?.name || detalhe?.id}</strong> para <strong>{pendingStatus}</strong>?
+                            Deseja alterar o status do empreendimento <strong>{detalhe?.nome || selected?.nome || selected?.name || detalhe?.id}</strong> para <strong className="text-yellow-600">{pendingStatus}</strong>?
                         </p>
                     </div>
                 </Dialog>
