@@ -154,6 +154,12 @@ export interface Item {
   descricao?: string;
 }
 
+export interface Material {
+  id?: number;
+  nome?: string;
+  descricao?: string;
+}
+
 export const itemService = {
   async getItemById(id: number | string): Promise<Item | null> {
     // Implementa tentativas (retry) simples com backoff exponencial
@@ -195,6 +201,46 @@ export const itemService = {
 
     console.error(`Erro ao buscar item por id ${id} após ${maxAttempts} tentativas:`, lastErr);
     return null;
+  }
+  ,
+  // Busca itens por texto (usada pelo seletor com filtro)
+  async searchItems(query: string): Promise<Item[]> {
+    try {
+      if (!query || String(query).trim().length === 0) {
+        // quando query vazia, retornar todos os itens
+        return await itemService.getAllItems();
+      }
+      const response = await authApi.get<Item[] | { data: Item[] }>(`/api/v1/items/Search`, {
+        headers: { Authorization: getAuthToken() },
+        params: { q: query }
+      });
+      const respData = response.data;
+      if (Array.isArray(respData)) return respData as Item[];
+      if (respData && typeof respData === 'object' && 'data' in respData && Array.isArray((respData as { data: Item[] }).data)) {
+        return (respData as { data: Item[] }).data;
+      }
+      return [];
+    } catch (err) {
+      console.error('Erro ao buscar itens por texto', err);
+      return [];
+    }
+  }
+  ,
+  async getAllItems(): Promise<Item[]> {
+    try {
+      const response = await authApi.get<Item[] | { data: Item[] }>(`/api/v1/items/GetAllItems`, {
+        headers: { Authorization: getAuthToken() }
+      });
+      const respData = response.data;
+      if (Array.isArray(respData)) return respData as Item[];
+      if (respData && typeof respData === 'object' && 'data' in respData && Array.isArray((respData as { data: Item[] }).data)) {
+        return (respData as { data: Item[] }).data;
+      }
+      return [];
+    } catch (err) {
+      console.error('Erro ao buscar todos os itens', err);
+      return [];
+    }
   }
 };
 
@@ -312,40 +358,147 @@ export interface MarcaMaterialResult {
 export const marcaMaterialService = {
   async getAllMarcasByMaterialId(id: number | string): Promise<MarcaMaterialResult | null> {
     try {
-      // allow inspecting non-2xx responses instead of throwing immediately
       const response = await authApi.get(`/api/v1/marca-material/GetAllMarcasByMaterialId/${id}`, {
         headers: { Authorization: getAuthToken() },
         validateStatus: () => true,
       });
-      // Se a resposta não for 200 OK, retornamos null (server retornou 400/401 etc)
       if (response.status !== 200) {
-        // opcional: registrar apenas em nível debug
         console.debug(`marcaMaterialService: status ${response.status} ao buscar marcas para material ${id}`);
         return null;
       }
       const respData = response.data;
       if (!respData) return null;
-      // se o servidor devolveu texto/html (por ex. página de login), não tentamos parsear
       const contentType = response.headers && (response.headers['content-type'] || response.headers['Content-Type']);
       if (typeof respData === 'string' && contentType && !contentType.includes('application/json')) {
         console.debug(`marcaMaterialService: resposta não-JSON (content-type=${contentType}) para material ${id}`);
         return null;
       }
-      // Caso 1: API retorna { data: { materialId, material, marcas: string[] } }
       if (typeof respData === 'object' && 'data' in respData && respData.data) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const inner = (respData as any).data;
-        const result: MarcaMaterialResult = {};
-        if (inner && Array.isArray(inner.marcas)) result.marcas = inner.marcas as string[];
-        if (inner && (inner.material || inner.materialName)) result.material = inner.material || inner.materialName;
-        return result;
+          const inner = (respData as Record<string, unknown>)['data'];
+          const result: MarcaMaterialResult = {};
+          if (inner && typeof inner === 'object') {
+            const innerObj = inner as Record<string, unknown>;
+            if (Array.isArray(innerObj['marcas'])) {
+              result.marcas = (innerObj['marcas'] as unknown[]).map(String);
+            }
+            const matVal = innerObj['material'] ?? innerObj['materialName'];
+            if (typeof matVal === 'string') {
+              result.material = matVal;
+            } else if (matVal && typeof matVal === 'object') {
+              const matObj = matVal as Record<string, unknown>;
+              const candidate = matObj['nome'] ?? matObj['name'] ?? matObj['materialName'];
+              if (typeof candidate === 'string') result.material = candidate;
+            }
+          }
+          return result;
       }
-      // Caso 2: API retorna diretamente um array de strings
       if (Array.isArray(respData)) return { marcas: respData as string[] };
       return null;
     } catch (err) {
       console.error(`Erro ao buscar marcas do material ${id}:`, err);
       return null;
+    }
+  }
+};
+
+export const materialService = {
+  async getMaterialById(id: number | string): Promise<Material | null> {
+    try {
+      const response = await authApi.get<Material | { data: Material }>(`/api/v1/materials/GetMaterialById/${id}`, {
+        headers: { Authorization: getAuthToken() }
+      });
+      const respData = response.data;
+      if (!respData) return null;
+      const raw = 'data' in respData ? (respData as { data: unknown }).data : respData;
+      if (!raw) return null;
+      if (typeof raw === 'object' && !Array.isArray(raw)) {
+        const anyRaw = raw as Record<string, unknown>;
+        const nid = anyRaw['id'] ?? anyRaw['materialId'] ?? anyRaw['MaterialId'] ?? (anyRaw['material'] && typeof anyRaw['material'] === 'object' ? (anyRaw['material'] as Record<string, unknown>)['id'] : undefined) ?? anyRaw['ID'];
+        let nomeRaw = anyRaw['nome'] ?? anyRaw['name'] ?? anyRaw['materialName'] ?? anyRaw['materialNome'] ?? anyRaw['description'] ?? anyRaw['descricao'] ?? anyRaw['material'];
+        if (nomeRaw && typeof nomeRaw === 'object') {
+          const nested = nomeRaw as Record<string, unknown>;
+          nomeRaw = nested['nome'] ?? nested['name'] ?? nested['materialName'] ?? nested['descricao'] ?? nested['description'];
+        }
+        const nome = nomeRaw;
+        const desc = anyRaw['descricao'] ?? anyRaw['description'] ?? undefined;
+        return { id: nid ? Number(nid) : undefined, nome: nome ? String(nome) : undefined, descricao: desc ? String(desc) : undefined } as Material;
+      }
+      return null;
+    } catch (err) {
+      console.error(`Erro ao buscar material por id ${id}:`, err);
+      return null;
+    }
+  },
+
+  async searchMaterials(query: string): Promise<Material[]> {
+    try {
+      if (!query || String(query).trim().length === 0) {
+        return await materialService.getAllMaterials();
+      }
+      const response = await authApi.get<unknown>(`/api/v1/materials/Search`, {
+        headers: { Authorization: getAuthToken() },
+        params: { q: query }
+      });
+      const respData = response.data as unknown;
+      const arr: unknown[] = Array.isArray(respData)
+        ? respData
+        : (respData && typeof respData === 'object' && 'data' in (respData as Record<string, unknown>) && Array.isArray(((respData as Record<string, unknown>)['data'])) ? ((respData as Record<string, unknown>)['data'] as unknown[]) : []);
+      return arr.map((raw) => {
+        const anyRaw = raw as Record<string, unknown>;
+        const nid = anyRaw['id'] ?? anyRaw['materialId'] ?? anyRaw['MaterialId'] ?? (anyRaw['material'] && typeof anyRaw['material'] === 'object' ? (anyRaw['material'] as Record<string, unknown>)['id'] : undefined) ?? anyRaw['ID'];
+        let nomeRaw = anyRaw['nome'] ?? anyRaw['name'] ?? anyRaw['materialName'] ?? anyRaw['materialNome'] ?? anyRaw['description'] ?? anyRaw['descricao'] ?? anyRaw['material'];
+        if (nomeRaw && typeof nomeRaw === 'object') {
+          const nested = nomeRaw as Record<string, unknown>;
+          nomeRaw = nested['nome'] ?? nested['name'] ?? nested['materialName'] ?? nested['descricao'] ?? nested['description'];
+        }
+        const nome = nomeRaw;
+        const desc = anyRaw['descricao'] ?? anyRaw['description'] ?? undefined;
+        return { id: nid ? Number(nid) : undefined, nome: nome ? String(nome) : undefined, descricao: desc ? String(desc) : undefined } as Material;
+      });
+    } catch (err) {
+      console.error('Erro ao buscar materiais por texto', err);
+      return [];
+    }
+  },
+
+  async getAllMaterials(): Promise<Material[]> {
+    try {
+      const response = await authApi.get<unknown>(`/api/v1/marca-material/GetAllMarcaMateriais`, {
+        headers: { Authorization: getAuthToken() }
+      });
+      const respData = response.data as unknown;
+      const arr: unknown[] = Array.isArray(respData)
+        ? respData
+        : (respData && typeof respData === 'object' && 'data' in (respData as Record<string, unknown>) && Array.isArray(((respData as Record<string, unknown>)['data'])) ? ((respData as Record<string, unknown>)['data'] as unknown[]) : []);
+      const map = new Map<number, Material>();
+      arr.forEach((raw) => {
+        const anyRaw = raw as Record<string, unknown>;
+        const materialField = anyRaw['material'];
+        if (materialField && typeof materialField === 'object') {
+          const mat = materialField as Record<string, unknown>;
+          const mid = mat['id'] ?? mat['materialId'] ?? mat['MaterialId'] ?? undefined;
+          const mname = mat['nome'] ?? mat['name'] ?? mat['descricao'] ?? mat['description'] ?? undefined;
+          const mdesc = mat['descricao'] ?? mat['description'] ?? undefined;
+          const idNum = mid ? Number(mid) : undefined;
+          if (idNum) {
+            if (!map.has(idNum)) {
+              map.set(idNum, { id: idNum, nome: mname ? String(mname) : undefined, descricao: mdesc ? String(mdesc) : undefined });
+            }
+          }
+        } else {
+          const nid = anyRaw['materialId'] ?? anyRaw['id'] ?? anyRaw['MaterialId'] ?? undefined;
+          const nome = anyRaw['nome'] ?? anyRaw['name'] ?? anyRaw['description'] ?? anyRaw['descricao'] ?? undefined;
+          const desc = anyRaw['descricao'] ?? anyRaw['description'] ?? undefined;
+          const idNum = nid ? Number(nid) : undefined;
+          if (idNum && !map.has(idNum)) {
+            map.set(idNum, { id: idNum, nome: nome ? String(nome) : undefined, descricao: desc ? String(desc) : undefined });
+          }
+        }
+      });
+      return Array.from(map.values());
+    } catch (err) {
+      console.error('Erro ao buscar todos os materiais', err);
+      return [];
     }
   }
 };
