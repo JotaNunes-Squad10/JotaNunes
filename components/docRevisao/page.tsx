@@ -391,6 +391,8 @@ export default function DocRevisao() {
                         options={options}
                         optionLabel="label"
                         filter
+                        emptyMessage="Nenhuma opção disponível"
+                        emptyFilterMessage="Nenhum resultado encontrado"
                         placeholder="Selecione um empreendimento"
                         className="w-full md:w-[54.5rem]"
                     />
