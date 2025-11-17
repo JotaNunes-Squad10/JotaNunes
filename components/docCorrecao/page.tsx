@@ -37,7 +37,6 @@ export default function DocRevisao() {
     const [selectedAmbientesToAdd, setSelectedAmbientesToAdd] = useState<number[]>([]);
     const [currentTopicoIndexForAmbiente, setCurrentTopicoIndexForAmbiente] = useState<number | null>(null);
     const [showAddItemDialog, setShowAddItemDialog] = useState<boolean>(false);
-    // agora permite selecionar múltiplos itens para adicionar de uma vez
     const [selectedItemsToAdd, setSelectedItemsToAdd] = useState<Item[]>([]);
     const [currentTopicoIndexForItem, setCurrentTopicoIndexForItem] = useState<number | null>(null);
     const [currentAmbienteIndexForItem, setCurrentAmbienteIndexForItem] = useState<number | null>(null);
@@ -91,7 +90,6 @@ export default function DocRevisao() {
         const top = detalhe.empreendimentoTopicos?.[topicoIndex];
         if (!top) return;
         try {
-            // coletar materiais já adicionados em todo o documento (evita duplicatas globais)
             const existingIds = new Set<number>();
             detalhe.empreendimentoTopicos?.forEach((t) => t.topicoMateriais?.forEach((m) => { if (typeof m.materialId === 'number') existingIds.add(Number(m.materialId)); }));
             const filtered = (materialsOptions || []).filter((o) => {
@@ -137,14 +135,12 @@ export default function DocRevisao() {
             const arr = Array.isArray(copy.empreendimentoTopicos) ? [...copy.empreendimentoTopicos] : [];
             const target = arr[currentTopicoIndexForMaterial];
             if (!target.topicoMateriais || !Array.isArray(target.topicoMateriais)) target.topicoMateriais = [];
-            // remove duplicates
             const filteredExisting = (target.topicoMateriais || []).filter((tm) => Number(tm.materialId ?? 0) !== Number(novoMat.materialId ?? 0));
             target.topicoMateriais = [...filteredExisting, novoMat];
             copy.empreendimentoTopicos = arr;
             return copy;
         });
 
-        // fetch marcas/nome do material
         try {
             const fetched = await marcaMaterialService.getAllMarcasByMaterialId(Number(selectedMaterialToAdd));
             if (fetched) {
@@ -166,7 +162,6 @@ export default function DocRevisao() {
 
     const handleMaterialChange = async (topicoMaterialId: number | undefined, newMaterialId: number | null) => {
         if (!topicoMaterialId) return;
-        // prevenir duplicatas: se o material já estiver selecionado em outra linha, bloquear
         if (typeof newMaterialId === 'number') {
             const alreadyOnOther = Object.entries(selectedMaterialsMap).find(([k, v]) => {
                 if (typeof v !== 'number') return false;
@@ -180,7 +175,6 @@ export default function DocRevisao() {
 
         setSelectedMaterialsMap((prev) => ({ ...prev, [Number(topicoMaterialId)]: newMaterialId }));
 
-        // atualizar detalhe localmente (apenas alterar materialId)
         setDetalhe((prev) => {
             if (!prev) return prev;
             const copy = { ...prev } as Empreendimento;
@@ -241,7 +235,6 @@ export default function DocRevisao() {
         return 3;
     };
 
-    // prioridade customizada para ordenação de tópicos
     const getTopicoPriority = (name?: string) => {
         if (!name) return 99;
         const n = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -321,7 +314,6 @@ export default function DocRevisao() {
         })();
     }, []);
 
-    // Ordena os tópicos do detalhe sempre que topicosMap estiver disponível
     useEffect(() => {
         if (!detalhe || !detalhe.empreendimentoTopicos || Object.keys(topicosMap).length === 0) return;
         try {
@@ -334,9 +326,7 @@ export default function DocRevisao() {
                     return { ...prev, empreendimentoTopicos: sorted } as Empreendimento;
                 });
             }
-        } catch {
-            // se algo falhar, não interrompe a experiência
-        }
+        } catch {}
     }, [topicosMap, detalhe, compareTopicos]);
 
     const handleConfirmAddTopico = () => {
@@ -351,7 +341,6 @@ export default function DocRevisao() {
             setShowAddTopicoDialog(false);
             return;
         }
-        // criar um novo objeto tópico mínimo esperado
         const novo = {
             id: undefined,
             topicoId: Number(selectedTopicoToAdd),
@@ -366,13 +355,11 @@ export default function DocRevisao() {
             copy.empreendimentoTopicos = Array.isArray(copy.empreendimentoTopicos) ? [...copy.empreendimentoTopicos, novo] : [novo];
             return copy;
         });
-        // garantir que o nome do tópico apareça imediatamente no mapa de tópicos e reordenar
         try {
             const label = topicosOptions.find((o) => Number(o.value) === Number(selectedTopicoToAdd))?.label;
             if (label) {
                     setTopicosMap((prev) => {
                     const next = { ...prev, [Number(selectedTopicoToAdd)]: { nome: label } };
-                    // reordena imediatamente o detalhe usando o mapa atualizado
                     setDetalhe((dprev) => {
                         if (!dprev || !dprev.empreendimentoTopicos) return dprev;
                         const sorted = [...dprev.empreendimentoTopicos].sort((a, b) => compareTopicos(a, b, next));
@@ -381,7 +368,6 @@ export default function DocRevisao() {
                     return next;
                 });
             } else {
-                // se não há label no options, apenas tenta reordenar com o mapa atual
                 setDetalhe((dprev) => {
                     if (!dprev || !dprev.empreendimentoTopicos) return dprev;
                     const sorted = [...dprev.empreendimentoTopicos].sort((a, b) => compareTopicos(a, b));
@@ -396,26 +382,17 @@ export default function DocRevisao() {
     const handleOpenAddTopico = async () => {
         try {
             const all = await topicoService.getAllTopicos();
-            console.log('🔍 [DEBUG] Tópicos retornados pelo backend:', all);
             const opts = (all || []).map((t) => ({ label: t.nome || String(t.id), value: Number(t.id) }));
             opts.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' }));
-            console.log('🔍 [DEBUG] Opções mapeadas (antes do filtro):', opts);
             
-            // filtrar tópicos já presentes
             const existing = new Set<number>();
             detalhe?.empreendimentoTopicos?.forEach((et) => { if (typeof et.topicoId === 'number') existing.add(Number(et.topicoId)); });
-            console.log('🔍 [DEBUG] IDs de tópicos já presentes no documento:', Array.from(existing));
             
-            // Nova regra: permitir MARCAS aparecer até ser adicionada (removido filtro isMarcas)
             const filtered = opts.filter((o) => {
-                const labelNorm = String(o.label ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
                 const alreadyExists = existing.has(Number(o.value));
-                console.log(`  - Tópico "${o.label}" (id: ${o.value}, norm: "${labelNorm}"): alreadyExists=${alreadyExists}, incluir=${!alreadyExists}`);
                 return !alreadyExists;
             });
-            console.log('🔍 [DEBUG] Opções após filtro:', filtered);
             
-            // Se não há opções disponíveis, mostrar mensagem informativa
             if (filtered.length === 0) {
                 toast.current?.show({ 
                     severity: 'info', 
@@ -429,23 +406,19 @@ export default function DocRevisao() {
             setTopicosOptions(filtered);
             setSelectedTopicoToAdd(filtered.length > 0 ? filtered[0].value : null);
             setShowAddTopicoDialog(true);
-        } catch (err) {
-            console.error('❌ [DEBUG] Erro ao carregar tópicos:', err);
+        } catch {
             toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Não foi possível carregar tópicos', life: 3000 });
         }
     };
 
     const handleOpenAddAmbiente = async (topico: EmpreendimentoTopico, index: number) => {
-        // Only allow for topics 'UNIDADES PRIVATIVAS' and 'ÁREA COMUM'
         const name = String(topicosMap[topico.topicoId ?? 0]?.nome ?? '');
         const normalized = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
         if (!(normalized.includes('unidades privativas') || normalized.includes('unidade privativa') || normalized.includes('area comum') || normalized.includes('área comum'))) {
-            // do nothing
             return;
         }
         try {
             const all = await ambienteService.getAllAmbientes();
-            // filtrar por topico (nome) e excluir ambientes já presentes neste tópico
             const existingIds = new Set<number>();
             (topico.topicoAmbientes || []).forEach((ta) => {
                 const idnum = Number(ta.ambienteId ?? ta.id ?? 0);
@@ -487,7 +460,6 @@ export default function DocRevisao() {
             return;
         }
 
-        // prepare novos ambientes
         const novos = toAdd.map((ambId, idx) => ({
             id: undefined,
             ambienteId: ambId,
@@ -502,23 +474,19 @@ export default function DocRevisao() {
             const arr = Array.isArray(copy.empreendimentoTopicos) ? [...copy.empreendimentoTopicos] : [];
             const target = arr[currentTopicoIndexForAmbiente];
             if (!target.topicoAmbientes || !Array.isArray(target.topicoAmbientes)) target.topicoAmbientes = [];
-            // remove possíveis duplicatas antigas com os mesmos ambienteId
             const filteredExisting = (target.topicoAmbientes || []).filter((ta) => !novos.some((n) => Number(n.ambienteId ?? 0) === Number(ta.ambienteId ?? ta.id ?? 0)));
             target.topicoAmbientes = [...filteredExisting, ...novos];
             copy.empreendimentoTopicos = arr;
             return copy;
         });
 
-        // Atualiza nomes dos ambientes no mapa em paralelo
         await Promise.all(toAdd.map(async (ambId) => {
             try {
                 const amb = await ambienteService.getAmbienteById(Number(ambId));
                 if (amb && typeof amb.nome !== 'undefined') {
                     setAmbientesMap((prev) => ({ ...prev, [Number(ambId)]: { nome: amb.nome } }));
                 }
-            } catch {
-                // ignore
-            }
+            } catch {}
         }));
 
         toast.current?.show({ severity: 'success', summary: 'Adicionado', detail: `${toAdd.length} ambiente(s) adicionados ao tópico`, life: 3000 });
@@ -534,7 +502,6 @@ export default function DocRevisao() {
         if (!amb) return;
 
         try {
-            // build filtered items options excluding those already in this ambiente
             const existingIds = new Set<number>();
             (amb.ambienteItens || []).forEach((it) => { if (typeof it.itemId === 'number') existingIds.add(Number(it.itemId)); });
             const filtered = (itemsOptions || []).filter((o) => {
@@ -544,10 +511,8 @@ export default function DocRevisao() {
                 } catch {}
                 return true;
             });
-            // map to options for add dialog
             const opts = filtered.map((o) => ({ label: o.label, value: o.value }));
             setAddItemOptions(opts);
-            // preselect first available (as an array)
             setSelectedItemsToAdd(opts.length > 0 && opts[0].value ? [opts[0].value] as Item[] : []);
             setCurrentTopicoIndexForItem(topicoIndex);
             setCurrentAmbienteIndexForItem(ambienteIndex);
@@ -568,7 +533,6 @@ export default function DocRevisao() {
         const amb = top.topicoAmbientes?.[currentAmbienteIndexForItem];
         if (!amb) return;
 
-        // filter out any items that already exist in this ambiente
         const existingIds = new Set<number>();
         (amb.ambienteItens || []).forEach((it) => { if (typeof it.itemId === 'number') existingIds.add(Number(it.itemId)); });
 
@@ -589,7 +553,6 @@ export default function DocRevisao() {
             const targetAmb = targetTop.topicoAmbientes[currentAmbienteIndexForItem];
             if (!targetAmb.ambienteItens || !Array.isArray(targetAmb.ambienteItens)) targetAmb.ambienteItens = [];
 
-            // remove duplicates by itemId for the ones we're adding then append
             const existingFiltered = (targetAmb.ambienteItens || []).filter((it) => !toAdd.some((t) => Number(t.id) === Number(it.itemId)));
             const novos = toAdd.map((t, i) => ({ id: -Date.now() - i, itemId: Number(t.id), posicao: (targetAmb.ambienteItens?.length ?? 0) + 1 + i, versoes: [] as number[] }));
             targetAmb.ambienteItens = [...existingFiltered, ...novos];
@@ -597,7 +560,6 @@ export default function DocRevisao() {
             return copy;
         });
 
-        // fetch item details to show name/description immediately (paralelo)
         (async () => {
             try {
                 await Promise.all(toAdd.map(async (s) => {
@@ -626,7 +588,6 @@ export default function DocRevisao() {
                 (top.topicoMateriais || []).forEach((m) => { if (typeof m.materialId === 'number') materialIds.add(Number(m.materialId)); });
             });
 
-            // Buscar detalhes dos items
             const fetchedItemsMap: Record<number, { nome?: string; descricao?: string }> = {};
             await Promise.all(Array.from(itemIds).map(async (id) => {
                 try {
@@ -636,7 +597,6 @@ export default function DocRevisao() {
             }));
             if (Object.keys(fetchedItemsMap).length > 0) setItemsMap((prev) => ({ ...prev, ...fetchedItemsMap }));
 
-            // Buscar nomes e marcas dos materiais
             const fetchedMaterialNames: Record<number, string> = {};
             await Promise.all(Array.from(materialIds).map(async (id) => {
                 try {
@@ -675,7 +635,6 @@ export default function DocRevisao() {
 
     const loadMaterialOptions = async (query: string) => {
         try {
-            // Usa novo endpoint quando query vazia; mantém busca quando há texto
             let results: Material[] = [];
             if (!query || query.trim() === '') {
                 results = await materialService.getAllMateriais();
@@ -712,7 +671,6 @@ export default function DocRevisao() {
         }
     }, [itemsMap]);
 
-    // Recompute addItemOptions when the itemsOptions or dialog state changes (so we don't include items already present in the ambiente)
     useEffect(() => {
         if (showAddItemDialog && currentTopicoIndexForItem !== null && currentAmbienteIndexForItem !== null) {
             const top = detalhe?.empreendimentoTopicos?.[currentTopicoIndexForItem];
@@ -728,26 +686,26 @@ export default function DocRevisao() {
                     return true;
                 }).map((o) => ({ label: o.label, value: o.value }));
                 setAddItemOptions(filtered);
-                // adjust currently selected items to those still available; if none remain, preselect first
                 try {
                     const availableIds = new Set<number>();
                     filtered.forEach((f) => { if (f && f.value && typeof (f.value as Item).id === 'number') availableIds.add(Number((f.value as Item).id)); });
-                    const kept = selectedItemsToAdd ? selectedItemsToAdd.filter((si) => si && typeof si.id === 'number' && availableIds.has(Number(si.id))) : [];
-                    if (kept.length > 0) {
-                        setSelectedItemsToAdd(kept);
-                    } else {
-                        setSelectedItemsToAdd(filtered.length > 0 && filtered[0].value ? [filtered[0].value as Item] : []);
-                    }
+                    setSelectedItemsToAdd((prevSelected) => {
+                        const kept = prevSelected ? prevSelected.filter((si) => si && typeof si.id === 'number' && availableIds.has(Number(si.id))) : [];
+                        if (kept.length > 0) {
+                            return kept;
+                        } else {
+                            return filtered.length > 0 && filtered[0].value ? [filtered[0].value as Item] : [];
+                        }
+                    });
                 } catch { /* ignore */ }
             }
         }
-    }, [itemsOptions, showAddItemDialog, currentTopicoIndexForItem, currentAmbienteIndexForItem, detalhe, selectedItemsToAdd]);
+    }, [itemsOptions, showAddItemDialog, currentTopicoIndexForItem, currentAmbienteIndexForItem, detalhe]);
 
     useEffect(() => {
         if (showAddMaterialDialog && currentTopicoIndexForMaterial !== null) {
             const top = detalhe?.empreendimentoTopicos?.[currentTopicoIndexForMaterial];
             if (top) {
-                // excluir materiais já adicionados em qualquer tópico do documento
                 const existingIds = new Set<number>();
                 detalhe?.empreendimentoTopicos?.forEach((t) => t.topicoMateriais?.forEach((m) => { if (typeof m.materialId === 'number') existingIds.add(Number(m.materialId)); }));
                 const filtered = (materialsOptions || []).filter((o) => {
@@ -788,7 +746,6 @@ export default function DocRevisao() {
             return;
         }
         const next: Record<number, Item | null> = {};
-        // use deterministic negative counters for temporary keys to avoid unstable Math.random()
         let tempItemKey = -1;
         detalhe.empreendimentoTopicos?.forEach((top) => {
             top.topicoAmbientes?.forEach((amb) => {
@@ -824,7 +781,6 @@ export default function DocRevisao() {
 
     const handleItemChange = async (ambItemId: number | undefined, newItem: Item | null) => {
         if (!ambItemId) return;
-        // prevenir duplicatas: se o item já estiver selecionado em outra linha, bloquear
         if (newItem && typeof newItem.id === 'number') {
             const alreadyOnOther = Object.entries(selectedItemsMap).find(([k, v]) => {
                 if (!v) return false;
@@ -856,7 +812,6 @@ export default function DocRevisao() {
             return copy;
         });
 
-        // buscar detalhes do item selecionado para atualizar itemsMap (nome/descrição)
         if (newItem && typeof newItem.id === 'number') {
             try {
                 const fetched = await itemService.getItemById(newItem.id);
@@ -1111,7 +1066,6 @@ export default function DocRevisao() {
                                                                 <button
                                                                     key={opt.value}
                                                                     onClick={() => {
-                                                                        // abrir modal de confirmação
                                                                         setPendingStatus(opt.value);
                                                                         setShowStatusMenu(false);
                                                                         setShowConfirmModal(true);
@@ -1133,7 +1087,6 @@ export default function DocRevisao() {
                                             <button
                                                 type="button"
                                                 onClick={async () => {
-                                                    // salvar alterações básicas do empreendimento
                                                     if (!detalhe?.id) return;
                                                     setSavingDetalheChanges(true);
                                                     try {
@@ -1146,7 +1099,6 @@ export default function DocRevisao() {
                                                         } as Partial<import('../../lib/services').Empreendimento> & { id: string | number };
                                                         await empreendimentoService.updateEmpreendimento(payload);
                                                         toast.current?.show({ severity: 'success', summary: 'Salvo', detail: 'Dados do empreendimento atualizados', life: 3000 });
-                                                        // refrescar detalhe
                                                         try {
                                                             const refreshed = await empreendimentoService.getEmpreendimentoById(detalhe.id as string | number);
                                                             if (refreshed) {
@@ -1301,7 +1253,6 @@ export default function DocRevisao() {
                                             {topico.topicoAmbientes && topico.topicoAmbientes.length > 0 && (
                                                 <div className="mt-2">
                                                     {(() => {
-                                                        // deduplicate ambientes by ambienteId/id to avoid double render
                                                         const seen = new Set<string>();
                                                         const unique = (topico.topicoAmbientes || []).filter((a, i) => {
                                                             const key = String(a.ambienteId ?? a.id ?? i);
@@ -1366,9 +1317,7 @@ export default function DocRevisao() {
                                                                                                                 const optId = val && typeof (val as Item).id === 'number' ? Number((val as Item).id) : undefined;
                                                                                                                 const currentSel = selectedItemsMap[Number(item.id ?? 0)];
                                                                                                                 if (typeof optId === 'number') {
-                                                                                                                    // permitir se for a opção atualmente selecionada nesta linha
                                                                                                                     if (currentSel && currentSel.id === optId) return true;
-                                                                                                                    // excluir se já estiver selecionado em qualquer outra linha
                                                                                                                     return !Object.values(selectedItemsMap).some((v) => v && typeof v.id === 'number' && Number(v.id) === optId);
                                                                                                                 }
                                                                                                             } catch {}
@@ -1461,9 +1410,7 @@ export default function DocRevisao() {
                                                                                         const val = opt.value as number | undefined | null;
                                                                                         const currentSel = selectedMaterialsMap[Number(mat.id ?? mat.materialId ?? 0)];
                                                                                         if (typeof val === 'number') {
-                                                                                            // keep the currently selected option for this row
                                                                                             if (typeof currentSel === 'number' && currentSel === val) return true;
-                                                                                            // exclude if this materialId exists in any other material row of the same tópico
                                                                                             const existsInTopic = (topico.topicoMateriais || []).some((m) => {
                                                                                                 const mid = Number(m.materialId ?? m.id ?? 0);
                                                                                                 const thisRowId = Number(mat.id ?? mat.materialId ?? 0);
