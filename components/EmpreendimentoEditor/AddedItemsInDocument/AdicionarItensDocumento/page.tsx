@@ -39,8 +39,56 @@ export default function AdicionarItensDocumento({
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(false);
 
+  // --------------------------------------------
+  // FORÇA RESETE AO TROCAR DE TÓPICO (AMBIENTE ⇄ MARCAS)
+  // --------------------------------------------
+  useEffect(() => {
+    setSelectedAmbientes([]);
+    setItensAmbiente([]);
+    setLoading(true);
+  }, [ambienteSelecionado]);
+
+  const handleRefresh = () => {
+    setRefreshTrigger((prev) => !prev);
+  };
+
+  // ========================================================
+  // 1) MODO MARCAS — SEMPRE PRIORITÁRIO
+  // ========================================================
+  useEffect(() => {
+    if (ambienteSelecionado.toLowerCase() !== "marcas") return;
+
+    setLoading(true);
+
+    const topicoMarcas = empreendimento.empreendimentoTopicos.find(
+      (t: any) => t.topicoId === 3
+    );
+
+    const materiaisExistentes = topicoMarcas?.topicoMateriais
+      ? topicoMarcas.topicoMateriais.map((m: any) => m.materialId)
+      : [];
+
+    const todasMarcas: AmbienteOption[] = itemMarcaMateriais.map((item) => ({
+      name: item.marca.nome,
+      code: String(item.id),
+      descricao: item.material.nome,
+      materialId: item.material.id,
+    }));
+
+    const filtrado = todasMarcas.filter(
+      (m) => !materiaisExistentes.includes(m.materialId!)
+    );
+
+    setItensAmbiente(filtrado);
+    setLoading(false);
+  }, [ambienteSelecionado, empreendimento, itemMarcaMateriais]);
+
+  // ========================================================
+  // 2) AMBIENTES NORMAIS (ÁREA COMUM, UNIDADES PRIVATIVAS etc.)
+  // ========================================================
   useEffect(() => {
     if (!itemAmbienteSelecionado) return;
+    if (ambienteSelecionado.toLowerCase() === "marcas") return; // impedir conflito
 
     const fetchItens = async () => {
       setLoading(true);
@@ -97,47 +145,14 @@ export default function AdicionarItensDocumento({
     ambienteSelecionado,
   ]);
 
-  const handleRefresh = () => {
-    setRefreshTrigger((prev) => !prev);
-  };
-
-  // =========================
-  //  FILTRAR E EXIBIR MARCAS
-  // =========================
-  useEffect(() => {
-    if (ambienteSelecionado.toLowerCase() !== "marcas") return;
-
-    const topicoMarcas = empreendimento.empreendimentoTopicos.find(
-      (t: any) => t.topicoId === 3
-    );
-
-    const materiaisExistentes = topicoMarcas?.topicoMateriais
-      ? topicoMarcas.topicoMateriais.map((m: any) => m.materialId)
-      : [];
-
-    const todasMarcas: AmbienteOption[] = itemMarcaMateriais.map((item) => ({
-      name: item.marca.nome,
-      code: String(item.id),
-      descricao: item.material.nome,
-      materialId: item.material.id,
-    }));
-
-    const filtrado = todasMarcas.filter(
-      (m) => !materiaisExistentes.includes(m.materialId!)
-    );
-
-    setItensAmbiente(filtrado);
-    setLoading(false);
-  }, [ambienteSelecionado, empreendimento, itemMarcaMateriais]);
-
-  // =========================
-  //  ADICIONAR ITENS / MARCAS
-  // =========================
+  // ========================================================
+  // ADICIONAR ITENS
+  // ========================================================
   const handleAddItems = async () => {
     if (selectedAmbientes.length === 0) return;
 
     // -----------------------
-    //  CASO ESPECIAL: MARCAS
+    // MARCAS
     // -----------------------
     if (ambienteSelecionado.toUpperCase() === "MARCAS") {
       const TOPICO_MARCAS = 3;
@@ -155,7 +170,7 @@ export default function AdicionarItensDocumento({
 
       onAddItems(idsToAdd, TOPICO_MARCAS, 0);
 
-      // 🔥 REMOVER MARCAS ADICIONADAS DO MULTISELECT
+      // Remove do MultiSelect
       setItensAmbiente((prev) =>
         prev.filter(
           (item) => !selectedAmbientes.some((sel) => sel.code === item.code)
@@ -167,7 +182,7 @@ export default function AdicionarItensDocumento({
     }
 
     // ------------------------
-    //  CASO NORMAL (ITENS)
+    // ITENS NORMAIS
     // ------------------------
     const ambientes = await subTopicosAmbienteService.getAllAmbiente();
 
@@ -205,7 +220,10 @@ export default function AdicionarItensDocumento({
             filter
           />
         </div>
-        <AdicionarNovoItem onReload={handleRefresh} />
+        {/* Recarrega apenas ambientes normais — não marcas */}
+        {ambienteSelecionado.toLowerCase() !== "marcas" && (
+          <AdicionarNovoItem onReload={handleRefresh} />
+        )}
       </div>
 
       <div className="flex mt-3 w-[50%] gap-5">

@@ -108,30 +108,6 @@ export default function PainelMenu({
               );
             },
           });
-        } else {
-          // Caso não haja sub-tópicos, adiciona um item padrão
-          const idTopic = topico.id;
-          if (childItems.length === 0 && ![1, 2, 3].includes(idTopic)) {
-            childItems.push({
-              label: "Adicione um novo ambiente",
-              template: (item, options) => {
-                return (
-                  <div
-                    onClick={options.onClick}
-                    className={`
-                      flex items-center
-                      px-3 py-2
-                      rounded-md
-                      cursor-pointer
-                      color-gray-500
-                    `}
-                  >
-                    Adicione um novo item
-                  </div>
-                );
-              },
-            });
-          }
         }
       });
 

@@ -395,4 +395,25 @@ export const DocumentoService = {
       throw error;
     }
   },
+
+  async updateEmpreendimentoStatus(
+    idDocumento: string,
+    status: number
+  ): Promise<any> {
+    const payload = {
+      id: idDocumento,
+      status: status,
+    };
+    try {
+      const response = await axios.patch(
+        "https://jotanunesservice.onrender.com/api/v1/empreendimento/UpdateEmpreendimentoStatus",
+        payload
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Houve um erro ao atualizar o status do documento", error);
+      throw error;
+    }
+  },
 };

@@ -5,42 +5,22 @@ import { Card } from "primereact/card";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 import ActionBar from "./ActionBar/page";
-import { Dispatch, SetStateAction } from "react";
 import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
-import {
-  DocumentoService,
-  EmpreendimentosTopicos,
-  UpdateEmpreendimento,
-} from "@/lib/api";
-
-interface InfosDocument {
-  nomeDocumento: string;
-  setNomeDocumento: Dispatch<SetStateAction<string>>;
-  descricaoDocumento: string;
-  setDescricaoDocumento: Dispatch<SetStateAction<string>>;
-  localizacaoDocumento: string;
-  setLocalizacaoDocumento: Dispatch<SetStateAction<string>>;
-  tamanhoAreaDocumento: number;
-  setTamanhoAreaDocumento: Dispatch<SetStateAction<number>>;
-  padraoDocumento: string;
-  setPadraoDocumento: Dispatch<SetStateAction<string>>;
-  statusDocumento: string;
-  setStatusDocumento: Dispatch<SetStateAction<string>>;
-  versaoDocumento: number;
-  setVersaoDocumento: Dispatch<SetStateAction<number>>;
-  empreendimentoTopicos: EmpreendimentosTopicos[];
-  setEmpreendimentoTopicos: Dispatch<SetStateAction<EmpreendimentosTopicos[]>>;
-}
+import { DocumentoService, UpdateEmpreendimento } from "@/lib/api";
 
 interface FormEmpreendimentoProps {
   empreendimento: UpdateEmpreendimento;
   updateEmpreendimento: (field: keyof UpdateEmpreendimento, value: any) => void;
+  status: string;
+  idDocumento: string;
 }
 
 export default function FormEmpreendimento({
   empreendimento,
   updateEmpreendimento,
+  status,
+  idDocumento,
 }: FormEmpreendimentoProps) {
   const toast = useRef<Toast>(null);
   const [loading, setLoading] = useState(false);
@@ -76,7 +56,7 @@ export default function FormEmpreendimento({
   return (
     <div>
       <Toast ref={toast} position="top-right" />
-      <ActionBar />
+      <ActionBar statusEmpreendimento={status} idDocumento={idDocumento} />
       <Card className="shadow-md p-6 w-full ">
         {/* Campo Empreendimento */}
         <div className="flex flex-col sm:flex-row sm:items-center mb-6">

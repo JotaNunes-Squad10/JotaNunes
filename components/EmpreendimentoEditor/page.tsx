@@ -11,8 +11,6 @@ import { Toast } from "primereact/toast";
 import {
   DocumentoService,
   UpdateEmpreendimento,
-  topicoService,
-  subTopicosAmbienteService,
   MarcaMateriais,
   marcaService,
 } from "@/lib/api";
@@ -41,6 +39,8 @@ export default function EmpreendimentoEditor({
   const [loading, setLoading] = useState<boolean>(false);
   const toast = useRef<Toast | null>(null);
   const [marcaMaterial, setMarcaMaterial] = useState<MarcaMateriais[]>([]);
+  const [status, setStatus] = useState<string>("");
+  const [idDocumento, setIdDocumento] = useState<string>("");
 
   // Carrega marcas-materials (fonte para adicionar em MARCAS)
   useEffect(() => {
@@ -132,6 +132,10 @@ export default function EmpreendimentoEditor({
           if (mounted) setEmpreendimento(undefined);
           return;
         }
+
+        // Resgata o status que está o documento
+        setStatus(documentData.status);
+        setIdDocumento(documentData.id);
 
         // Normaliza a resposta em UpdateEmpreendimento (formato que usamos internamente)
         const normalized: UpdateEmpreendimento = {
@@ -541,6 +545,8 @@ export default function EmpreendimentoEditor({
           <FormEmpreendimento
             empreendimento={empreendimento}
             updateEmpreendimento={updateEmpreendimento}
+            status={status}
+            idDocumento={idDocumento}
           />
 
           <AddedItemsInDocument
