@@ -297,6 +297,20 @@ export const empreendimentoService = {
       throw err;
     }
   },
+  // Atualizar dados básicos do empreendimento (nome, descricao, localizacao, padrao)
+  async updateEmpreendimento(data: Partial<Empreendimento> & { id: string | number }): Promise<void> {
+    try {
+      // Endpoint assumido: UpdateEmpreendimento (PATCH)
+      await authApi.patch(
+        "/api/v1/empreendimento/UpdateEmpreendimento",
+        data,
+        { headers: { Authorization: getAuthToken() } }
+      );
+    } catch (err) {
+      console.error(`Erro ao atualizar empreendimento ${data.id}:`, err);
+      throw err;
+    }
+  },
 };
 
 export interface Ambiente {
@@ -320,6 +334,36 @@ export const ambienteService = {
       return null;
     }
   }
+  ,
+  // Buscar todos os ambientes
+  async getAllAmbientes(): Promise<Array<{ id?: number; nome?: string; topico?: { id?: number; nome?: string } }>> {
+    try {
+      const response = await authApi.get<unknown>(`/api/v1/ambiente/GetAllAmbientes`, {
+        headers: { Authorization: getAuthToken() }
+      });
+      const respData = response.data as unknown;
+      const arr: unknown[] = Array.isArray(respData)
+        ? respData
+        : (respData && typeof respData === 'object' && 'data' in (respData as Record<string, unknown>) && Array.isArray(((respData as Record<string, unknown>)['data'])) ? ((respData as Record<string, unknown>)['data'] as unknown[]) : []);
+      return arr.map((raw) => {
+        const anyRaw = raw as Record<string, unknown>;
+        const id = anyRaw['id'] ?? undefined;
+  const nome = anyRaw['nome'] ?? anyRaw['name'] ?? undefined;
+        const topRaw = anyRaw['topico'] ?? anyRaw['topicoId'] ?? undefined;
+        let topObj: { id?: number; nome?: string } | undefined = undefined;
+        if (topRaw && typeof topRaw === 'object') {
+          const t = topRaw as Record<string, unknown>;
+          const tid = t['id'] ?? t['topicoId'] ?? undefined;
+          const tnome = t['nome'] ?? t['name'] ?? undefined;
+          topObj = { id: tid ? Number(tid) : undefined, nome: tnome ? String(tnome) : undefined };
+        }
+        return { id: id ? Number(id) : undefined, nome: nome ? String(nome) : undefined, topico: topObj };
+      });
+    } catch (err) {
+      console.error('Erro ao buscar todos os ambientes', err);
+      return [];
+    }
+  }
 };
 
 export interface Topico {
@@ -341,6 +385,24 @@ export const topicoService = {
     } catch (err) {
       console.error(`Erro ao buscar topico por id ${id}:`, err);
       return null;
+    }
+  }
+  ,
+  // Buscar todos os tópicos
+  async getAllTopicos(): Promise<Topico[]> {
+    try {
+      const response = await authApi.get<{ data: Topico[] } | Topico[]>(`/api/v1/topico/GetAllTopicos`, {
+        headers: { Authorization: getAuthToken() }
+      });
+      const respData = response.data;
+      if (Array.isArray(respData)) return respData as Topico[];
+      if (respData && typeof respData === 'object' && 'data' in respData && Array.isArray((respData as { data: Topico[] }).data)) {
+        return (respData as { data: Topico[] }).data;
+      }
+      return [];
+    } catch (err) {
+      console.error('Erro ao buscar todos os tópicos', err);
+      return [];
     }
   }
 };
@@ -433,7 +495,8 @@ export const materialService = {
   async searchMaterials(query: string): Promise<Material[]> {
     try {
       if (!query || String(query).trim().length === 0) {
-        return await materialService.getAllMaterials();
+        // Quando a busca é vazia, preferir novo endpoint oficial de materiais
+        return await materialService.getAllMateriais();
       }
       const response = await authApi.get<unknown>(`/api/v1/materials/Search`, {
         headers: { Authorization: getAuthToken() },
@@ -457,6 +520,33 @@ export const materialService = {
       });
     } catch (err) {
       console.error('Erro ao buscar materiais por texto', err);
+      return [];
+    }
+  },
+
+  // Novo endpoint oficial informado pelo usuário: /api/v1/material/GetAllMateriais
+  // Mantemos getAllMaterials para retrocompatibilidade (marca-material agrupado),
+  // mas priorizamos este para listagem principal de materiais.
+  async getAllMateriais(): Promise<Material[]> {
+    try {
+      const response = await authApi.get<unknown>(`/api/v1/material/GetAllMateriais`, {
+        headers: { Authorization: getAuthToken() }
+      });
+      const respData = response.data as unknown;
+      const arr: unknown[] = Array.isArray(respData)
+        ? respData
+        : (respData && typeof respData === 'object' && 'data' in (respData as Record<string, unknown>) && Array.isArray(((respData as Record<string, unknown>)['data']))
+            ? ((respData as Record<string, unknown>)['data'] as unknown[])
+            : []);
+      return arr.map((raw) => {
+        const anyRaw = raw as Record<string, unknown>;
+        const nid = anyRaw['id'] ?? anyRaw['materialId'] ?? anyRaw['MaterialId'] ?? undefined;
+        const nome = anyRaw['nome'] ?? anyRaw['name'] ?? anyRaw['descricao'] ?? anyRaw['description'] ?? undefined;
+        const desc = anyRaw['descricao'] ?? anyRaw['description'] ?? undefined;
+        return { id: nid ? Number(nid) : undefined, nome: nome ? String(nome) : undefined, descricao: desc ? String(desc) : undefined } as Material;
+      });
+    } catch (err) {
+      console.error('Erro ao buscar todos os materiais (GetAllMateriais)', err);
       return [];
     }
   },
