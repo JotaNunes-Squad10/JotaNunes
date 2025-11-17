@@ -608,8 +608,8 @@ export default function DocRevisao() {
                                                 className="w-full h-28 p-2 border rounded text-sm resize-none"
                                             />
                                             <div className="mt-2 flex justify-end gap-2">
-                                                <button onClick={() => handleCloseComment()} className="px-3 py-1 text-sm border rounded hover:bg-gray-200 bg-gray-100">Cancelar</button>
-                                                <button onClick={() => selectedCommentKey !== null && handleDeleteComment(selectedCommentKey)} className="px-3 py-1 text-sm border rounded hover:bg-red-600 bg-red-400">Excluir</button>
+                                                <button onClick={() => handleCloseComment()} className="px-3 py-1 text-sm rounded hover:bg-gray-400 bg-gray-300">Cancelar</button>
+                                                <button onClick={() => selectedCommentKey !== null && handleDeleteComment(selectedCommentKey)} className="px-3 py-1 text-sm rounded hover:bg-red-600 bg-red-400">Excluir</button>
                                                 <button onClick={() => selectedCommentKey !== null && handleSaveComment(selectedCommentKey)} className="px-3 py-1 text-sm bg-yellow-400 hover:bg-yellow-600 rounded">Salvar</button>
                                             </div>
                                         </div>
