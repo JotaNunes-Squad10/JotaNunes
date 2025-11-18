@@ -146,8 +146,7 @@ export default function DocRevisao() {
                 const mapped = filtered.map((e) => ({ label: e.nome || e.name || e.descricao || String(e.id), value: e }));
                 mapped.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' }));
                 setOptions(mapped);
-            } catch {
-                // falha ao carregar lista; mantemos opções vazias
+            } catch {              
             }
         })();
     }, []);
@@ -182,7 +181,6 @@ export default function DocRevisao() {
                 setItemsMap((prev) => ({ ...prev, ...fetchedMap }));
             }
         } catch {
-            // ignora erro de fetch de nomes de items
         }
     };
 
@@ -232,16 +230,20 @@ export default function DocRevisao() {
                 matResults.forEach((r, idx) => {
                     const id = Array.from(materialIds)[idx];
                     if (r.status === 'fulfilled' && r.value) {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const val: any = r.value;
+                        const val = r.value as unknown;
                         if (val) {
                             if (Array.isArray(val)) {
-                                mMap[id] = val as string[];
-                            } else if (val.marcas && Array.isArray(val.marcas)) {
-                                mMap[id] = val.marcas as string[];
-                                if (val.material) materialNameMap[id] = String(val.material);
+                                mMap[id] = val.map(String);
+                            } else if (typeof val === 'object' && val !== null) {
+                                const maybe = val as { marcas?: unknown; material?: unknown };
+                                if (Array.isArray(maybe.marcas)) {
+                                    mMap[id] = maybe.marcas.map(String);
+                                    if (maybe.material) materialNameMap[id] = String(maybe.material);
+                                } else {
+                                    mMap[id] = [];
+                                }
                             } else {
-                                mMap[id] = Array.isArray(val) ? val.map(String) : [];
+                                mMap[id] = [];
                             }
                         }
                     }
@@ -250,7 +252,6 @@ export default function DocRevisao() {
                 setMaterialNamesMap(materialNameMap);
             }
         } catch {
-            // ignora erro de fetch auxiliar
         }
     };
 
@@ -262,11 +263,10 @@ export default function DocRevisao() {
         let left = rect.right + padding;
 
         const ESTIMATED_BOX_WIDTH = 320;
-        const ESTIMATED_BOX_HEIGHT = 220; // altura estimada do box (textarea + controles)
+        const ESTIMATED_BOX_HEIGHT = 220; 
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
 
-        // horizontal: tenta posicionar à direita, senão à esquerda, com ajustes
         if (left + ESTIMATED_BOX_WIDTH > viewportWidth) {
             left = Math.max(rect.left - ESTIMATED_BOX_WIDTH - padding, padding);
         } else {
@@ -276,7 +276,6 @@ export default function DocRevisao() {
             }
         }
 
-        // vertical: abre abaixo se couber, senão acima; fallback para ficar dentro da viewport
         let top: number;
         const spaceBelow = viewportHeight - rect.bottom;
         if (spaceBelow >= ESTIMATED_BOX_HEIGHT + padding) {
@@ -284,7 +283,6 @@ export default function DocRevisao() {
         } else if (rect.top >= ESTIMATED_BOX_HEIGHT + padding) {
             top = rect.top - ESTIMATED_BOX_HEIGHT - padding;
         } else {
-            // fallback: tenta manter dentro da viewport
             top = Math.max(padding, Math.min(rect.top, viewportHeight - ESTIMATED_BOX_HEIGHT - padding));
         }
 
@@ -344,7 +342,6 @@ export default function DocRevisao() {
         setTempComment('');
     };
 
-    // portal element para a caixa de comentário (evita clipping por ancestors com transform/overflow)
     const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
     useEffect(() => {
         const el = document.createElement('div');
@@ -431,7 +428,6 @@ export default function DocRevisao() {
                                                                 <button
                                                                     key={opt.value}
                                                                     onClick={() => {
-                                                                        // abrir modal de confirmação
                                                                         setPendingStatus(opt.value);
                                                                         setShowStatusMenu(false);
                                                                         setShowConfirmModal(true);
@@ -446,7 +442,6 @@ export default function DocRevisao() {
                                                     )}
                                                 </div>
                                             ) : (
-                                                // quando não há detalhe selecionado, mostra um espaço vazio para alinhamento
                                                 <div />
                                             )}
 
