@@ -450,7 +450,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                   onClick={() => {
                     
                     if (opt === "Verificar") {
-                      router.push(`/revisao`);
+                      router.push(`/revisao?id=${selectedEmp.id}`);
                       return;
                     }
 
