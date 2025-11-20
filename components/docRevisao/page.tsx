@@ -115,9 +115,10 @@ export default function DocRevisao() {
             setCommentsMap({});
 
             try { router.refresh(); } catch {}
-        } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : String(err);
-            setStatusError(msg || 'Erro ao atualizar status');
+        } catch {
+            const errorMsg = 'Erro ao atualizar status';
+            setStatusError(errorMsg);
+            toast.current?.show({ severity: 'error', summary: 'Erro', detail: errorMsg, life: 3000 });
         } finally {
             setSavingStatus(false);
         }
@@ -475,58 +476,52 @@ export default function DocRevisao() {
                         className="w-full md:w-[54.5rem]"
                     />
                 </div>
-                {/* Botões abaixo do input, alinhados à direita dentro do mesmo container do input */}
+                {/* Botão de status alinhado à direita */}
                 <div className="mt-2 max-w-4xl mx-auto px-6">
                     <div className="w-full">
                         <div className="md:fixed md:left-1/2 md:-translate-x-1/2 md:transform w-full max-w-4xl md:top-20 md:z-50 py-0">
                             <div className="max-w-4xl mx-auto px-0 flex justify-end">
-                                <div className="w-full md:w-80">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            {detalhe ? (
-                                                <div className="relative">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setShowStatusMenu((s) => !s)}
-                                                        className="w-full px-3 py-1 rounded font-semibold border text-center"
-                                                        style={{
-                                                            backgroundColor: getColorForStatus(detalhe?.status ?? selectedStatus),
-                                                            color: getTextColorForBg(getColorForStatus(detalhe?.status ?? selectedStatus)),
-                                                            borderColor: 'rgba(0,0,0,0.08)'
-                                                        }}
-                                                        disabled={savingStatus}
-                                                    >
-                                                        {savingStatus ? (
-                                                            <>
-                                                                <i className="pi pi-spin pi-spinner mr-2" />
-                                                                Atualizando
-                                                            </>
-                                                        ) : (detalhe?.status ?? selectedStatus)}
-                                                    </button>
+                                {detalhe && (
+                                    <div className="relative w-full sm:w-40">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowStatusMenu((s) => !s)}
+                                            className="w-full px-3 py-1 rounded font-semibold border text-center"
+                                            style={{
+                                                backgroundColor: getColorForStatus(detalhe?.status ?? selectedStatus),
+                                                color: getTextColorForBg(getColorForStatus(detalhe?.status ?? selectedStatus)),
+                                                borderColor: 'rgba(0,0,0,0.08)'
+                                            }}
+                                            disabled={savingStatus}
+                                        >
+                                            {savingStatus ? (
+                                                <>
+                                                    <i className="pi pi-spin pi-spinner mr-2" />
+                                                    Atualizando
+                                                </>
+                                            ) : (detalhe?.status ?? selectedStatus)}
+                                        </button>
 
-                                                    {showStatusMenu && (
-                                                        <div ref={statusMenuRef} className="absolute right-0 mt-2 w-44 bg-white border rounded shadow z-50">
-                                                            {statusOptions.map((opt) => (
-                                                                <button
-                                                                    key={opt.value}
-                                                                    onClick={() => {
-                                                                        setPendingStatus(opt.value);
-                                                                        setShowStatusMenu(false);
-                                                                        setShowConfirmModal(true);
-                                                                    }}
-                                                                    className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-3"
-                                                                >
-                                                                    <span style={{ width: 12, height: 12, backgroundColor: opt.color, borderRadius: 4, display: 'inline-block' }} />
-                                                                    <span className="flex-1">{opt.label}</span>
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <div />
-                                            )}
+                                        {showStatusMenu && (
+                                            <div ref={statusMenuRef} className="absolute right-0 mt-2 w-44 bg-white border rounded shadow z-50">
+                                                {statusOptions.map((opt) => (
+                                                    <button
+                                                        key={opt.value}
+                                                        onClick={() => {
+                                                            setPendingStatus(opt.value);
+                                                            setShowStatusMenu(false);
+                                                            setShowConfirmModal(true);
+                                                        }}
+                                                        className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-3"
+                                                    >
+                                                        <span style={{ width: 12, height: 12, backgroundColor: opt.color, borderRadius: 4, display: 'inline-block' }} />
+                                                        <span className="flex-1">{opt.label}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </div>
                     </div>
