@@ -29,6 +29,8 @@ import FirstPageIcon from "@mui/icons-material/FirstPage";
 import LastPageIcon from "@mui/icons-material/LastPage";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "primereact/skeleton";
 import { getCookie } from "cookies-next";
@@ -206,9 +208,9 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
       );
 
       return response.data;
-    } catch (error: any) {
-      alert("Falha ao atualizar o status do empreendimento.");
-    }
+    } catch (error) {
+        throw error;
+      }
   };
 
   const handleSort = (column: "nome" | "ultimaAlteracao" | "usuario") => {
@@ -568,11 +570,24 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
 
               const novoStatusCode = mapStatus[novoStatusSelecionado] ?? 0;
 
-              await atualizarStatusEmpreendimento(selectedEmp.id.toString(), novoStatusCode);
-              
-              setOpenConfirmModal(false);
+              try {
+                const result = await atualizarStatusEmpreendimento(
+                  selectedEmp.id.toString(),
+                  novoStatusCode
+                );
 
-              window.location.reload();
+                if (result) {
+                  setOpenConfirmModal(false);
+
+                  toast.success("Status atualizado com sucesso!", {
+                    onClose: () => {
+                      window.location.reload();  // só recarrega depois que o toast sumir
+                    },
+                  });
+                }
+              } catch (e) {
+                toast.error("Erro ao atualizar o status.");
+              }
             }}
             sx={{ borderRadius: "20px", px: 3 }}
           >
@@ -580,6 +595,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
+      <ToastContainer autoClose={2000} theme="colored" />
     </Paper>
   );
 };
