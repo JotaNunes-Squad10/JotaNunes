@@ -576,6 +576,106 @@ export default function DocRevisao() {
         setSelectedItemsToAdd([]);
     };
 
+    const handleRemoveTopico = (topicoIndex: number) => {
+        if (!detalhe) return;
+        const topico = detalhe.empreendimentoTopicos?.[topicoIndex];
+        if (!topico) return;
+
+        const ambientesCount = Array.isArray(topico.topicoAmbientes) ? topico.topicoAmbientes.length : 0;
+        if (ambientesCount > 1) {
+            toast.current?.show({ severity: 'warn', summary: 'Não permitido', detail: 'Não é possível remover o tópico enquanto ele contiver mais de 1 ambiente', life: 3500 });
+            return;
+        }
+
+        setDetalhe((prev) => {
+            if (!prev) return prev;
+            const copy = { ...prev } as Empreendimento;
+            const arr = Array.isArray(copy.empreendimentoTopicos) ? [...copy.empreendimentoTopicos] : [];
+            arr.splice(topicoIndex, 1);
+            copy.empreendimentoTopicos = arr;
+            return copy;
+        });
+
+        const topicoNome = topicosMap[topico.topicoId ?? 0]?.nome || `Tópico ${topico.topicoId}`;
+        toast.current?.show({ severity: 'success', summary: 'Removido', detail: `${topicoNome} removido do documento`, life: 3000 });
+    };
+
+    const handleRemoveAmbiente = (topicoIndex: number, ambienteIndex: number) => {
+        if (!detalhe) return;
+        const topico = detalhe.empreendimentoTopicos?.[topicoIndex];
+        if (!topico) return;
+        const ambiente = topico.topicoAmbientes?.[ambienteIndex];
+        if (!ambiente) return;
+
+        const itensCount = Array.isArray(ambiente.ambienteItens) ? ambiente.ambienteItens.length : 0;
+        if (itensCount > 1) {
+            toast.current?.show({ severity: 'warn', summary: 'Não permitido', detail: 'Não é possível remover o ambiente enquanto ele contiver mais de 1 item', life: 3500 });
+            return;
+        }
+
+        setDetalhe((prev) => {
+            if (!prev) return prev;
+            const copy = { ...prev } as Empreendimento;
+            const arr = Array.isArray(copy.empreendimentoTopicos) ? [...copy.empreendimentoTopicos] : [];
+            const targetTop = arr[topicoIndex];
+            if (!targetTop.topicoAmbientes || !Array.isArray(targetTop.topicoAmbientes)) return prev;
+            targetTop.topicoAmbientes.splice(ambienteIndex, 1);
+            copy.empreendimentoTopicos = arr;
+            return copy;
+        });
+
+        const ambienteNome = ambientesMap[ambiente.ambienteId ?? 0]?.nome || `Ambiente ${ambiente.ambienteId}`;
+        toast.current?.show({ severity: 'success', summary: 'Removido', detail: `${ambienteNome} removido do tópico`, life: 3000 });
+    };
+
+    const handleRemoveItem = (topicoIndex: number, ambienteIndex: number, itemIndex: number) => {
+        if (!detalhe) return;
+        const topico = detalhe.empreendimentoTopicos?.[topicoIndex];
+        if (!topico) return;
+        const ambiente = topico.topicoAmbientes?.[ambienteIndex];
+        if (!ambiente) return;
+        const item = ambiente.ambienteItens?.[itemIndex];
+        if (!item) return;
+        
+        setDetalhe((prev) => {
+            if (!prev) return prev;
+            const copy = { ...prev } as Empreendimento;
+            const arr = Array.isArray(copy.empreendimentoTopicos) ? [...copy.empreendimentoTopicos] : [];
+            const targetTop = arr[topicoIndex];
+            if (!targetTop.topicoAmbientes || !Array.isArray(targetTop.topicoAmbientes)) return prev;
+            const targetAmb = targetTop.topicoAmbientes[ambienteIndex];
+            if (!targetAmb.ambienteItens || !Array.isArray(targetAmb.ambienteItens)) return prev;
+            targetAmb.ambienteItens.splice(itemIndex, 1);
+            copy.empreendimentoTopicos = arr;
+            return copy;
+        });
+        
+        const itemNome = itemsMap[item.itemId ?? 0]?.nome || `Item #${item.itemId}`;
+        toast.current?.show({ severity: 'success', summary: 'Removido', detail: `${itemNome} removido do ambiente`, life: 3000 });
+    };
+
+    const handleRemoveMaterial = (topicoIndex: number, materialIndex: number) => {
+        if (!detalhe) return;
+        const topico = detalhe.empreendimentoTopicos?.[topicoIndex];
+        if (!topico) return;
+        const material = topico.topicoMateriais?.[materialIndex];
+        if (!material) return;
+        
+        setDetalhe((prev) => {
+            if (!prev) return prev;
+            const copy = { ...prev } as Empreendimento;
+            const arr = Array.isArray(copy.empreendimentoTopicos) ? [...copy.empreendimentoTopicos] : [];
+            const targetTop = arr[topicoIndex];
+            if (!targetTop.topicoMateriais || !Array.isArray(targetTop.topicoMateriais)) return prev;
+            targetTop.topicoMateriais.splice(materialIndex, 1);
+            copy.empreendimentoTopicos = arr;
+            return copy;
+        });
+        
+        const materialNome = materialNamesMap[material.materialId ?? 0] || `Material #${material.materialId}`;
+        toast.current?.show({ severity: 'success', summary: 'Removido', detail: `${materialNome} removido do tópico`, life: 3000 });
+    };
+
     const fetchItemsNames = async (d: Empreendimento) => {
         try {
             const itemIds = new Set<number>();
@@ -928,51 +1028,116 @@ export default function DocRevisao() {
         setCommentBoxPos({ top, left });
         setTempComment(commentsMap[key]?.text ?? '');
     };
-    const handleSaveComment = (itemKey: string) => {
-        const storageKey = `docRevisao_comments_${detalhe?.id ?? 'global'}`;
-        if (!tempComment || tempComment.trim() === '') {
+    const handleSaveComment = async (itemKey: string) => {
+        try {
+            const parts = itemKey.split(':');
+            if (parts.length !== 2) {
+                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Formato de chave inválido', life: 3000 });
+                return;
+            }
+            const id = parseInt(parts[1]);
+            if (isNaN(id)) {
+                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'ID inválido', life: 3000 });
+                return;
+            }
+
+            const statusId = mapStatusToNumber(detalhe?.status ?? selectedStatus);
+
+            if (parts[0] === 'item') {
+                await itemService.setItemComentario(id, statusId, tempComment.trim());
+
+                if (!tempComment || tempComment.trim() === '') {
+                    setCommentsMap((prev) => {
+                        const copy = { ...prev };
+                        delete copy[itemKey];
+                        return copy;
+                    });
+                } else {
+                    const next = { ...commentsMap, [itemKey]: { text: tempComment.trim(), createdAt: new Date().toISOString() } };
+                    setCommentsMap(next);
+                }
+
+                toast.current?.show({ severity: 'success', summary: 'Sucesso', detail: 'Comentário salvo com sucesso', life: 3000 });
+            } else {
+                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Tipo inválido para comentário', life: 3000 });
+            }
+        } catch (err) {
+            console.error('Erro ao salvar comentário:', err);
+            toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Erro ao salvar comentário', life: 3000 });
+        } finally {
+            setSelectedCommentKey(null);
+            setCommentBoxPos(null);
+            setTempComment('');
+        }
+    };
+
+    const handleDeleteComment = async (itemKey: string) => {
+        try {
+            const parts = itemKey.split(':');
+            if (parts.length !== 2) {
+                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Formato de chave inválido', life: 3000 });
+                return;
+            }
+            const id = parseInt(parts[1]);
+            if (isNaN(id)) {
+                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'ID inválido', life: 3000 });
+                return;
+            }
+
+            if (parts[0] === 'item') {
+                if (itemService.clearItemComentario) {
+                    await itemService.clearItemComentario(id);
+                } else {
+                    await itemService.setItemComentario(id, mapStatusToNumber(selectedStatus), '');
+                }
+            } else {
+                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Tipo inválido para comentário', life: 3000 });
+            }
+
             setCommentsMap((prev) => {
                 const copy = { ...prev };
                 delete copy[itemKey];
-                try { localStorage.setItem(storageKey, JSON.stringify(copy)); } catch {}
                 return copy;
             });
-        } else {
-            const next = { ...commentsMap, [itemKey]: { text: tempComment.trim(), createdAt: new Date().toISOString() } };
-            setCommentsMap(next);
-            try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
-        }
-        setSelectedCommentKey(null);
-        setCommentBoxPos(null);
-        setTempComment('');
-    };
 
-    const handleDeleteComment = (itemKey: string) => {
-        const storageKey = `docRevisao_comments_${detalhe?.id ?? 'global'}`;
-        setCommentsMap((prev) => {
-            const copy = { ...prev };
-            delete copy[itemKey];
-            try { localStorage.setItem(storageKey, JSON.stringify(copy)); } catch {}
-            return copy;
-        });
-        setSelectedCommentKey(null);
-        setCommentBoxPos(null);
-        setTempComment('');
+            toast.current?.show({ severity: 'success', summary: 'Sucesso', detail: 'Comentário removido', life: 3000 });
+        } catch (err) {
+            console.error('Erro ao deletar comentário:', err);
+            toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Erro ao remover comentário', life: 3000 });
+        } finally {
+            setSelectedCommentKey(null);
+            setCommentBoxPos(null);
+            setTempComment('');
+        }
     };
 
     useEffect(() => {
         try {
             if (!detalhe?.id) { setCommentsMap({}); return; }
-            const key = `docRevisao_comments_${detalhe.id}`;
-            const raw = localStorage.getItem(key);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                if (parsed && typeof parsed === 'object') setCommentsMap(parsed);
-            } else {
-                setCommentsMap({});
-            }
-    } catch { /* ignore */ }
-    }, [detalhe?.id]);
+
+            // Carregar comentários da estrutura retornada pela API (revisaoItem / revisaoMaterial)
+            const newCommentsMap: Record<string, { text: string; createdAt: string }> = {};
+
+            detalhe.empreendimentoTopicos?.forEach((topico) => {
+                topico.topicoAmbientes?.forEach((ambiente) => {
+                    ambiente.ambienteItens?.forEach((item) => {
+                        if (item.revisaoItem && item.revisaoItem.observacao) {
+                            const itemKey = `item:${item.id}`;
+                            newCommentsMap[itemKey] = {
+                                text: item.revisaoItem.observacao,
+                                createdAt: new Date().toISOString()
+                            };
+                        }
+                    });
+                });
+            });
+
+            setCommentsMap(newCommentsMap);
+        } catch (err) {
+            console.error('Erro ao carregar comentários:', err);
+            setCommentsMap({});
+        }
+    }, [detalhe?.id, detalhe?.empreendimentoTopicos]);
 
     const handleCloseComment = () => {
         setSelectedCommentKey(null);
@@ -1214,7 +1379,8 @@ export default function DocRevisao() {
                                             {detalhe.empreendimentoTopicos && detalhe.empreendimentoTopicos.length > 0 && detalhe.empreendimentoTopicos
                                         .map((topico, idx) => (
                                                                 <section key={topico.id ?? idx} className="mb-4">
-                                                                    <div className="flex items-center w-full">
+                                                                    <div className="flex items-center justify-between w-full gap-2 mb-2">
+                                                                        <div className="flex items-center gap-2 flex-1">
                                                                             <h4 className="font-semibold mb-0">{topicosMap[topico.topicoId ?? 0]?.nome || `Tópico ${topico.topicoId ?? topico.id}`}</h4>
                                                                             {/* botão + para ações específicas por tópico (Ambientes para Unidades/Área comum, Materiais para MARCAS) */}
                                                                             {(() => {
@@ -1225,7 +1391,7 @@ export default function DocRevisao() {
                                                                                         type="button"
                                                                                         title="Adicionar ambiente"
                                                                                         onClick={() => handleOpenAddAmbiente(topico, idx)}
-                                                                                        className="ml-2 p-1 rounded bg-green-500 text-white hover:bg-green-700 flex items-center justify-center"
+                                                                                        className="p-1 rounded bg-green-500 text-white hover:bg-green-700 flex items-center justify-center flex-shrink-0"
                                                                                         style={{ width: 28, height: 28 }}
                                                                                     >
                                                                                         <i className="pi pi-plus" />
@@ -1238,7 +1404,7 @@ export default function DocRevisao() {
                                                                                         type="button"
                                                                                         title="Adicionar material"
                                                                                         onClick={() => handleOpenAddMaterial(idx)}
-                                                                                        className="ml-2 p-1 rounded bg-green-500 text-white hover:bg-green-700 flex items-center justify-center"
+                                                                                        className="p-1 rounded bg-green-500 text-white hover:bg-green-700 flex items-center justify-center flex-shrink-0"
                                                                                         style={{ width: 28, height: 28 }}
                                                                                     >
                                                                                         <i className="pi pi-plus" />
@@ -1247,6 +1413,16 @@ export default function DocRevisao() {
                                                                             }
                                                                             return null;
                                                                         })()}
+                                                                        </div>
+                                                                        <button
+                                                                            type="button"
+                                                                            title="Remover tópico"
+                                                                            onClick={() => handleRemoveTopico(idx)}
+                                                                            className="p-1 rounded bg-red-500 text-white hover:bg-red-700 flex items-center justify-center flex-shrink-0"
+                                                                            style={{ width: 28, height: 28 }}
+                                                                        >
+                                                                            <i className="pi pi-times" />
+                                                                        </button>
                                                                     </div>
 
                                             {/* Ambientes */}
@@ -1263,19 +1439,30 @@ export default function DocRevisao() {
 
                                                         return unique.map((amb, ambIdx) => (
                                                             <div key={String(amb.ambienteId ?? amb.id ?? ambIdx)} className="mb-3 bg-gray-100 md:bg-transparent p-3 md:p-0 rounded">
-                                                                <div className="flex items-center gap-1">
-                                                                    <h5 className="font-medium bg-gray-300 md:bg-transparent px-2 py-1 rounded flex items-center gap-1">
-                                                                        {ambientesMap[amb.ambienteId ?? 0]?.nome || `Ambiente ${amb.ambienteId ?? amb.id}`}
+                                                                <div className="flex items-center justify-between gap-2 mb-2">
+                                                                    <div className="flex items-center gap-2 flex-1">
+                                                                        <h5 className="font-medium mb-0">
+                                                                            {ambientesMap[amb.ambienteId ?? 0]?.nome || `Ambiente ${amb.ambienteId ?? amb.id}`}
+                                                                        </h5>
                                                                         <button
                                                                             type="button"
                                                                             title="Adicionar item"
                                                                             onClick={() => handleOpenAddItem(idx, ambIdx)}
-                                                                            className="p-1 rounded bg-green-500 text-white hover:bg-green-700 flex items-center justify-center"
+                                                                            className="p-1 rounded bg-green-500 text-white hover:bg-green-700 flex items-center justify-center flex-shrink-0"
                                                                             style={{ width: 28, height: 28 }}
                                                                         >
                                                                             <i className="pi pi-plus" />
                                                                         </button>
-                                                                    </h5>
+                                                                    </div>
+                                                                    <button
+                                                                        type="button"
+                                                                        title="Remover ambiente"
+                                                                        onClick={() => handleRemoveAmbiente(idx, ambIdx)}
+                                                                        className="p-1 rounded bg-red-500 text-white hover:bg-red-700 flex items-center justify-center flex-shrink-0"
+                                                                        style={{ width: 28, height: 28 }}
+                                                                    >
+                                                                        <i className="pi pi-times" />
+                                                                    </button>
                                                                 </div>
 
                                                                 {amb.ambienteItens && amb.ambienteItens.length > 0 ? (
@@ -1284,7 +1471,8 @@ export default function DocRevisao() {
                                                                             <thead className="hidden md:table-header-group">
                                                                                 <tr className="bg-gray-100 md:border-b md:border-gray-300">
                                                                                     <th className="px-3 py-2 text-left w-1/3">Item</th>
-                                                                                    <th className="px-3 py-2 text-left w-2/3">Descrição</th>
+                                                                                    <th className="px-3 py-2 text-left">Descrição</th>
+                                                                                    <th className="px-3 py-2 text-right" style={{ width: 40 }}>Ações</th>
                                                                                 </tr>
                                                                             </thead>
                                                                             <tbody>
@@ -1304,7 +1492,7 @@ export default function DocRevisao() {
                                                                                             <span className="md:hidden inline-block w-28 font-semibold text-gray-700">Item:</span>
                                                                                             <div className="flex items-center gap-2 w-full">
                                                                                                 <div
-                                                                                                    className="w-full"
+                                                                                                    className="flex-1"
                                                                                                     onClick={(e) => e.stopPropagation()}
                                                                                                     onMouseDown={(e) => e.stopPropagation()}
                                                                                                     onTouchStart={(e) => e.stopPropagation()}
@@ -1345,6 +1533,21 @@ export default function DocRevisao() {
                                                                                             <span className="md:hidden inline-block w-28 font-semibold text-gray-700">Descrição:</span>
                                                                                             <span className="block">{itemsMap[item.itemId ?? 0]?.descricao || '-'}</span>
                                                                                         </td>
+                                                                                        <td className="block md:table-cell md:pr-0 py-2 md:text-right">
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                title="Remover item"
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    const itemIdx = amb.ambienteItens?.findIndex(it => it.id === item.id) ?? -1;
+                                                                                                    if (itemIdx !== -1) handleRemoveItem(idx, ambIdx, itemIdx);
+                                                                                                }}
+                                                                                                className="p-1 rounded bg-red-500 text-white hover:bg-red-700 flex items-center justify-center flex-shrink-0 md:ml-auto"
+                                                                                                style={{ width: 28, height: 28 }}
+                                                                                            >
+                                                                                                <i className="pi pi-times" style={{ fontSize: '0.875rem' }} />
+                                                                                            </button>
+                                                                                        </td>
                                                                                     </tr>
                                                                                 ))}
                                                                             </tbody>
@@ -1379,20 +1582,16 @@ export default function DocRevisao() {
                                                         <thead className="hidden md:table-header-group">
                                                             <tr className="bg-gray-100 md:border-b md:border-gray-300">
                                                                 <th className="px-3 py-2 text-left w-1/3">Material</th>
-                                                                <th className="px-3 py-2 text-left w-2/3">Marcas</th>
+                                                                <th className="px-3 py-2 text-left">Marcas</th>
+                                                                <th className="px-3 py-2 text-right" style={{ width: 40 }}>Ações</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
                                                             {topico.topicoMateriais.map((mat, mIdx) => (
                                                                 <tr
                                                                     key={`${mat.id ?? mat.materialId ?? 'mat'}-${mIdx}`}
-                                                                    onClick={(e) => handleOpenComment(e, `material:${mat.materialId ?? mat.id ?? 0}`)}
-                                                                    title={commentsMap[`material:${mat.materialId ?? mat.id ?? 0}`]?.text ?? ''}
                                                                     className={
-                                                                        `block md:table-row mb-3 md:mb-0 rounded md:rounded-none border-b border-gray-200 bg-white md:bg-transparent md:border-b md:border-gray-300 cursor-pointer transition-colors duration-150 ease-in-out ` +
-                                                                        (commentsMap[`material:${mat.materialId ?? mat.id ?? 0}`]
-                                                                            ? 'bg-yellow-50 md:bg-gradient-to-r md:from-yellow-200 md:to-orange-100 md:hover:opacity-95 hover:opacity-95'
-                                                                            : 'bg-white md:bg-transparent hover:bg-gray-50')
+                                                                        `block md:table-row mb-3 md:mb-0 rounded md:rounded-none border-b border-gray-200 bg-white md:bg-transparent md:border-b md:border-gray-300 transition-colors duration-150 ease-in-out`
                                                                     }
                                                                 >
                                                                     <td className="block md:table-cell px-3 py-2">
@@ -1442,9 +1641,21 @@ export default function DocRevisao() {
                                                                     </td>
                                                                     <td className="block md:table-cell px-3 py-2">
                                                                         <span className="md:hidden inline-block w-28 font-semibold text-gray-700">Marcas:</span>
-                                                                        <div className="flex items-center">
-                                                                            <span className="block">{(marcasMap[mat.materialId ?? 0] || []).join(', ') || '-'}</span>
-                                                                        </div>
+                                                                        <span className="block">{(marcasMap[mat.materialId ?? 0] || []).join(', ') || '-'}</span>
+                                                                    </td>
+                                                                    <td className="block md:table-cell md:pr-0 py-2 md:text-right">
+                                                                        <button
+                                                                            type="button"
+                                                                            title="Remover material"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleRemoveMaterial(idx, mIdx);
+                                                                            }}
+                                                                            className="p-1 rounded bg-red-500 text-white hover:bg-red-700 flex items-center justify-center flex-shrink-0 md:ml-auto"
+                                                                            style={{ width: 28, height: 28 }}
+                                                                        >
+                                                                            <i className="pi pi-times" style={{ fontSize: '0.875rem' }} />
+                                                                        </button>
                                                                     </td>
                                                                 </tr>
                                                             ))}
