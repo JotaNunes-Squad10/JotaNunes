@@ -138,12 +138,24 @@ export interface EmpreendimentoTopico {
       id?: number;
       itemId?: number;
       versoes?: number[];
+      revisaoItem?: {
+        id?: number;
+        statusId?: number;
+        status?: string;
+        observacao?: string;
+      };
     }>;
   }>;
   topicoMateriais?: Array<{
     id?: number;
     materialId?: number;
     versoes?: number[];
+    revisaoMaterial?: {
+      id?: number;
+      statusId?: number;
+      status?: string;
+      observacao?: string;
+    };
   }>;
 }
 
@@ -161,6 +173,20 @@ export interface Material {
 }
 
 export const itemService = {
+  // Salvar comentário do item
+  async setItemComentario(itemId: number, statusId: number, observacao: string): Promise<void> {
+    try {
+      await authApi.post(
+        "/api/v1/items/SetItemComentario",
+        { itemId, statusId, observacao },
+        { headers: { Authorization: getAuthToken() } }
+      );
+    } catch (err) {
+      console.error(`Erro ao salvar comentário do item ${itemId}:`, err);
+      throw err;
+    }
+  },
+
   async getItemById(id: number | string): Promise<Item | null> {
     // Implementa tentativas (retry) simples com backoff exponencial
     const maxAttempts = 3;

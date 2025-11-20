@@ -290,33 +290,85 @@ export default function DocRevisao() {
         setCommentBoxPos({ top, left });
         setTempComment(commentsMap[key]?.text ?? '');
     };
-    const handleSaveComment = (itemKey: string) => {
-        const storageKey = `docRevisao_comments_${detalhe?.id ?? 'global'}`;
-        if (!tempComment || tempComment.trim() === '') {
-            setCommentsMap((prev) => {
-                const copy = { ...prev };
-                delete copy[itemKey];
-                try { localStorage.setItem(storageKey, JSON.stringify(copy)); } catch {}
-                return copy;
-            });
-        } else {
-            const next = { ...commentsMap, [itemKey]: { text: tempComment.trim(), createdAt: new Date().toISOString() } };
-            setCommentsMap(next);
-            try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+    const handleSaveComment = async (itemKey: string) => {
+        try {
+            // Extrair itemId do itemKey
+            // itemKey formato: "item:123" ou "material:456"
+            const parts = itemKey.split(':');
+            if (parts.length !== 2) {
+                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Formato de chave inválido', life: 3000 });
+                return;
+            }
+            
+            const idStr = parts[1];
+            const itemId = parseInt(idStr);
+            
+            if (isNaN(itemId)) {
+                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'ID inválido', life: 3000 });
+                return;
+            }
+            
+            const statusId = mapStatusToNumber(selectedStatus);
+            
+            // Salvar comentário via API
+            await itemService.setItemComentario(itemId, statusId, tempComment.trim());
+            
+            // Atualizar o mapa local
+            if (!tempComment || tempComment.trim() === '') {
+                setCommentsMap((prev) => {
+                    const copy = { ...prev };
+                    delete copy[itemKey];
+                    return copy;
+                });
+            } else {
+                const next = { ...commentsMap, [itemKey]: { text: tempComment.trim(), createdAt: new Date().toISOString() } };
+                setCommentsMap(next);
+            }
+            
+            toast.current?.show({ severity: 'success', summary: 'Sucesso', detail: 'Comentário salvo com sucesso', life: 3000 });
+        } catch (err) {
+            console.error('Erro ao salvar comentário:', err);
+            toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Erro ao salvar comentário', life: 3000 });
         }
         setSelectedCommentKey(null);
         setCommentBoxPos(null);
         setTempComment('');
     };
 
-    const handleDeleteComment = (itemKey: string) => {
-        const storageKey = `docRevisao_comments_${detalhe?.id ?? 'global'}`;
-        setCommentsMap((prev) => {
-            const copy = { ...prev };
-            delete copy[itemKey];
-            try { localStorage.setItem(storageKey, JSON.stringify(copy)); } catch {}
-            return copy;
-        });
+    const handleDeleteComment = async (itemKey: string) => {
+        try {
+            // Extrair itemId do itemKey
+            // itemKey formato: "item:123" ou "material:456"
+            const parts = itemKey.split(':');
+            if (parts.length !== 2) {
+                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Formato de chave inválido', life: 3000 });
+                return;
+            }
+            
+            const idStr = parts[1];
+            const itemId = parseInt(idStr);
+            
+            if (isNaN(itemId)) {
+                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'ID inválido', life: 3000 });
+                return;
+            }
+            
+            const statusId = mapStatusToNumber(selectedStatus);
+            
+            // Deletar comentário enviando string vazia para a API
+            await itemService.setItemComentario(itemId, statusId, '');
+            
+            setCommentsMap((prev) => {
+                const copy = { ...prev };
+                delete copy[itemKey];
+                return copy;
+            });
+            
+            toast.current?.show({ severity: 'success', summary: 'Sucesso', detail: 'Comentário removido', life: 3000 });
+        } catch (err) {
+            console.error('Erro ao deletar comentário:', err);
+            toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Erro ao remover comentário', life: 3000 });
+        }
         setSelectedCommentKey(null);
         setCommentBoxPos(null);
         setTempComment('');
@@ -324,17 +376,46 @@ export default function DocRevisao() {
 
     useEffect(() => {
         try {
-            if (!detalhe?.id) { setCommentsMap({}); return; }
-            const key = `docRevisao_comments_${detalhe.id}`;
-            const raw = localStorage.getItem(key);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                if (parsed && typeof parsed === 'object') setCommentsMap(parsed);
-            } else {
-                setCommentsMap({});
+            if (!detalhe?.id) { 
+                setCommentsMap({}); 
+                return; 
             }
-    } catch { /* ignore */ }
-    }, [detalhe?.id]);
+            
+            // Carregar comentários da estrutura revisaoItem retornada pela API
+            const newCommentsMap: Record<string, { text: string; createdAt: string }> = {};
+            
+            detalhe.empreendimentoTopicos?.forEach((topico) => {
+                topico.topicoAmbientes?.forEach((ambiente) => {
+                    ambiente.ambienteItens?.forEach((item) => {
+                        // revisaoItem agora é um objeto, não array
+                        if (item.revisaoItem && item.revisaoItem.observacao) {
+                            const itemKey = `item:${item.id}`;
+                            newCommentsMap[itemKey] = {
+                                text: item.revisaoItem.observacao,
+                                createdAt: new Date().toISOString() // A API não retorna data, usar data atual
+                            };
+                        }
+                    });
+                });
+                
+                // Carregar comentários dos materiais
+                topico.topicoMateriais?.forEach((material) => {
+                    if (material.revisaoMaterial && material.revisaoMaterial.observacao) {
+                        const materialKey = `material:${material.materialId ?? material.id ?? 0}`;
+                        newCommentsMap[materialKey] = {
+                            text: material.revisaoMaterial.observacao,
+                            createdAt: new Date().toISOString()
+                        };
+                    }
+                });
+            });
+            
+            setCommentsMap(newCommentsMap);
+        } catch (err) {
+            console.error('Erro ao carregar comentários:', err);
+            setCommentsMap({});
+        }
+    }, [detalhe?.id, detalhe?.empreendimentoTopicos]);
 
     const handleCloseComment = () => {
         setSelectedCommentKey(null);
@@ -444,15 +525,6 @@ export default function DocRevisao() {
                                             ) : (
                                                 <div />
                                             )}
-
-                                        <div>
-                                            <button
-                                                type="button"
-                                                className="w-full px-3 py-1 rounded font-medium border bg-blue-600 text-white hover:bg-blue-700"
-                                            >
-                                                Salvar
-                                            </button>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
