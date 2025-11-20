@@ -2,18 +2,23 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from 'react-dom';
-import Header from "../../components/gerenciamentoUser/headerUser/page";
+import Header from "../../components/home/header/page";
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { useRouter } from 'next/navigation';
+import { useSearchParams } from "next/navigation";
 import { empreendimentoService, Empreendimento, itemService, ambienteService, topicoService, marcaMaterialService } from '../../lib/services';
 import 'primereact/resources/themes/saga-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 
 export default function DocRevisao() {
     const [options, setOptions] = useState<Array<{ label: string; value: Empreendimento }>>([]);
+
+    const searchParams = useSearchParams();
+    const idParam = searchParams.get("id");
+
     const [selected, setSelected] = useState<Empreendimento | null>(null);
     const [detalhe, setDetalhe] = useState<Empreendimento | null>(null);
     const [loadingDetalhe, setLoadingDetalhe] = useState(false);
@@ -141,11 +146,34 @@ export default function DocRevisao() {
     useEffect(() => {
         (async () => {
             try {
+                if (idParam) {
+                    setLoadingDetalhe(true);
+                }
+
                 const data = await empreendimentoService.getAllEmpreendimentos();
                 const filtered = data.filter((e) => e.status === 'Pendente');
                 const mapped = filtered.map((e) => ({ label: e.nome || e.name || e.descricao || String(e.id), value: e }));
                 mapped.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' }));
                 setOptions(mapped);
+
+                if (idParam) {
+                    const emp = mapped.find(e => String(e.value.id) === String(idParam));
+                    if (emp) {
+                        setSelected(emp.value); // Faz o select exibir
+
+                        // Carrega os detalhes:
+                        empreendimentoService.getEmpreendimentoById(String(emp.value.id))
+                            .then((resp) => {
+                                if (resp) {
+                                    setDetalhe(resp);
+                                    fetchItemsNames(resp);
+                                    fetchAuxNames(resp);
+                                }
+                            })
+                            .finally(() => setLoadingDetalhe(false));
+                    }
+                }
+
             } catch {              
             }
         })();
