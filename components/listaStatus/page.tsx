@@ -88,16 +88,37 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
 
   // Função que retorna as opções do dropdown baseado no status
   const getDropdownOptions = (status: string) => {
+
+    // REGRAS ESPECIAIS DO OPERADOR
+    if (userProfile === 3) {
+      if (status === "Pendente") {
+        return ["Criar cópia"];
+      }
+
+    }
+
+    // REGRAS ESPECIAIS DO GESTOR
+    if (userProfile === 2) {
+
+      if (status === "Pendente") return ["Verificar", "Mudar status"];
+
+      if (status === "Aprovado") return ["Visualizar"];
+      if (status === "Cancelado") return ["Visualizar"];
+    }
+
+
+    // REGRAS NORMAIS (ADMIN + restante do sistema)
     switch (status) {
       case "Editando":
-        return ["Editar", "Mudar status"];
+        return ["Editar","Criar cópia","Mudar status"];
       case "Em revisão":
-        return ["Revisar", "Mudar status"];
+        return ["Revisar","Criar cópia","Mudar status"];
       case "Pendente":
-        return ["Verificar", "Mudar status"];
+        return ["Verificar","Criar cópia","Mudar status"];
       case "Aprovado":
+        return ["Visualizar","Criar cópia","Criar padrão"];
       case "Cancelado":
-        return ["Visualizar", "Criar padrão"];
+        return ["Visualizar","Criar cópia"];
       default:
         return [];
     }
@@ -142,8 +163,8 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   // Define quais status cada perfil pode editar
   const permissoes: Record<number, string[]> = {
     1: ["Editando", "Pendente", "Em revisão", "Aprovado", "Cancelado"], // Admin
-    2: ["Pendente", "Aprovado"], // Gestor
-    3: ["Editando", "Em revisão"], // Operador
+    2: ["Pendente", "Aprovado", "Cancelado"], // Gestor
+    3: ["Editando", "Pendente", "Em revisão", "Aprovado", "Cancelado"], // Operador
   };
 
   const podeEditar = (perfil: number | null, status: string) => {
@@ -411,12 +432,16 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
 
                   {possuiPermissaoGeral && (
                     <TableCell align="center">
-                      {podeEditar(userProfile, empreendimento.status) && (
-                        <>
-                          <IconButton onClick={(e) => handleMenuOpen(e, empreendimento)}>
-                            <i className="pi pi-pen-to-square" style={{ fontSize: "1.2rem" }}></i>
-                          </IconButton>
-                        </>
+                      {(
+                        // Se Operador e status é Pendente ícone aparece
+                        (userProfile === 3 && empreendimento.status === "Pendente") ||
+
+                        // Caso contrário, segue regras normais
+                        podeEditar(userProfile, empreendimento.status)
+                      ) && (
+                        <IconButton onClick={(e) => handleMenuOpen(e, empreendimento)}>
+                          <i className="pi pi-pen-to-square" style={{ fontSize: "1.2rem" }}></i>
+                        </IconButton>
                       )}
                     </TableCell>
                   )}
