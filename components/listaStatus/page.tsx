@@ -456,6 +456,11 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                       return;
                     }
 
+                    if (opt === "Visualizar") {
+                      router.push(`/pdfEmpreendimento?id=${selectedEmp.id}`);
+                      return;
+                    }
+
                     if (opt === "Mudar status") {
                       setSelectedEmp((prev) => prev ? { ...prev, showStatusChange: true } : selectedEmp);
                     } else {
