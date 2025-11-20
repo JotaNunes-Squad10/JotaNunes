@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Box } from "@mui/material";
 import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Header from "../headerUser/page";
 import StatusSummary from "../home/status/page";
 import EmpreendimentosTable, { Empreendimento } from "../listaStatus/page";
@@ -20,10 +22,13 @@ const StatusTabela: React.FC = () => {
   useEffect(() => {
     const status = statusParam || "Todos";
     setFiltroAtivo(status);
+  }, [statusParam]);
 
+  useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+
         const response = await axios.get(
           "https://jotanunesservice.onrender.com/api/v1/empreendimento/GetAllEmpreendimentos"
         );
@@ -41,14 +46,14 @@ const StatusTabela: React.FC = () => {
 
         setEmpreendimentos(parsedData);
       } catch (error) {
-        console.error("Erro ao buscar empreendimentos:", error);
+        toast.error("Erro ao buscar empreendimentos");
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [statusParam]);
+  }, []);   
 
   return (
     <>
