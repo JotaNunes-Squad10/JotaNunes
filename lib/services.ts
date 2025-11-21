@@ -507,7 +507,7 @@ export const materialService = {
     }
     
     try {
-      const response = await authApi.get<Material | { data: Material }>(`/api/v1/materials/GetMaterialById/${id}`, {
+      const response = await authApi.get<Material | { data: Material }>(`/api/v1/material/GetMaterialById/${id}`, {
         headers: { Authorization: getAuthToken() }
       });
       
@@ -542,7 +542,7 @@ export const materialService = {
       if (!query || String(query).trim().length === 0) {
         return await materialService.getAllMateriais();
       }
-      const response = await authApi.get<unknown>(`/api/v1/materials/Search`, {
+            const response = await authApi.get<unknown>(`/api/v1/material/Search`, {
         headers: { Authorization: getAuthToken() },
         params: { q: query }
       });
