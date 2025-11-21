@@ -143,17 +143,7 @@ export default function DocRevisao() {
 
         try {
             const fetched = await marcaMaterialService.getAllMarcasByMaterialId(Number(selectedMaterialToAdd));
-            if (fetched) {
-                if (Array.isArray(fetched)) {
-                    setMarcasMap((prev) => ({ ...prev, [Number(selectedMaterialToAdd)]: fetched as string[] }));
-                } else if (typeof fetched === 'object' && fetched !== null) {
-                    const obj = fetched as { marcas?: unknown; material?: unknown; materialName?: unknown };
-                    const marcas = Array.isArray(obj.marcas) ? obj.marcas.map(String) : [];
-                    setMarcasMap((prev) => ({ ...prev, [Number(selectedMaterialToAdd)]: marcas }));
-                    const matName = obj.material ?? obj.materialName ?? undefined;
-                    if (matName) setMaterialNamesMap((prev) => ({ ...prev, [Number(selectedMaterialToAdd)]: String(matName) }));
-                }
-            }
+            processMarcasResponse(Number(selectedMaterialToAdd), fetched);
         } catch {}
 
         toast.current?.show({ severity: 'success', summary: 'Adicionado', detail: 'Material adicionado ao tópico', life: 3000 });
@@ -193,17 +183,7 @@ export default function DocRevisao() {
         if (typeof newMaterialId === 'number') {
             try {
                 const fetched = await marcaMaterialService.getAllMarcasByMaterialId(newMaterialId);
-                if (fetched) {
-                    if (Array.isArray(fetched)) {
-                        setMarcasMap((prev) => ({ ...prev, [Number(newMaterialId)]: fetched as string[] }));
-                    } else if (typeof fetched === 'object' && fetched !== null) {
-                        const obj = fetched as { marcas?: unknown; material?: unknown; materialName?: unknown };
-                        const marcas = Array.isArray(obj.marcas) ? obj.marcas.map(String) : [];
-                        setMarcasMap((prev) => ({ ...prev, [Number(newMaterialId)]: marcas }));
-                        const matName = obj.material ?? obj.materialName ?? undefined;
-                        if (matName) setMaterialNamesMap((prev) => ({ ...prev, [Number(newMaterialId)]: String(matName) }));
-                    }
-                }
+                processMarcasResponse(Number(newMaterialId), fetched);
             } catch {}
         }
     };
@@ -224,6 +204,32 @@ export default function DocRevisao() {
         } catch {
             return '#000000';
         }
+    };
+
+    // Helper: normaliza respostas de marcas/material e atualiza mapas de estado
+    const processMarcasResponse = (id: number, fetched: unknown) => {
+        try {
+            if (!fetched) return;
+            if (Array.isArray(fetched)) {
+                setMarcasMap((prev) => ({ ...prev, [Number(id)]: fetched as string[] }));
+                return;
+            }
+            if (typeof fetched === 'object' && fetched !== null) {
+                const obj = fetched as { marcas?: unknown; material?: unknown; materialName?: unknown };
+                const marcas = Array.isArray(obj.marcas) ? obj.marcas.map(String) : [];
+                setMarcasMap((prev) => ({ ...prev, [Number(id)]: marcas }));
+                const matName = obj.material ?? obj.materialName ?? undefined;
+                if (matName) setMaterialNamesMap((prev) => ({ ...prev, [Number(id)]: String(matName) }));
+            }
+        } catch {}
+    };
+
+    // Helper: extrai string de filtro de eventos do PrimeReact
+    const parseFilter = (evt: unknown) => {
+        try {
+            const e = evt as Record<string, unknown> | null;
+            return e && 'filter' in e && typeof e.filter !== 'undefined' ? String(e.filter) : '';
+        } catch { return ''; }
     };
 
     const mapStatusToNumber = (s: string) => {
@@ -769,14 +775,7 @@ export default function DocRevisao() {
             await Promise.all(Array.from(materialIds).map(async (id) => {
                 try {
                     const marcas = await marcaMaterialService.getAllMarcasByMaterialId(id);
-                    if (marcas) {
-                        if (Array.isArray(marcas)) setMarcasMap((prev) => ({ ...prev, [id]: marcas as string[] }));
-                        else if (typeof marcas === 'object' && marcas !== null) {
-                            const obj = marcas as Record<string, unknown>;
-                            const arr = Array.isArray(obj.marcas) ? (obj.marcas as unknown[]).map(String) : [];
-                            setMarcasMap((prev) => ({ ...prev, [id]: arr }));
-                        }
-                    }
+                    processMarcasResponse(id, marcas);
                 } catch {}
             }));
         } catch {}
@@ -1023,31 +1022,10 @@ export default function DocRevisao() {
             if (materialIds.size > 0) {
                 const matPromises = Array.from(materialIds).map((id) => marcaMaterialService.getAllMarcasByMaterialId(id));
                 const matResults = await Promise.allSettled(matPromises);
-                const mMap: Record<number, string[]> = {};
-                const materialNameMap: Record<number, string> = {};
-                matResults.forEach((r, idx) => {
-                    const id = Array.from(materialIds)[idx];
-                    if (r.status === 'fulfilled' && r.value) {
-                        const val = r.value as unknown;
-                        if (val) {
-                            if (Array.isArray(val)) {
-                                mMap[id] = val as string[];
-                            } else if (typeof val === 'object' && val !== null) {
-                                const obj = val as { marcas?: unknown; material?: unknown; materialName?: unknown };
-                                if (Array.isArray(obj.marcas)) {
-                                    mMap[id] = obj.marcas.map(String);
-                                    if (obj.material) materialNameMap[id] = String(obj.material);
-                                } else {
-                                    mMap[id] = Array.isArray(val) ? (val as unknown[]).map(String) : [];
-                                }
-                            } else {
-                                mMap[id] = [];
-                            }
-                        }
-                    }
+                Array.from(materialIds).forEach((id, idx) => {
+                    const r = matResults[idx];
+                    if (r && r.status === 'fulfilled') processMarcasResponse(id, (r as PromiseFulfilledResult<unknown>).value);
                 });
-                setMarcasMap(mMap);
-                setMaterialNamesMap(materialNameMap);
             }
         } catch {
         }
@@ -1574,11 +1552,7 @@ export default function DocRevisao() {
                                                                                                         }}
                                                                                                         optionLabel="label"
                                                                                                         filter
-                                                                                                        onFilter={(e) => {
-                                                                                                            const evt = e as unknown as Record<string, unknown> | null;
-                                                                                                            const q = evt && 'filter' in evt && typeof evt.filter !== 'undefined' ? String(evt.filter) : '';
-                                                                                                            void loadItemOptions(String(q));
-                                                                                                        }}
+                                                                                                        onFilter={(e) => { void loadItemOptions(parseFilter(e)); }}
                                                                                                         placeholder={itemsMap[item.itemId ?? 0]?.nome ? itemsMap[item.itemId ?? 0].nome : `Item #${item.itemId}`}
                                                                                                         filterPlaceholder="Pesquisar item"
                                                                                                         className="w-full"
@@ -1684,11 +1658,7 @@ export default function DocRevisao() {
                                                                                     const newMatId = (e.value as number) ?? null;
                                                                                     await handleMaterialChange(mat.id, newMatId);
                                                                                 }}
-                                                                                onFilter={(e) => {
-                                                                                    const evt = e as unknown as Record<string, unknown> | null;
-                                                                                    const q = evt && 'filter' in evt && typeof evt.filter !== 'undefined' ? String(evt.filter) : '';
-                                                                                    void loadMaterialOptions(String(q));
-                                                                                }}
+                                                                                onFilter={(e) => { void loadMaterialOptions(parseFilter(e)); }}
                                                                                 placeholder={materialNamesMap[mat.materialId ?? 0] || `Material #${mat.materialId}`}
                                                                                 filterPlaceholder="Pesquisar material"
                                                                                 className="w-full"
@@ -1801,11 +1771,7 @@ export default function DocRevisao() {
                                             className="w-full"
                                             filter
                                             display="chip"
-                                            onFilter={(e) => {
-                                                const evt = e as unknown as Record<string, unknown> | null;
-                                                const q = evt && 'filter' in evt && typeof evt.filter !== 'undefined' ? String(evt.filter) : '';
-                                                void loadItemOptions(String(q));
-                                            }}
+                                            onFilter={(e) => { void loadItemOptions(parseFilter(e)); }}
                                         />
                                     </div>
                                 </Dialog>
@@ -1842,11 +1808,7 @@ export default function DocRevisao() {
                                                 className="w-full"
                                                 filter
                                                 disabled={addMaterialOptions.length === 0}
-                                                onFilter={(e) => {
-                                                    const evt = e as unknown as Record<string, unknown> | null;
-                                                    const q = evt && 'filter' in evt && typeof evt.filter !== 'undefined' ? String(evt.filter) : '';
-                                                    void loadMaterialOptions(String(q));
-                                                }}
+                                                onFilter={(e) => { void loadMaterialOptions(parseFilter(e)); }}
                                             />
                                             {addMaterialOptions.length === 0 && (
                                                 <p className="text-sm text-gray-500 mt-2">Nenhum material disponível</p>
@@ -1899,7 +1861,7 @@ export default function DocRevisao() {
                 >
                     <div className="px-1 py-2 text-sm">
                         <p>
-                            Deseja alterar o status do empreendimento <strong>{detalhe?.nome || selected?.nome || selected?.name || detalhe?.id}</strong> para <strong className="text-yellow-600">{pendingStatus}</strong>?
+                            Deseja alterar o status e salvar as alterações do empreendimento <strong>{detalhe?.nome || selected?.nome || selected?.name || detalhe?.id}</strong> para <strong className="text-yellow-600">{pendingStatus}</strong>?
                         </p>
                     </div>
                 </Dialog>
