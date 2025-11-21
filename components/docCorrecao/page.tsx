@@ -235,6 +235,39 @@ export default function DocRevisao() {
         return 3;
     };
 
+    // Função para preparar o payload completo do empreendimento
+    const prepareEmpreendimentoPayload = () => {
+        if (!detalhe?.id) return null;
+        
+        const payload = {
+            id: String(detalhe.id),
+            nome: detalhe.nome,
+            descricao: detalhe.descricao,
+            localizacao: detalhe.localizacao,
+            tamanhoArea: 0,
+            padrao: typeof detalhe.padrao === 'string' ? 
+                (detalhe.padrao === 'Residence' ? 1 : detalhe.padrao === 'Mais Viver' ? 2 : detalhe.padrao === 'Vida Bela' ? 3 : 0) 
+                : (detalhe.padrao ?? 0),
+            empreendimentoTopicos: (detalhe.empreendimentoTopicos || []).map((topico, tIdx) => ({
+                topicoId: topico.topicoId ?? 0,
+                posicao: topico.posicao ?? (tIdx + 1),
+                topicoAmbientes: (topico.topicoAmbientes || []).map((ambiente, aIdx) => ({
+                    ambienteId: ambiente.ambienteId ?? 0,
+                    area: 0,
+                    posicao: ambiente.posicao ?? (aIdx + 1),
+                    ambienteItens: (ambiente.ambienteItens || []).map((item) => ({
+                        itemId: item.itemId ?? 0
+                    }))
+                })),
+                topicoMateriais: (topico.topicoMateriais || []).map((material) => ({
+                    materialId: material.materialId ?? 0
+                }))
+            }))
+        };
+        
+        return payload;
+    };
+
     const getTopicoPriority = (name?: string) => {
         if (!name) return 99;
         const n = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -291,6 +324,28 @@ export default function DocRevisao() {
             setShowConfirmModal(false);
             return;
         }
+        
+        // Primeiro salvar as alterações do empreendimento
+        if (detalhe?.id) {
+            setSavingStatus(true);
+            try {
+                const payload = prepareEmpreendimentoPayload();
+                if (payload) {
+                    await empreendimentoService.updateEmpreendimentoCompleto(payload);
+                }
+            } catch (err: unknown) {
+                const msg = err instanceof Error ? err.message : String(err);
+                toast.current?.show({ 
+                    severity: 'error', 
+                    summary: 'Erro ao salvar', 
+                    detail: msg || 'Erro ao salvar alterações antes de mudar status', 
+                    life: 4000 
+                });
+                setSavingStatus(false);
+                return;
+            }
+        }
+        
         await handleSelectStatus(pendingStatus);
         setPendingStatus(null);
         setShowConfirmModal(false);
@@ -1255,15 +1310,12 @@ export default function DocRevisao() {
                                                     if (!detalhe?.id) return;
                                                     setSavingDetalheChanges(true);
                                                     try {
-                                                        const payload = {
-                                                            id: detalhe.id,
-                                                            nome: detalhe.nome,
-                                                            descricao: detalhe.descricao,
-                                                            localizacao: detalhe.localizacao,
-                                                            padrao: detalhe.padrao,
-                                                        } as Partial<import('../../lib/services').Empreendimento> & { id: string | number };
-                                                        await empreendimentoService.updateEmpreendimento(payload);
-                                                        toast.current?.show({ severity: 'success', summary: 'Salvo', detail: 'Dados do empreendimento atualizados', life: 3000 });
+                                                        const payload = prepareEmpreendimentoPayload();
+                                                        if (!payload) {
+                                                            throw new Error('Não foi possível preparar os dados');
+                                                        }
+                                                        await empreendimentoService.updateEmpreendimentoCompleto(payload);
+                                                        toast.current?.show({ severity: 'success', summary: 'Salvo', detail: 'Empreendimento atualizado com sucesso', life: 3000 });
                                                         try {
                                                             const refreshed = await empreendimentoService.getEmpreendimentoById(detalhe.id as string | number);
                                                             if (refreshed) {

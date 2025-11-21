@@ -348,6 +348,42 @@ export const empreendimentoService = {
       throw err;
     }
   },
+  
+  // Atualizar empreendimento completo com tópicos, ambientes e itens
+  async updateEmpreendimentoCompleto(payload: {
+    id: string;
+    nome?: string;
+    descricao?: string;
+    localizacao?: string;
+    tamanhoArea?: number;
+    padrao?: number;
+    empreendimentoTopicos?: Array<{
+      topicoId: number;
+      posicao: number;
+      topicoAmbientes?: Array<{
+        ambienteId: number;
+        area?: number;
+        posicao: number;
+        ambienteItens?: Array<{
+          itemId: number;
+        }>;
+      }>;
+      topicoMateriais?: Array<{
+        materialId: number;
+      }>;
+    }>;
+  }): Promise<void> {
+    try {
+      await authApi.put(
+        "/api/v1/empreendimento/UpdateEmpreendimento",
+        payload,
+        { headers: { Authorization: getAuthToken() } }
+      );
+    } catch (err) {
+      console.error(`Erro ao atualizar empreendimento completo ${payload.id}:`, err);
+      throw err;
+    }
+  },
 };
 
 export interface Ambiente {
