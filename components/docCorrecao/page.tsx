@@ -691,20 +691,25 @@ export default function DocRevisao() {
         if (!ambiente) return;
         const item = ambiente.ambienteItens?.[itemIndex];
         if (!item) return;
-        
+
+        // Atualização imutável para evitar efeitos colaterais em referências compartilhadas
         setDetalhe((prev) => {
             if (!prev) return prev;
-            const copy = { ...prev } as Empreendimento;
-            const arr = Array.isArray(copy.empreendimentoTopicos) ? [...copy.empreendimentoTopicos] : [];
-            const targetTop = arr[topicoIndex];
-            if (!targetTop.topicoAmbientes || !Array.isArray(targetTop.topicoAmbientes)) return prev;
-            const targetAmb = targetTop.topicoAmbientes[ambienteIndex];
-            if (!targetAmb.ambienteItens || !Array.isArray(targetAmb.ambienteItens)) return prev;
-            targetAmb.ambienteItens.splice(itemIndex, 1);
-            copy.empreendimentoTopicos = arr;
-            return copy;
+            const newTopicos = (prev.empreendimentoTopicos || []).map((t, tIdx) => {
+                if (tIdx !== topicoIndex) return t;
+                const newTopico: EmpreendimentoTopico = { ...t } as EmpreendimentoTopico;
+                newTopico.topicoAmbientes = (t.topicoAmbientes || []).map((a, aIdx) => {
+                    if (aIdx !== ambienteIndex) return a;
+                    const newAmb = { ...a } as typeof a;
+                    newAmb.ambienteItens = (a.ambienteItens || []).filter((_, idx) => idx !== itemIndex);
+                    return newAmb;
+                });
+                return newTopico;
+            });
+
+            return { ...prev, empreendimentoTopicos: newTopicos } as Empreendimento;
         });
-        
+
         const itemNome = itemsMap[item.itemId ?? 0]?.nome || `Item #${item.itemId}`;
         toast.current?.show({ severity: 'success', summary: 'Removido', detail: `${itemNome} removido do ambiente`, life: 3000 });
     };
@@ -1528,11 +1533,11 @@ export default function DocRevisao() {
                                                                                 </tr>
                                                                             </thead>
                                                                             <tbody>
-                                                                                {amb.ambienteItens.map((item) => (
-                                                                                    <tr
-                                                                                        key={item.id}
-                                                                                        onClick={(e) => handleOpenComment(e, `item:${item.id ?? 0}`)}
-                                                                                        title={commentsMap[`item:${item.id ?? 0}`]?.text ?? ''}
+                                                                                        {amb.ambienteItens.map((item, itemIdx) => (
+                                                                                            <tr
+                                                                                                key={`${item.id ?? item.itemId ?? 'item'}-${itemIdx}`}
+                                                                                                onClick={(e) => handleOpenComment(e, `item:${item.id ?? item.itemId ?? itemIdx}`)}
+                                                                                                title={commentsMap[`item:${item.id ?? item.itemId ?? itemIdx}`]?.text ?? ''}
                                                                                         className={
                                                                                             `block md:table-row mb-3 md:mb-0 rounded md:rounded-none border-b border-gray-300 md:border-b md:border-gray-300 cursor-pointer transition-colors duration-150 ease-in-out ` +
                                                                                             (commentsMap[`item:${item.id ?? 0}`]
@@ -1591,8 +1596,7 @@ export default function DocRevisao() {
                                                                                                 title="Remover item"
                                                                                                 onClick={(e) => {
                                                                                                     e.stopPropagation();
-                                                                                                    const itemIdx = amb.ambienteItens?.findIndex(it => it.id === item.id) ?? -1;
-                                                                                                    if (itemIdx !== -1) handleRemoveItem(idx, ambIdx, itemIdx);
+                                                                                                    if (typeof itemIdx === 'number' && itemIdx !== -1) handleRemoveItem(idx, ambIdx, itemIdx);
                                                                                                 }}
                                                                                                 className="p-1 rounded bg-red-500 text-white hover:bg-red-700 flex items-center justify-center flex-shrink-0 md:ml-auto"
                                                                                                 style={{ width: 28, height: 28 }}
