@@ -127,13 +127,13 @@ export interface UpdateEmpreendimentoPayload {
 // Configuração da API principal
 export const api = axios.create({
   baseURL: "https://jotanunesservice.onrender.com",
-  timeout: 10000,
+  timeout: 30000,
 });
 
 // API para endpoints de autenticação (sempre produção)
 export const authApi = axios.create({
   baseURL: "https://jotanunesservice.onrender.com",
-  timeout: 10000,
+  timeout: 30000,
 });
 
 // Serviços de Autenticação
