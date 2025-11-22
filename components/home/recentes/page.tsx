@@ -14,6 +14,8 @@ interface Documento {
 export default function Recentes() {
   const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
 
   useEffect(() => {
     axios.get("https://jotanunesservice.onrender.com/api/v1/empreendimento/GetAllEmpreendimentos")
@@ -24,6 +26,8 @@ export default function Recentes() {
     })
     .catch(err => {
       console.error("Erro ao buscar documentos recentes:", err);
+      let erro ="Erro ao consultar o arquivos recentes. Tente mais tarde ou entre em contato com o suporte. " + err ;
+      setError(erro);
       setLoading(false);
     });
   }, []);
@@ -46,6 +50,12 @@ export default function Recentes() {
           </svg>
         </button>
       </div>
+
+      {error && (
+        <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
 
       {/* Lista de documentos */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
