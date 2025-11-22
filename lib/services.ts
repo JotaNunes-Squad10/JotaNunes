@@ -138,12 +138,24 @@ export interface EmpreendimentoTopico {
       id?: number;
       itemId?: number;
       versoes?: number[];
+      revisaoItem?: {
+        id?: number;
+        statusId?: number;
+        status?: string;
+        observacao?: string;
+      };
     }>;
   }>;
   topicoMateriais?: Array<{
     id?: number;
     materialId?: number;
     versoes?: number[];
+    revisaoMaterial?: {
+      id?: number;
+      statusId?: number;
+      status?: string;
+      observacao?: string;
+    };
   }>;
 }
 
@@ -161,6 +173,31 @@ export interface Material {
 }
 
 export const itemService = {
+  // Salvar comentário do item
+  async setItemComentario(itemId: number, statusId: number, observacao: string): Promise<void> {
+    try {
+      await authApi.post(
+        "/api/v1/items/SetItemComentario",
+        { itemId, statusId, observacao },
+        { headers: { Authorization: getAuthToken() } }
+      );
+    } catch (err) {
+      console.error(`Erro ao salvar comentário do item ${itemId}:`, err);
+      throw err;
+    }
+  },
+  
+  async clearItemComentario(itemId: number): Promise<void> {
+    try {
+      await authApi.delete(`/api/v1/items/ClearItemComentario/${itemId}`, {
+        headers: { Authorization: getAuthToken() }
+      });
+    } catch (err) {
+      console.error(`Erro ao limpar comentário do item ${itemId}:`, err);
+      throw err;
+    }
+  },
+
   async getItemById(id: number | string): Promise<Item | null> {
     // Implementa tentativas (retry) simples com backoff exponencial
     const maxAttempts = 3;
@@ -308,6 +345,42 @@ export const empreendimentoService = {
       );
     } catch (err) {
       console.error(`Erro ao atualizar empreendimento ${data.id}:`, err);
+      throw err;
+    }
+  },
+  
+  // Atualizar empreendimento completo com tópicos, ambientes e itens
+  async updateEmpreendimentoCompleto(payload: {
+    id: string;
+    nome?: string;
+    descricao?: string;
+    localizacao?: string;
+    tamanhoArea?: number;
+    padrao?: number;
+    empreendimentoTopicos?: Array<{
+      topicoId: number;
+      posicao: number;
+      topicoAmbientes?: Array<{
+        ambienteId: number;
+        area?: number;
+        posicao: number;
+        ambienteItens?: Array<{
+          itemId: number;
+        }>;
+      }>;
+      topicoMateriais?: Array<{
+        materialId: number;
+      }>;
+    }>;
+  }): Promise<void> {
+    try {
+      await authApi.put(
+        "/api/v1/empreendimento/UpdateEmpreendimento",
+        payload,
+        { headers: { Authorization: getAuthToken() } }
+      );
+    } catch (err) {
+      console.error(`Erro ao atualizar empreendimento completo ${payload.id}:`, err);
       throw err;
     }
   },
@@ -465,10 +538,19 @@ export const marcaMaterialService = {
 
 export const materialService = {
   async getMaterialById(id: number | string): Promise<Material | null> {
+    if (!id || (typeof id === 'number' && id <= 0)) {
+      return null;
+    }
+    
     try {
-      const response = await authApi.get<Material | { data: Material }>(`/api/v1/materials/GetMaterialById/${id}`, {
+      const response = await authApi.get<Material | { data: Material }>(`/api/v1/material/GetMaterialById/${id}`, {
         headers: { Authorization: getAuthToken() }
       });
+      
+      if (response.status === 404) {
+        return null;
+      }
+      
       const respData = response.data;
       if (!respData) return null;
       const raw = 'data' in respData ? (respData as { data: unknown }).data : respData;
@@ -486,8 +568,7 @@ export const materialService = {
         return { id: nid ? Number(nid) : undefined, nome: nome ? String(nome) : undefined, descricao: desc ? String(desc) : undefined } as Material;
       }
       return null;
-    } catch (err) {
-      console.error(`Erro ao buscar material por id ${id}:`, err);
+    } catch {
       return null;
     }
   },
@@ -495,10 +576,9 @@ export const materialService = {
   async searchMaterials(query: string): Promise<Material[]> {
     try {
       if (!query || String(query).trim().length === 0) {
-        // Quando a busca é vazia, preferir novo endpoint oficial de materiais
         return await materialService.getAllMateriais();
       }
-      const response = await authApi.get<unknown>(`/api/v1/materials/Search`, {
+            const response = await authApi.get<unknown>(`/api/v1/material/Search`, {
         headers: { Authorization: getAuthToken() },
         params: { q: query }
       });
@@ -524,9 +604,6 @@ export const materialService = {
     }
   },
 
-  // Novo endpoint oficial informado pelo usuário: /api/v1/material/GetAllMateriais
-  // Mantemos getAllMaterials para retrocompatibilidade (marca-material agrupado),
-  // mas priorizamos este para listagem principal de materiais.
   async getAllMateriais(): Promise<Material[]> {
     try {
       const response = await authApi.get<unknown>(`/api/v1/material/GetAllMateriais`, {

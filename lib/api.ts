@@ -99,6 +99,31 @@ export interface GenerateDocumentoResponse {
   };
 }
 
+// Interface para atualização completa do empreendimento
+export interface UpdateEmpreendimentoPayload {
+  id: string;
+  nome?: string;
+  descricao?: string;
+  localizacao?: string;
+  tamanhoArea?: number;
+  padrao?: number;
+  empreendimentoTopicos?: Array<{
+    topicoId: number;
+    posicao: number;
+    topicoAmbientes?: Array<{
+      ambienteId: number;
+      area?: number;
+      posicao: number;
+      ambienteItens?: Array<{
+        itemId: number;
+      }>;
+    }>;
+    topicoMateriais?: Array<{
+      materialId: number;
+    }>;
+  }>;
+}
+
 // Configuração da API principal
 export const api = axios.create({
   baseURL: "https://jotanunesservice.onrender.com",
