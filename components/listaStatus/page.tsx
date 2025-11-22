@@ -476,6 +476,11 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                   key={opt}
                   onClick={() => {
                     
+                    if (opt === "Editar") {
+                      router.push(`/empreendimento/${selectedEmp.id}`); 
+                      return; 
+                    }
+
                     if (opt === "Verificar") {
                       sessionStorage.setItem("empreendimentoSelecionado", String(selectedEmp.id)); 
                       router.push("/revisao"); 
