@@ -482,6 +482,12 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                       return; 
                     }
 
+                    if (opt === "Revisar") {
+                      sessionStorage.setItem("empreendimentoSelecionado", String(selectedEmp.id)); 
+                      router.push("/docCorrecao"); 
+                      return; 
+                    }
+
                     if (opt === "Visualizar") {
                       router.push(`/pdfEmpreendimento?id=${selectedEmp.id}`);
                       return;

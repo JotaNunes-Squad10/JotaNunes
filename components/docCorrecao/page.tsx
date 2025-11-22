@@ -1195,6 +1195,40 @@ export default function DocRevisao() {
         };
     }, []);
 
+        useEffect(() => {
+            const storedId = sessionStorage.getItem("empreendimentoSelecionado");
+            if (storedId) {
+                setLoadingDetalhe(true);
+            }
+        }, []);
+
+
+        useEffect(() => {
+        if (options.length === 0) return; // ainda não carregou
+
+        const storedId = sessionStorage.getItem("empreendimentoSelecionado");
+        if (!storedId) return;
+
+        const emp = options.find(e => String(e.value.id) === String(storedId));
+        if (!emp) return;
+
+        // Remove para evitar reuso ou loops
+        sessionStorage.removeItem("empreendimentoSelecionado");
+
+        setSelected(emp.value);        // preenche dropdown
+
+        empreendimentoService
+            .getEmpreendimentoById(String(emp.value.id))
+            .then((resp) => {
+                if (resp) {
+                    setDetalhe(resp);
+                    fetchItemsNames(resp);
+                    fetchAuxNames(resp);
+                }
+            })
+            .finally(() => setLoadingDetalhe(false));
+    }, [options]);
+
     return (
         <div>
             <Header />
