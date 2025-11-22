@@ -57,7 +57,12 @@ export default function Menu_acoes_rapidas() {
                 label: 'Criar a partir do Padrão Sobrado PC - Mais Viver',
             },
         ]
-         : []),
+         : [
+
+            {
+                label: 'Você não tem permissão para criar um novo documento',
+            },
+         ]),
         ]
 
     
