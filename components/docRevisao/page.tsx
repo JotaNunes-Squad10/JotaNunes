@@ -2,23 +2,18 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from 'react-dom';
-import Header from "../../components/home/header/page";
+import Header from "../../components/headerUser/page";
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { useRouter } from 'next/navigation';
-import { useSearchParams } from "next/navigation";
 import { empreendimentoService, Empreendimento, itemService, ambienteService, topicoService, marcaMaterialService } from '../../lib/services';
 import 'primereact/resources/themes/saga-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 
 export default function DocRevisao() {
     const [options, setOptions] = useState<Array<{ label: string; value: Empreendimento }>>([]);
-
-    const searchParams = useSearchParams();
-    const idParam = searchParams.get("id");
-
     const [selected, setSelected] = useState<Empreendimento | null>(null);
     const [detalhe, setDetalhe] = useState<Empreendimento | null>(null);
     const [loadingDetalhe, setLoadingDetalhe] = useState(false);
@@ -120,9 +115,10 @@ export default function DocRevisao() {
             setCommentsMap({});
 
             try { router.refresh(); } catch {}
-        } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : String(err);
-            setStatusError(msg || 'Erro ao atualizar status');
+        } catch {
+            const errorMsg = 'Erro ao atualizar status';
+            setStatusError(errorMsg);
+            toast.current?.show({ severity: 'error', summary: 'Erro', detail: errorMsg, life: 3000 });
         } finally {
             setSavingStatus(false);
         }
@@ -146,38 +142,43 @@ export default function DocRevisao() {
     useEffect(() => {
         (async () => {
             try {
-                if (idParam) {
-                    setLoadingDetalhe(true);
-                }
-
                 const data = await empreendimentoService.getAllEmpreendimentos();
                 const filtered = data.filter((e) => e.status === 'Pendente');
                 const mapped = filtered.map((e) => ({ label: e.nome || e.name || e.descricao || String(e.id), value: e }));
                 mapped.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' }));
                 setOptions(mapped);
-
-                if (idParam) {
-                    const emp = mapped.find(e => String(e.value.id) === String(idParam));
-                    if (emp) {
-                        setSelected(emp.value); // Faz o select exibir
-
-                        // Carrega os detalhes:
-                        empreendimentoService.getEmpreendimentoById(String(emp.value.id))
-                            .then((resp) => {
-                                if (resp) {
-                                    setDetalhe(resp);
-                                    fetchItemsNames(resp);
-                                    fetchAuxNames(resp);
-                                }
-                            })
-                            .finally(() => setLoadingDetalhe(false));
-                    }
-                }
-
             } catch {              
             }
         })();
     }, []);
+
+    useEffect(() => {
+        if (options.length === 0) return; // ainda não carregou
+
+        const storedId = sessionStorage.getItem("empreendimentoSelecionado");
+        if (!storedId) return;
+
+        const emp = options.find(e => String(e.value.id) === String(storedId));
+        if (!emp) return;
+
+        // Remove para não repetir
+        sessionStorage.removeItem("empreendimentoSelecionado");
+
+        setSelected(emp.value);
+        setLoadingDetalhe(true);
+
+        empreendimentoService
+            .getEmpreendimentoById(String(emp.value.id))
+            .then((resp) => {
+                if (resp) {
+                    setDetalhe(resp);
+                    fetchItemsNames(resp);
+                    fetchAuxNames(resp);
+                }
+            })
+            .finally(() => setLoadingDetalhe(false));
+
+    }, [options]);
 
     const fetchItemsNames = async (d: Empreendimento) => {
         try {
@@ -318,33 +319,85 @@ export default function DocRevisao() {
         setCommentBoxPos({ top, left });
         setTempComment(commentsMap[key]?.text ?? '');
     };
-    const handleSaveComment = (itemKey: string) => {
-        const storageKey = `docRevisao_comments_${detalhe?.id ?? 'global'}`;
-        if (!tempComment || tempComment.trim() === '') {
-            setCommentsMap((prev) => {
-                const copy = { ...prev };
-                delete copy[itemKey];
-                try { localStorage.setItem(storageKey, JSON.stringify(copy)); } catch {}
-                return copy;
-            });
-        } else {
-            const next = { ...commentsMap, [itemKey]: { text: tempComment.trim(), createdAt: new Date().toISOString() } };
-            setCommentsMap(next);
-            try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+    const handleSaveComment = async (itemKey: string) => {
+        try {
+            // Extrair itemId do itemKey
+            // itemKey formato: "item:123" ou "material:456"
+            const parts = itemKey.split(':');
+            if (parts.length !== 2) {
+                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Formato de chave inválido', life: 3000 });
+                return;
+            }
+            
+            const idStr = parts[1];
+            const itemId = parseInt(idStr);
+            
+            if (isNaN(itemId)) {
+                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'ID inválido', life: 3000 });
+                return;
+            }
+            
+            const statusId = mapStatusToNumber(selectedStatus);
+            
+            // Salvar comentário via API
+            await itemService.setItemComentario(itemId, statusId, tempComment.trim());
+            
+            // Atualizar o mapa local
+            if (!tempComment || tempComment.trim() === '') {
+                setCommentsMap((prev) => {
+                    const copy = { ...prev };
+                    delete copy[itemKey];
+                    return copy;
+                });
+            } else {
+                const next = { ...commentsMap, [itemKey]: { text: tempComment.trim(), createdAt: new Date().toISOString() } };
+                setCommentsMap(next);
+            }
+            
+            toast.current?.show({ severity: 'success', summary: 'Sucesso', detail: 'Comentário salvo com sucesso', life: 3000 });
+        } catch (err) {
+            console.error('Erro ao salvar comentário:', err);
+            toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Erro ao salvar comentário', life: 3000 });
         }
         setSelectedCommentKey(null);
         setCommentBoxPos(null);
         setTempComment('');
     };
 
-    const handleDeleteComment = (itemKey: string) => {
-        const storageKey = `docRevisao_comments_${detalhe?.id ?? 'global'}`;
-        setCommentsMap((prev) => {
-            const copy = { ...prev };
-            delete copy[itemKey];
-            try { localStorage.setItem(storageKey, JSON.stringify(copy)); } catch {}
-            return copy;
-        });
+    const handleDeleteComment = async (itemKey: string) => {
+        try {
+            // Extrair itemId do itemKey
+            // itemKey formato: "item:123" ou "material:456"
+            const parts = itemKey.split(':');
+            if (parts.length !== 2) {
+                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Formato de chave inválido', life: 3000 });
+                return;
+            }
+            
+            const idStr = parts[1];
+            const itemId = parseInt(idStr);
+            
+            if (isNaN(itemId)) {
+                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'ID inválido', life: 3000 });
+                return;
+            }
+            
+            const statusId = mapStatusToNumber(selectedStatus);
+            
+            // Deletar comentário enviando string vazia para a API
+            await itemService.setItemComentario(itemId, statusId, '');
+            
+            setCommentsMap((prev) => {
+                const copy = { ...prev };
+                delete copy[itemKey];
+                return copy;
+            });
+            
+            toast.current?.show({ severity: 'success', summary: 'Sucesso', detail: 'Comentário removido', life: 3000 });
+        } catch (err) {
+            console.error('Erro ao deletar comentário:', err);
+            toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Erro ao remover comentário', life: 3000 });
+        }
         setSelectedCommentKey(null);
         setCommentBoxPos(null);
         setTempComment('');
@@ -352,17 +405,46 @@ export default function DocRevisao() {
 
     useEffect(() => {
         try {
-            if (!detalhe?.id) { setCommentsMap({}); return; }
-            const key = `docRevisao_comments_${detalhe.id}`;
-            const raw = localStorage.getItem(key);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                if (parsed && typeof parsed === 'object') setCommentsMap(parsed);
-            } else {
-                setCommentsMap({});
+            if (!detalhe?.id) { 
+                setCommentsMap({}); 
+                return; 
             }
-    } catch { /* ignore */ }
-    }, [detalhe?.id]);
+            
+            // Carregar comentários da estrutura revisaoItem retornada pela API
+            const newCommentsMap: Record<string, { text: string; createdAt: string }> = {};
+            
+            detalhe.empreendimentoTopicos?.forEach((topico) => {
+                topico.topicoAmbientes?.forEach((ambiente) => {
+                    ambiente.ambienteItens?.forEach((item) => {
+                        // revisaoItem agora é um objeto, não array
+                        if (item.revisaoItem && item.revisaoItem.observacao) {
+                            const itemKey = `item:${item.id}`;
+                            newCommentsMap[itemKey] = {
+                                text: item.revisaoItem.observacao,
+                                createdAt: new Date().toISOString() // A API não retorna data, usar data atual
+                            };
+                        }
+                    });
+                });
+                
+                // Carregar comentários dos materiais
+                topico.topicoMateriais?.forEach((material) => {
+                    if (material.revisaoMaterial && material.revisaoMaterial.observacao) {
+                        const materialKey = `material:${material.materialId ?? material.id ?? 0}`;
+                        newCommentsMap[materialKey] = {
+                            text: material.revisaoMaterial.observacao,
+                            createdAt: new Date().toISOString()
+                        };
+                    }
+                });
+            });
+            
+            setCommentsMap(newCommentsMap);
+        } catch (err) {
+            console.error('Erro ao carregar comentários:', err);
+            setCommentsMap({});
+        }
+    }, [detalhe?.id, detalhe?.empreendimentoTopicos]);
 
     const handleCloseComment = () => {
         setSelectedCommentKey(null);
@@ -422,67 +504,52 @@ export default function DocRevisao() {
                         className="w-full md:w-[54.5rem]"
                     />
                 </div>
-                {/* Botões abaixo do input, alinhados à direita dentro do mesmo container do input */}
+                {/* Botão de status alinhado à direita */}
                 <div className="mt-2 max-w-4xl mx-auto px-6">
                     <div className="w-full">
                         <div className="md:fixed md:left-1/2 md:-translate-x-1/2 md:transform w-full max-w-4xl md:top-20 md:z-50 py-0">
                             <div className="max-w-4xl mx-auto px-0 flex justify-end">
-                                <div className="w-full md:w-80">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            {detalhe ? (
-                                                <div className="relative">
+                                {detalhe && (
+                                    <div className="relative w-full sm:w-40">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowStatusMenu((s) => !s)}
+                                            className="w-full px-3 py-1 rounded font-semibold border text-center"
+                                            style={{
+                                                backgroundColor: getColorForStatus(detalhe?.status ?? selectedStatus),
+                                                color: getTextColorForBg(getColorForStatus(detalhe?.status ?? selectedStatus)),
+                                                borderColor: 'rgba(0,0,0,0.08)'
+                                            }}
+                                            disabled={savingStatus}
+                                        >
+                                            {savingStatus ? (
+                                                <>
+                                                    <i className="pi pi-spin pi-spinner mr-2" />
+                                                    Atualizando
+                                                </>
+                                            ) : (detalhe?.status ?? selectedStatus)}
+                                        </button>
+
+                                        {showStatusMenu && (
+                                            <div ref={statusMenuRef} className="absolute right-0 mt-2 w-44 bg-white border rounded shadow z-50">
+                                                {statusOptions.map((opt) => (
                                                     <button
-                                                        type="button"
-                                                        onClick={() => setShowStatusMenu((s) => !s)}
-                                                        className="w-full px-3 py-1 rounded font-semibold border text-center"
-                                                        style={{
-                                                            backgroundColor: getColorForStatus(detalhe?.status ?? selectedStatus),
-                                                            color: getTextColorForBg(getColorForStatus(detalhe?.status ?? selectedStatus)),
-                                                            borderColor: 'rgba(0,0,0,0.08)'
+                                                        key={opt.value}
+                                                        onClick={() => {
+                                                            setPendingStatus(opt.value);
+                                                            setShowStatusMenu(false);
+                                                            setShowConfirmModal(true);
                                                         }}
-                                                        disabled={savingStatus}
+                                                        className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-3"
                                                     >
-                                                        {savingStatus ? (
-                                                            <>
-                                                                <i className="pi pi-spin pi-spinner mr-2" />
-                                                                Atualizando
-                                                            </>
-                                                        ) : (detalhe?.status ?? selectedStatus)}
+                                                        <span style={{ width: 12, height: 12, backgroundColor: opt.color, borderRadius: 4, display: 'inline-block' }} />
+                                                        <span className="flex-1">{opt.label}</span>
                                                     </button>
-
-                                                    {showStatusMenu && (
-                                                        <div ref={statusMenuRef} className="absolute right-0 mt-2 w-44 bg-white border rounded shadow z-50">
-                                                            {statusOptions.map((opt) => (
-                                                                <button
-                                                                    key={opt.value}
-                                                                    onClick={() => {
-                                                                        setPendingStatus(opt.value);
-                                                                        setShowStatusMenu(false);
-                                                                        setShowConfirmModal(true);
-                                                                    }}
-                                                                    className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-3"
-                                                                >
-                                                                    <span style={{ width: 12, height: 12, backgroundColor: opt.color, borderRadius: 4, display: 'inline-block' }} />
-                                                                    <span className="flex-1">{opt.label}</span>
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <div />
-                                            )}
-
-                                        <div>
-                                            <button
-                                                type="button"
-                                                className="w-full px-3 py-1 rounded font-medium border bg-blue-600 text-white hover:bg-blue-700"
-                                            >
-                                                Salvar
-                                            </button>
-                                        </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </div>
                     </div>

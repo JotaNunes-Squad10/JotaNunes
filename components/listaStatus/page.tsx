@@ -477,8 +477,9 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                   onClick={() => {
                     
                     if (opt === "Verificar") {
-                      router.push(`/revisao?id=${selectedEmp.id}`);
-                      return;
+                      sessionStorage.setItem("empreendimentoSelecionado", String(selectedEmp.id)); 
+                      router.push("/revisao"); 
+                      return; 
                     }
 
                     if (opt === "Visualizar") {
