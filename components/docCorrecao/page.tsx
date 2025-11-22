@@ -1199,34 +1199,34 @@ export default function DocRevisao() {
             const storedId = sessionStorage.getItem("empreendimentoSelecionado");
             if (storedId) {
                 setLoadingDetalhe(true);
+                sessionStorage.removeItem
             }
         }, []);
 
-
         useEffect(() => {
-        if (options.length === 0) return; // ainda não carregou
+            if (options.length === 0) return; // ainda não carregou
 
-        const storedId = sessionStorage.getItem("empreendimentoSelecionado");
-        if (!storedId) return;
+            const storedId = sessionStorage.getItem("empreendimentoSelecionado");
+            if (!storedId) return;
 
-        const emp = options.find(e => String(e.value.id) === String(storedId));
-        if (!emp) return;
+            const emp = options.find(e => String(e.value.id) === String(storedId));
+            if (!emp) return;
 
-        // Remove para evitar reuso ou loops
-        sessionStorage.removeItem("empreendimentoSelecionado");
+            // Remove para evitar reuso ou loops
+            sessionStorage.removeItem("empreendimentoSelecionado");
 
-        setSelected(emp.value);        // preenche dropdown
+            setSelected(emp.value);        // preenche dropdown
 
-        empreendimentoService
-            .getEmpreendimentoById(String(emp.value.id))
-            .then((resp) => {
-                if (resp) {
-                    setDetalhe(resp);
-                    fetchItemsNames(resp);
-                    fetchAuxNames(resp);
-                }
-            })
-            .finally(() => setLoadingDetalhe(false));
+            empreendimentoService
+                .getEmpreendimentoById(String(emp.value.id))
+                .then((resp) => {
+                    if (resp) {
+                        setDetalhe(resp);
+                        fetchItemsNames(resp);
+                        fetchAuxNames(resp);
+                    }
+                })
+                .finally(() => setLoadingDetalhe(false));
     }, [options]);
 
     return (

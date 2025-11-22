@@ -153,6 +153,14 @@ export default function DocRevisao() {
     }, []);
 
     useEffect(() => {
+                const storedId = sessionStorage.getItem("empreendimentoSelecionado");
+                if (storedId) {
+                    setLoadingDetalhe(true);
+                    sessionStorage.removeItem
+                }
+            }, []);
+
+    useEffect(() => {
         if (options.length === 0) return; // ainda não carregou
 
         const storedId = sessionStorage.getItem("empreendimentoSelecionado");
@@ -165,7 +173,6 @@ export default function DocRevisao() {
         sessionStorage.removeItem("empreendimentoSelecionado");
 
         setSelected(emp.value);
-        setLoadingDetalhe(true);
 
         empreendimentoService
             .getEmpreendimentoById(String(emp.value.id))
