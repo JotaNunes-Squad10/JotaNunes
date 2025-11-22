@@ -16,10 +16,6 @@ export default function ActionBar({
   statusEmpreendimento,
   idDocumento,
 }: ActionBarProps) {
-  const handleExportar = () => {
-    alert("Exportando arquivo...");
-  };
-
   const [status, setStatus] = useState(statusEmpreendimento);
   const menuRef = useRef<Menu>(null);
   const toast = useRef<Toast>(null);
@@ -141,14 +137,6 @@ export default function ActionBar({
         style={{ ...getStatuscolor(), fontSize: "0.8rem" }}
         className="h-11 w-40 sm:w-48 sm:h-12"
         onClick={(e) => menuRef.current?.toggle(e)}
-      />
-      <Button
-        label="Exportar PDF"
-        className="h-11 w-40 sm:w-48 sm:h-12"
-        style={{ fontSize: "0.8rem" }}
-        severity="danger"
-        onClick={handleExportar}
-        icon={<FileText className="mr-2" size={15} />}
       />
     </div>
   );
