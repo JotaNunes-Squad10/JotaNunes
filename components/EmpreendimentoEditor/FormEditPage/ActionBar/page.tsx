@@ -3,7 +3,6 @@
 import React, { useRef, useState } from "react";
 import { Button } from "primereact/button";
 import { Menu } from "primereact/menu";
-import { FileText } from "lucide-react";
 import { DocumentoService } from "@/lib/api";
 import { Toast } from "primereact/toast";
 
