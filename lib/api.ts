@@ -36,7 +36,7 @@ export interface Topico {
 }
 
 export interface Item {
-  id: number;
+  id?: number;
   nome: string;
   descricao: string;
 }
@@ -46,28 +46,48 @@ export interface Marca {
   nome: string;
 }
 
-
-export interface Empreendimento {
+export interface MarcaMateriais {
   id: number;
-  nome: string;
-  descricao: string;
-  localizacao: string;
-  tamanhoArea: number;
-  padrao: string;
-  status: string;
-  versao: number;
+  marca: {
+    id: number;
+    nome: string;
+  };
+  material: {
+    id: number;
+    nome: string;
+  };
+}
+
+interface MarcaMateriaisGet {
+  data: MarcaMateriais[];
 }
 
 export interface GetAllTopicResponse {
   data: Topico[];
 }
 
+export interface CreateTopicPayload {
+  nome: string;
+}
+
+export interface DeleteTopicPayload {
+  id: number;
+}
+
 export interface GetAllItemResponse {
   data: Item[];
 }
 
+export interface GetItemById {
+  data: Item;
+}
+
 // Interface dos subitems do tópico ambientes
-export type SubTopic = Topico;
+export type SubTopic = {
+  id: number;
+  nome: string;
+  topico: Topico;
+};
 
 export interface GetAllSubTopicProps {
   data: SubTopic[];
@@ -85,6 +105,96 @@ export interface GetAllEmpreendimentoProps {
   data: Empreendimento[];
 }
 
+// Interfaces do endpoint Ambiente
+export interface CreateAmbientePayload {
+  nome: string;
+  topicoId: number;
+}
+
+export interface CreateDocumentoPayload {
+  nome: string;
+  descricao: string;
+  tamanhoArea: number;
+  localizacao: string;
+  padrao: number;
+  empreendimentoTopicos: EmpreendimentosTopicos[];
+}
+
+// Interface do GetTopicId
+export interface GetDocumentoById {
+  id: string;
+  nome: string;
+  descricao: string;
+  localizacao: string;
+  padrao: string;
+  status: string;
+  versao: number;
+  tamanhoArea: number;
+  usuarioAlteracao: string;
+  dataHoraAlteracao: string;
+  empreendimentos: Empreendimento[];
+  empreendimentoTopicos: EmpreendimentosTopicos[];
+}
+
+export interface Empreendimento {
+  id: number;
+  nome: string;
+  descricao: string;
+  localizacao: string;
+  tamanhoArea: number;
+  padrao: string;
+  status: string;
+  versao: number;
+}
+
+export interface EmpreendimentosTopicos {
+  topicoId: number;
+  posicao: number;
+  versoes: number[];
+  topicoAmbientes: TopicoAmbiente[];
+  ambienteItens: AmbienteItens[];
+}
+
+export interface TopicoAmbiente {
+  ambienteId: number;
+  posicao: number;
+  versoes: number[];
+  ambienteItens: AmbienteItens[];
+}
+
+export interface AmbienteItens {
+  itemId: number;
+  versoes: number[];
+}
+
+export interface TopicoMaterial {
+  materialId: number;
+  versoes: number[];
+}
+
+export interface EmprendimentoTopico {
+  topicoId: number;
+  posicao: number;
+  topicoAmbientes: {
+    ambienteId: number;
+    area: number;
+    posicao: number;
+    ambienteItens: { itemId: number }[]; // ✅ array normal
+  }[];
+  topicoMateriais: { materialId: number; versoes?: number[] }[] | null; // ✅ permite null
+}
+
+// Interface do Payload PUT
+export interface UpdateEmpreendimento {
+  id: string;
+  nome: string;
+  descricao: string;
+  localizacao: string;
+  tamanhoArea: number;
+  padrao: number;
+  empreendimentoTopicos: EmprendimentoTopico[];
+}
+
 export interface GenerateDocumentoPayload {
   id: string;
   version: number;
@@ -99,31 +209,6 @@ export interface GenerateDocumentoResponse {
   };
 }
 
-// Interface para atualização completa do empreendimento
-export interface UpdateEmpreendimentoPayload {
-  id: string;
-  nome?: string;
-  descricao?: string;
-  localizacao?: string;
-  tamanhoArea?: number;
-  padrao?: number;
-  empreendimentoTopicos?: Array<{
-    topicoId: number;
-    posicao: number;
-    topicoAmbientes?: Array<{
-      ambienteId: number;
-      area?: number;
-      posicao: number;
-      ambienteItens?: Array<{
-        itemId: number;
-      }>;
-    }>;
-    topicoMateriais?: Array<{
-      materialId: number;
-    }>;
-  }>;
-}
-
 // Configuração da API principal
 export const api = axios.create({
   baseURL: "https://jotanunesservice.onrender.com",
@@ -133,14 +218,16 @@ export const api = axios.create({
 // API para endpoints de autenticação (sempre produção)
 export const authApi = axios.create({
   baseURL: "https://jotanunesservice.onrender.com",
-  timeout: 60000,
+  timeout: 10000,
 });
 
 // Serviços de Autenticação
 export const authService = {
   // Função para autenticar usuário
-  async authenticate(payload: AuthenticatePayload): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>(
+  async authenticate(
+    payload: AuthenticatePayload
+  ): Promise<AuthenticatePayload> {
+    const response = await api.post<AuthenticatePayload>(
       "/api/v1/authentication/Authenticate",
       payload
     );
@@ -193,8 +280,6 @@ authApi.interceptors.response.use(
   }
 );
 
-
-
 // Configurações da API Tópicos
 export const topicoService = {
   async getAllTopic(): Promise<Topico[]> {
@@ -202,6 +287,21 @@ export const topicoService = {
       "https://jotanunesservice.onrender.com/api/v1/topico/GetAllTopicos"
     );
     return response.data.data;
+  },
+
+  async createTopic(payload: CreateTopicPayload): Promise<string> {
+    const response = await api.post<string>(
+      "https://jotanunesservice.onrender.com/api/v1/topico/CreateTopico",
+      payload
+    );
+    return response.data;
+  },
+
+  async deleteTopic(payload: DeleteTopicPayload): Promise<any> {
+    const response = await axios.delete<DeleteTopicPayload>(
+      `https://jotanunesservice.onrender.com/api/v1/topico/DeleteTopico/${payload.id}`
+    );
+    return response.data;
   },
 };
 
@@ -224,6 +324,14 @@ export const itemService = {
 
     return response.data.data;
   },
+
+  async getItemById(id: number): Promise<Item> {
+    const response = await axios.get<GetItemById>(
+      `https://jotanunesservice.onrender.com/api/v1/items/GetItemById/${id}`
+    );
+
+    return response.data.data;
+  },
 };
 
 export const marcaService = {
@@ -233,6 +341,39 @@ export const marcaService = {
     );
 
     return response.data.data;
+  },
+
+  async getAllMarcaMateriais(): Promise<MarcaMateriais[]> {
+    const response = await axios.get<MarcaMateriaisGet>(
+      "https://jotanunesservice.onrender.com/api/v1/marca-material/GetAllMarcaMateriais"
+    );
+
+    return response.data.data;
+  },
+};
+
+export const AmbienteService = {
+  // A possibilidade de não estar funcionando
+  async createAmbiente(
+    payload: CreateAmbientePayload
+  ): Promise<{ id: number; nome: string; topicoId: number }> {
+    const response = await axios.post(
+      "https://jotanunesservice.onrender.com/api/v1/ambiente/CreateAmbiente",
+      payload
+    );
+
+    return response.data;
+  },
+};
+
+export const ItemsServie = {
+  async createItem(payload: Item): Promise<Item> {
+    const response = await axios.post<Item>(
+      "https://jotanunesservice.onrender.com/api/v1/items/CreateItem",
+      payload
+    );
+
+    return response.data;
   },
 };
 
@@ -244,28 +385,100 @@ export const empreendimentoService = {
 
     return response.data.data;
   },
+    async getEmpreendimentoById(id: string): Promise<any> {
+    try {
+      const response = await axios.get(
+        `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${id}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar empreendimento por ID:", error);
+      throw error;
+    }
+  },
+      async createEmpreendimento(payload: any): Promise<any> {
+    try {
+      const response = await axios.post(
+        "https://jotanunesservice.onrender.com/api/v1/empreendimento/CreateEmpreendimento",
+        payload
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao criar empreendimento:", error);
+      throw error;
+    }
+  },
+  async getEmpreendimentoByVersion(id: string, versionNumber: number): Promise<any> {
+    try {
+      const response = await axios.get(
+        `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoByVersion/${id}/${versionNumber}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar empreendimento por versão:", error);
+      throw error;
+    }
+  },
+
 };
 
 // Configuração da API do Documento
 export const DocumentoService = {
-  async generateDocumento(payload: GenerateDocumentoPayload): Promise<GenerateDocumentoResponse> {
-    const response = await axios.post<GenerateDocumentoResponse>(
-      "https://jotanunesservice.onrender.com/api/v1/empreendimento/GenerateDocumentoEmpreendimento",
+  async createDocumento(payload: CreateDocumentoPayload): Promise<any> {
+    const response = await axios.post<CreateDocumentoPayload>(
+      "https://jotanunesservice.onrender.com/api/v1/empreendimento/CreateEmpreendimento",
       payload
     );
+
     return response.data;
   },
 
-  async getDocumentoById(documentId: string): Promise<Empreendimento | null> {
+  async getDocumentoById(
+    documentId: string
+  ): Promise<GetDocumentoById | undefined> {
     try {
       const response = await axios.get(
         `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${documentId}`
       );
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error("Erro ao buscar informações do documento:", error);
     }
 
-    return null;
+    return;
+  },
+
+  async updateEmpreendimento(payload: UpdateEmpreendimento): Promise<any> {
+    try {
+      const response = await axios.put(
+        "https://jotanunesservice.onrender.com/api/v1/empreendimento/UpdateEmpreendimento",
+        payload
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Houve um erro ao tentar modificar o documento", error);
+      throw error;
+    }
+  },
+
+  async updateEmpreendimentoStatus(
+    idDocumento: string,
+    status: number
+  ): Promise<any> {
+    const payload = {
+      id: idDocumento,
+      status: status,
+    };
+    try {
+      const response = await axios.patch(
+        "https://jotanunesservice.onrender.com/api/v1/empreendimento/UpdateEmpreendimentoStatus",
+        payload
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Houve um erro ao atualizar o status do documento", error);
+      throw error;
+    }
   },
 };
