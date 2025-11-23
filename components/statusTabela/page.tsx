@@ -4,13 +4,15 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Box } from "@mui/material";
 import axios from "axios";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Header from "../headerUser/page";
 import StatusSummary from "../home/status/page";
 import EmpreendimentosTable, { Empreendimento } from "../listaStatus/page";
 
 const StatusTabela: React.FC = () => {
   const searchParams = useSearchParams();
-  const statusParam = searchParams?.get("status");
+  const statusParam = searchParams.get("status");
 
   const [empreendimentos, setEmpreendimentos] = useState<Empreendimento[]>([]);
   const [filtroAtivo, setFiltroAtivo] = useState<string>("Todos");
@@ -20,35 +22,38 @@ const StatusTabela: React.FC = () => {
   useEffect(() => {
     const status = statusParam || "Todos";
     setFiltroAtivo(status);
+  }, [statusParam]);
 
+  useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+
         const response = await axios.get(
           "https://jotanunesservice.onrender.com/api/v1/empreendimento/GetAllEmpreendimentos"
         );
 
         const data = response.data?.data || [];
 
-  const parsedData: Empreendimento[] = data.map((item: Record<string, unknown>) => ({
+        const parsedData: Empreendimento[] = data.map((item: any) => ({
           id: item.id,
           nome: item.nome,
-          ultimaAlteracao: "-",
+          ultimaAlteracao: item.dataHoraAlteracao,
           versao: item.versao,
-          usuario: "-",
+          usuario: item.usuarioAlteracao,
           status: item.status,
         }));
 
         setEmpreendimentos(parsedData);
       } catch (error) {
-        console.error("Erro ao buscar empreendimentos:", error);
+        toast.error("Erro ao buscar empreendimentos");
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [statusParam]);
+  }, []);   
 
   return (
     <>
@@ -56,7 +61,7 @@ const StatusTabela: React.FC = () => {
       <Box sx={{ px: 4, py: 2 }}>
         {/* Cards de Status */}
         <Box mb={3}>
-          <StatusSummary />
+          <StatusSummary empreendimentos={empreendimentos} />
         </Box>
 
         {/* Tabela */}

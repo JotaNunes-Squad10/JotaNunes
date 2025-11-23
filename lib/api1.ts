@@ -101,6 +101,10 @@ export interface GetAllMarcaProps {
   data: Marca[];
 }
 
+export interface GetAllEmpreendimentoProps {
+  data: Empreendimento[];
+}
+
 // Interfaces do endpoint Ambiente
 export interface CreateAmbientePayload {
   nome: string;
@@ -137,7 +141,9 @@ export interface Empreendimento {
   nome: string;
   descricao: string;
   localizacao: string;
+  tamanhoArea: number;
   padrao: string;
+  status: string;
   versao: number;
 }
 
@@ -187,6 +193,20 @@ export interface UpdateEmpreendimento {
   tamanhoArea: number;
   padrao: number;
   empreendimentoTopicos: EmprendimentoTopico[];
+}
+
+export interface GenerateDocumentoPayload {
+  id: string;
+  version: number;
+}
+
+export interface GenerateDocumentoResponse {
+  data: string;
+  validationResult: {
+    isValid: boolean;
+    errors: string[];
+    ruleSetsExecuted?: string[] | null;
+  };
 }
 
 // Configuração da API principal
@@ -355,6 +375,51 @@ export const ItemsServie = {
 
     return response.data;
   },
+};
+
+export const empreendimentoService = {
+  async getAllEmpreendimento(): Promise<Empreendimento[]> {
+    const response = await axios.get<GetAllEmpreendimentoProps>(
+      "https://jotanunesservice.onrender.com/api/v1/empreendimento/GetAllEmpreendimentos"
+    );
+
+    return response.data.data;
+  },
+    async getEmpreendimentoById(id: string): Promise<any> {
+    try {
+      const response = await axios.get(
+        `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${id}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar empreendimento por ID:", error);
+      throw error;
+    }
+  },
+      async createEmpreendimento(payload: any): Promise<any> {
+    try {
+      const response = await axios.post(
+        "https://jotanunesservice.onrender.com/api/v1/empreendimento/CreateEmpreendimento",
+        payload
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao criar empreendimento:", error);
+      throw error;
+    }
+  },
+  async getEmpreendimentoByVersion(id: string, versionNumber: number): Promise<any> {
+    try {
+      const response = await axios.get(
+        `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoByVersion/${id}/${versionNumber}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar empreendimento por versão:", error);
+      throw error;
+    }
+  },
+
 };
 
 // Configuração da API do Documento

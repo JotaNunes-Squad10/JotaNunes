@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
-import { Card, CardContent, Typography } from "@mui/material";
+import { Card, CardContent, Typography, Button } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import Menu_acoes_rapidas from "../menu_acoes_rapidas/page";
 
 const AcoesRapidas: React.FC = () => {

@@ -140,6 +140,12 @@ export default function DocRevisao() {
     };
 
     useEffect(() => {
+
+        const storedId = sessionStorage.getItem("empreendimentoSelecionado");
+            if (storedId) {
+                setLoadingDetalhe(true);
+            }
+
         (async () => {
             try {
                 const data = await empreendimentoService.getAllEmpreendimentos();
@@ -147,10 +153,48 @@ export default function DocRevisao() {
                 const mapped = filtered.map((e) => ({ label: e.nome || e.name || e.descricao || String(e.id), value: e }));
                 mapped.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' }));
                 setOptions(mapped);
-            } catch {              
+            } catch {
+
+                toast.current?.show({
+                severity: 'error',
+                summary: 'Erro ao carregar',
+                detail: 'Não foi possível carregar os empreendimentos.',
+                life: 2000
+            });
+                if (storedId) {
+                setLoadingDetalhe(false);
+                sessionStorage.removeItem("empreendimentoSelecionado");
+                }
             }
         })();
     }, []);
+
+    useEffect(() => {
+        if (options.length === 0) return; // ainda não carregou
+
+        const storedId = sessionStorage.getItem("empreendimentoSelecionado");
+        if (!storedId) return;
+
+        const emp = options.find(e => String(e.value.id) === String(storedId));
+        if (!emp) return;
+
+        // Remove para não repetir
+        sessionStorage.removeItem("empreendimentoSelecionado");
+
+        setSelected(emp.value);
+
+        empreendimentoService
+            .getEmpreendimentoById(String(emp.value.id))
+            .then((resp) => {
+                if (resp) {
+                    setDetalhe(resp);
+                    fetchItemsNames(resp);
+                    fetchAuxNames(resp);
+                }
+            })
+            .finally(() => setLoadingDetalhe(false));
+
+    }, [options]);
 
     const fetchItemsNames = async (d: Empreendimento) => {
         try {
@@ -293,45 +337,44 @@ export default function DocRevisao() {
     };
     const handleSaveComment = async (itemKey: string) => {
         try {
+            // Extrair itemId do itemKey
+            // itemKey formato: "item:123" ou "material:456"
             const parts = itemKey.split(':');
             if (parts.length !== 2) {
                 toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Formato de chave inválido', life: 3000 });
                 return;
             }
-
+            
             const idStr = parts[1];
             const itemId = parseInt(idStr);
+            
             if (isNaN(itemId)) {
                 toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'ID inválido', life: 3000 });
                 return;
             }
-
-            const statusId = mapStatusToNumber(detalhe?.status ?? selectedStatus);
-
-            if (parts[0] === 'item') {
-                // item
-                if (!tempComment || tempComment.trim() === '') {
-                    await itemService.clearItemComentario(itemId);
-                    setCommentsMap((prev) => {
-                        const copy = { ...prev };
-                        delete copy[itemKey];
-                        return copy;
-                    });
-                } else {
-                    await itemService.setItemComentario(itemId, statusId, tempComment.trim());
-                    const next = { ...commentsMap, [itemKey]: { text: tempComment.trim(), createdAt: new Date().toISOString() } };
-                    setCommentsMap(next);
-                }
-
-                toast.current?.show({ severity: 'success', summary: 'Sucesso', detail: 'Comentário salvo com sucesso', life: 3000 });
+            
+            const statusId = mapStatusToNumber(selectedStatus);
+            
+            // Salvar comentário via API
+            await itemService.setItemComentario(itemId, statusId, tempComment.trim());
+            
+            // Atualizar o mapa local
+            if (!tempComment || tempComment.trim() === '') {
+                setCommentsMap((prev) => {
+                    const copy = { ...prev };
+                    delete copy[itemKey];
+                    return copy;
+                });
             } else {
-                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Tipo inválido para comentário', life: 3000 });
+                const next = { ...commentsMap, [itemKey]: { text: tempComment.trim(), createdAt: new Date().toISOString() } };
+                setCommentsMap(next);
             }
+            
+            toast.current?.show({ severity: 'success', summary: 'Sucesso', detail: 'Comentário salvo com sucesso', life: 3000 });
         } catch (err) {
             console.error('Erro ao salvar comentário:', err);
             toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Erro ao salvar comentário', life: 3000 });
         }
-
         setSelectedCommentKey(null);
         setCommentBoxPos(null);
         setTempComment('');
@@ -344,27 +387,27 @@ export default function DocRevisao() {
                 toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Formato de chave inválido', life: 3000 });
                 return;
             }
+            
             const idStr = parts[1];
             const itemId = parseInt(idStr);
+            
             if (isNaN(itemId)) {
                 toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'ID inválido', life: 3000 });
                 return;
             }
-
-            if (parts[0] === 'item') {
-                // item
-                await itemService.clearItemComentario(itemId);
-
-                setCommentsMap((prev) => {
-                    const copy = { ...prev };
-                    delete copy[itemKey];
-                    return copy;
-                });
-
-                toast.current?.show({ severity: 'success', summary: 'Sucesso', detail: 'Comentário removido', life: 3000 });
-            } else {
-                toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Tipo inválido para comentário', life: 3000 });
-            }
+            
+            const statusId = mapStatusToNumber(selectedStatus);
+            
+            // Deletar comentário enviando string vazia para a API
+            await itemService.setItemComentario(itemId, statusId, '');
+            
+            setCommentsMap((prev) => {
+                const copy = { ...prev };
+                delete copy[itemKey];
+                return copy;
+            });
+            
+            toast.current?.show({ severity: 'success', summary: 'Sucesso', detail: 'Comentário removido', life: 3000 });
         } catch (err) {
             console.error('Erro ao deletar comentário:', err);
             toast.current?.show({ severity: 'error', summary: 'Erro', detail: 'Erro ao remover comentário', life: 3000 });
@@ -398,7 +441,16 @@ export default function DocRevisao() {
                     });
                 });
                 
-                // Observação: comentários de materiais foram desabilitados — não carregar/mostrar aqui
+                // Carregar comentários dos materiais
+                topico.topicoMateriais?.forEach((material) => {
+                    if (material.revisaoMaterial && material.revisaoMaterial.observacao) {
+                        const materialKey = `material:${material.materialId ?? material.id ?? 0}`;
+                        newCommentsMap[materialKey] = {
+                            text: material.revisaoMaterial.observacao,
+                            createdAt: new Date().toISOString()
+                        };
+                    }
+                });
             });
             
             setCommentsMap(newCommentsMap);
@@ -621,8 +673,13 @@ export default function DocRevisao() {
                                                             {topico.topicoMateriais.map((mat) => (
                                                                 <tr
                                                                     key={mat.id}
+                                                                    onClick={(e) => handleOpenComment(e, `material:${mat.materialId ?? mat.id ?? 0}`)}
+                                                                    title={commentsMap[`material:${mat.materialId ?? mat.id ?? 0}`]?.text ?? ''}
                                                                     className={
-                                                                        `block md:table-row mb-3 md:mb-0 rounded md:rounded-none border-b border-gray-200 bg-white md:bg-transparent md:border-b md:border-gray-300 transition-colors duration-150 ease-in-out`
+                                                                        `block md:table-row mb-3 md:mb-0 rounded md:rounded-none border-b border-gray-200 bg-white md:bg-transparent md:border-b md:border-gray-300 cursor-pointer transition-colors duration-150 ease-in-out ` +
+                                                                        (commentsMap[`material:${mat.materialId ?? mat.id ?? 0}`]
+                                                                            ? 'bg-yellow-50 md:bg-gradient-to-r md:from-yellow-200 md:to-orange-100 md:hover:opacity-95 hover:opacity-95'
+                                                                            : 'bg-white md:bg-transparent hover:bg-gray-50')
                                                                     }
                                                                 >
                                                                     <td className="block md:table-cell px-3 py-2">

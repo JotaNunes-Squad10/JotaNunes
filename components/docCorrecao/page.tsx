@@ -363,6 +363,12 @@ export default function DocRevisao() {
     };
 
     useEffect(() => {
+
+        const storedId = sessionStorage.getItem("empreendimentoSelecionado");
+            if (storedId) {
+                setLoadingDetalhe(true);
+            }
+
         (async () => {
             try {
                 const data = await empreendimentoService.getAllEmpreendimentos();
@@ -371,6 +377,18 @@ export default function DocRevisao() {
                 mapped.sort((a, b) => a.label.localeCompare(b.label, 'pt-BR', { sensitivity: 'base' }));
                 setOptions(mapped);
             } catch {
+
+                toast.current?.show({
+                    severity: 'error',
+                    summary: 'Erro ao carregar',
+                    detail: 'Não foi possível carregar os empreendimentos.',
+                    life: 2000
+                });
+                if (storedId) {
+                    setLoadingDetalhe(false);
+                    sessionStorage.removeItem("empreendimentoSelecionado");
+                    }
+
             }
         })();
     }, []);
@@ -1194,6 +1212,32 @@ export default function DocRevisao() {
             setPortalEl(null);
         };
     }, []);
+
+        useEffect(() => {
+            if (options.length === 0) return; // ainda não carregou
+
+            const storedId = sessionStorage.getItem("empreendimentoSelecionado");
+            if (!storedId) return;
+
+            const emp = options.find(e => String(e.value.id) === String(storedId));
+            if (!emp) return;
+
+            // Remove para evitar reuso ou loops
+            sessionStorage.removeItem("empreendimentoSelecionado");
+
+            setSelected(emp.value);        // preenche dropdown
+
+            empreendimentoService
+                .getEmpreendimentoById(String(emp.value.id))
+                .then((resp) => {
+                    if (resp) {
+                        setDetalhe(resp);
+                        fetchItemsNames(resp);
+                        fetchAuxNames(resp);
+                    }
+                })
+                .finally(() => setLoadingDetalhe(false));
+    }, [options]);
 
     return (
         <div>
