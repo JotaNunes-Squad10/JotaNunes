@@ -65,6 +65,11 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   const router = useRouter();
 
   const [page, setPage] = useState(0);
+
+  useEffect(() => {
+    setPage(0);
+  }, [filtroAtivo]);
+
   const [userProfile, setUserProfile] = useState<number | null>(null);
   const rowsPerPage = 10;
   const [orderBy, setOrderBy] = useState<"nome" | "ultimaAlteracao" | "usuario">("nome");
