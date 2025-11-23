@@ -11,7 +11,7 @@ export default function Menu_acoes_rapidas() {
     const items: MenuItem[] = [
         {
             label: 'Criar Novo Documento',
-             url: ''
+             url: '/createEmpreendimento'
         },
         {
             label: 'Criar a partir do Padrão Torre PC - Mais Viver',
