@@ -62,6 +62,11 @@ interface MarcaMateriaisGet {
   data: MarcaMateriais[];
 }
 
+export interface CreateMarca {
+  nome: string;
+  materialIds: number[];
+}
+
 export interface GetAllTopicResponse {
   data: Topico[];
 }
@@ -328,6 +333,29 @@ export const marcaService = {
       "https://jotanunesservice.onrender.com/api/v1/marca-material/GetAllMarcaMateriais"
     );
 
+    return response.data.data;
+  },
+
+  async createMarca(payload: CreateMarca): Promise<any> {
+    try {
+      const response = await axios.post(
+        "https://jotanunesservice.onrender.com/api/v1/marca/CreateMarca",
+        payload
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao criar marca:", error);
+      throw error;
+    }
+  },
+};
+
+// Materiais marcas
+export const MaterialService = {
+  async getAllMateriais(): Promise<Marca[]> {
+    const response = await axios.get(
+      "https://jotanunesservice.onrender.com/api/v1/material/GetAllMateriais"
+    );
     return response.data.data;
   },
 };

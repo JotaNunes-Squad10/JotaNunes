@@ -8,6 +8,7 @@ import {
   UpdateEmpreendimento,
 } from "@/lib/api";
 import { Button } from "primereact/button";
+import AdicionarNovaMarca from "./AdicionarNovaMarca/page";
 
 interface Props {
   itemAmbienteSelecionado: string;
@@ -223,6 +224,9 @@ export default function AdicionarItensDocumento({
         {/* Recarrega apenas ambientes normais — não marcas */}
         {ambienteSelecionado.toLowerCase() !== "marcas" && (
           <AdicionarNovoItem onReload={handleRefresh} />
+        )}
+        {ambienteSelecionado.toLowerCase() === "marcas" && (
+          <AdicionarNovaMarca onReload={handleRefresh} />
         )}
       </div>
 
