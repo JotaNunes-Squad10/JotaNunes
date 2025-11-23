@@ -156,7 +156,6 @@ export default function DocRevisao() {
                 const storedId = sessionStorage.getItem("empreendimentoSelecionado");
                 if (storedId) {
                     setLoadingDetalhe(true);
-                    sessionStorage.removeItem
                 }
             }, []);
 
