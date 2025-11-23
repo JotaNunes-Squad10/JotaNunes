@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { Newspaper } from 'lucide-react';
+import { useRouter } from "next/navigation";
 
 type RecenteItem = {
   title: string;
@@ -27,12 +28,16 @@ const recentes: RecenteItem[] = [
 ];
 
 const Recentes: React.FC = () => {
+  const router = useRouter();
+
   return (
     <>
       {/* Cabeçalho */}
       <div className="flex items-center justify-between mb-4">
         <span className="text-lg font-semibold">Editados Recentemente</span>
-        <button className="flex items-center gap-1 bg-red-600 text-white px-4 py-2 rounded font-medium text-sm hover:bg-red-700 transition">
+        <button
+        onClick={() => router.push("/statusTabela")} 
+        className="flex items-center gap-1 bg-red-600 text-white px-4 py-2 rounded font-medium text-sm hover:bg-red-700 transition cursor-pointer">
           Ver Todos
           {/* Ícone seta (SVG) */}
           <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

@@ -133,7 +133,7 @@ export const api = axios.create({
 // API para endpoints de autenticação (sempre produção)
 export const authApi = axios.create({
   baseURL: "https://jotanunesservice.onrender.com",
-  timeout: 10000,
+  timeout: 60000,
 });
 
 // Serviços de Autenticação

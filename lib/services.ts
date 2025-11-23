@@ -285,7 +285,9 @@ export const empreendimentoService = {
   async getAllEmpreendimentos(): Promise<Empreendimento[]> {
     const response = await authApi.get<Empreendimento[] | { data: Empreendimento[] }>(
       "/api/v1/empreendimento/GetAllEmpreendimentos",
-      { headers: { Authorization: getAuthToken() } }
+      { headers: { Authorization: getAuthToken() },
+        timeout: 60000 
+      }
     );
     const respData = response.data;
     if (Array.isArray(respData)) {
