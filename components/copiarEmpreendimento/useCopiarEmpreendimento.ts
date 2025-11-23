@@ -4,32 +4,37 @@ import { useRouter } from "next/navigation";
 import { empreendimentoService } from "@/lib/api";
 import { getCookie } from "cookies-next";
 import { jwtDecode } from "jwt-decode";
+import { toast } from "react-toastify";
 
 export function useCopiarEmpreendimento() {
   const router = useRouter();
 
   async function getUserProfile(): Promise<number | null> {
-  try {
-    const token = await getCookie("accessToken"); // <--- AQUI: await
+    try {
+      const token = await getCookie("accessToken");
 
-    if (!token || typeof token !== "string") return null;
+      if (!token || typeof token !== "string") {
+        toast.error("Token inválido ou usuário não autenticado!");
+        return null;
+      }
 
-    const decoded: any = jwtDecode(token);
-    const grupo = decoded.groups?.[0];
+      const decoded: any = jwtDecode(token);
+      const grupo = decoded.groups?.[0];
 
-    const mapPerfil: Record<string, number> = {
-      Administrador: 1,
-      Gestor: 2,
-      Operador: 3,
-    };
+      const mapPerfil: Record<string, number> = {
+        Administrador: 1,
+        Gestor: 2,
+        Operador: 3,
+      };
 
-    return mapPerfil[grupo] ?? null;
-  } catch (err) {
-    console.error("Erro ao decodificar token:", err);
-    return null;
+      return mapPerfil[grupo] ?? null;
+
+    } catch (err) {
+      console.error("Erro ao decodificar token:", err);
+      toast.error("Erro ao validar autenticação.");
+      return null;
+    }
   }
-}
-
 
   function converterPadrao(padrao: string | number) {
     if (typeof padrao === "number") return padrao;
@@ -81,6 +86,7 @@ export function useCopiarEmpreendimento() {
       return response.data;
     } catch (error) {
       console.error("Erro ao buscar empreendimento:", error);
+      toast.error("Erro ao buscar empreendimento.");
     }
   }
 
@@ -90,6 +96,7 @@ export function useCopiarEmpreendimento() {
       return response.data;
     } catch (error) {
       console.error("Erro ao buscar empreendimento pela versão:", error);
+      toast.error("Erro ao buscar versão do empreendimento.");
     }
   }
 
@@ -99,17 +106,24 @@ export function useCopiarEmpreendimento() {
       const perfil = await getUserProfile();
 
       if (perfil !== 1 && perfil !== 3) {
-        console.warn("Usuário não possui permissão para copiar empreendimento.");
-        return; // bloqueia
+        toast.warning("Usuário sem permissão");
+        return;
       }
       // ---------------------------
 
       const info = await buscarEmpreendimentoPorId(id);
-      if (!info) return;
+      if (!info) {
+        toast.error("Empreendimento não encontrado.");
+        return;
+      }
 
       const versaoAtual = info.versao;
       const empreendimentoDaVersao = await buscarEmpreendimentoPorVersao(id, versaoAtual);
-      if (!empreendimentoDaVersao) return;
+
+      if (!empreendimentoDaVersao) {
+        toast.error("Versão do empreendimento não encontrada.");
+        return;
+      }
 
       const objetoParaCriacao = montarObjetoParaCriacao(empreendimentoDaVersao);
 
@@ -118,10 +132,13 @@ export function useCopiarEmpreendimento() {
       const novoId = criado.data?.id ?? criado.id ?? null;
 
       if (novoId) {
+        toast.success("Empreendimento copiado com sucesso!");
         router.push(`/empreendimento/${novoId}`);
       }
+
     } catch (error) {
       console.error("Erro ao copiar empreendimento:", error);
+      toast.error("Erro ao copiar empreendimento.");
     }
   }
 
