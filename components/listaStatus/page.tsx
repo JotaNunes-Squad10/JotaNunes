@@ -17,12 +17,6 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FirstPageIcon from "@mui/icons-material/FirstPage";
@@ -36,6 +30,10 @@ import { Skeleton } from "primereact/skeleton";
 import { getCookie } from "cookies-next";
 import { jwtDecode } from "jwt-decode";
 import { useCopiarEmpreendimento } from "@/components/copiarEmpreendimento/useCopiarEmpreendimento";
+
+import { Dialog } from "primereact/dialog";
+import { Button } from "primereact/button";
+
 
 export type Empreendimento = {
   id: number;
@@ -66,7 +64,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   const { copiarEmpreendimento } = useCopiarEmpreendimento();
 
   const router = useRouter();
-
+  
   const [page, setPage] = useState(0);
 
   useEffect(() => {
@@ -77,6 +75,9 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   const rowsPerPage = 10;
   const [orderBy, setOrderBy] = useState<"nome" | "ultimaAlteracao" | "usuario">("nome");
   const [orderAsc, setOrderAsc] = useState(true);
+
+  //estado botão habilitado ou desabilitado
+  const [savingStatus, setSavingStatus] = useState(false);
 
   // Novo estado para dropdown
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -586,77 +587,81 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
         </Box>
       )}
 
-      {/* Modal de confirmação */}
-      <Dialog
-        open={openConfirmModal}
-        onClose={() => setOpenConfirmModal(false)}
-        PaperProps={{
-          sx: { borderRadius: "16px", p: 1, minWidth: 360 },
-        }}
-      >
-        <DialogTitle sx={{ fontWeight: "bold", textAlign: "center" }}>
-          Confirmar mudança de status
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ textAlign: "center" }}>
-            Deseja realmente mudar o empreendimento{" "}
-            <strong>{selectedEmp?.nome}</strong> de{" "}
-            <strong>{selectedEmp?.status}</strong> para{" "}
-            <strong>{novoStatusSelecionado}</strong>?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => setOpenConfirmModal(false)}
-            sx={{ borderRadius: "20px", px: 3 }}
-          >
-            Não
-          </Button>
-          <Button
-            variant="contained"
-            color="success"
-            onClick={async () => {
-              if (!selectedEmp || !novoStatusSelecionado) return;
+      {/* Modal de confirmação – PrimeReact */}
+        <Dialog
+            header="Confirmar alteração de status"
+            visible={openConfirmModal}
+            style={{ width: "90%", maxWidth: "520px" }}
+            modal
+            onHide={() => setOpenConfirmModal(false)}
+            footer={
+                <div className="flex justify-end gap-2">
+                    <Button
+                        label="Cancelar"
+                        onClick={() => setOpenConfirmModal(false)}
+                        className="p-button-secondary"
+                    />
+                    <Button
+                        label={savingStatus ? "Atualizando" : "Confirmar"}
+                        icon={savingStatus ? "pi pi-spin pi-spinner" : "pi pi-check"}
+                        iconPos="left"
+                        onClick={async () => {
+                            if (!selectedEmp || !novoStatusSelecionado) return;
 
-              
-              const mapStatus: Record<string, number> = {
-                Aprovado: 1,
-                'Em revisão': 2,
-                Pendente: 3,
-                Editando: 4,
-                Cancelado: 5,
-              };
+                            setSavingStatus(true); // <-- inicia loading
 
-              const novoStatusCode = mapStatus[novoStatusSelecionado] ?? 0;
+                            type StatusPermitidos =
+                                | "Aprovado"
+                                | "Em revisão"
+                                | "Pendente"
+                                | "Editando"
+                                | "Cancelado";
 
-              try {
-                const result = await atualizarStatusEmpreendimento(
-                  selectedEmp.id.toString(),
-                  novoStatusCode
-                );
+                            const mapStatus: Record<StatusPermitidos, number> = {
+                                Aprovado: 1,
+                                "Em revisão": 2,
+                                Pendente: 3,
+                                Editando: 4,
+                                Cancelado: 5,
+                            };
 
-                if (result) {
-                  setOpenConfirmModal(false);
+                            const novoStatusCode = mapStatus[novoStatusSelecionado as StatusPermitidos];
 
-                  toast.success("Status atualizado com sucesso!", {
-                    onClose: () => {
-                      window.location.reload();  // só recarrega depois que o toast sumir
-                    },
-                  });
-                }
-              } catch (error) {
-                console.error(error);
-                toast.error("Erro ao atualizar o status.");
-              }
-            }}
-            sx={{ borderRadius: "20px", px: 3 }}
-          >
-            Sim
-          </Button>
-        </DialogActions>
-      </Dialog>
+                            try {
+                                const result = await atualizarStatusEmpreendimento(
+                                    selectedEmp.id.toString(),
+                                    novoStatusCode
+                                );
+
+                                if (result) {
+                                    toast.success("Status atualizado com sucesso!", {
+                                        onClose: () => window.location.reload(),
+                                    });
+
+                                    setOpenConfirmModal(false);
+                                }
+                            } catch (error) {
+                                console.error(error);
+                                toast.error("Erro ao atualizar o status.");
+                            } finally {
+                                setSavingStatus(false); // <-- encerra loading
+                            }
+                        }}
+                        disabled={savingStatus}   // <-- bloqueia cliques
+                        className="p-button-danger"
+                    />
+                </div>
+            }
+        >
+            <div className="px-1 py-2 text-sm">
+                <p>
+                    Deseja alterar o status do empreendimento{" "}
+                    <strong>{selectedEmp?.nome}</strong> de{" "}
+                    <strong>{selectedEmp?.status}</strong> para{" "}
+                    <strong className="text-yellow-600">{novoStatusSelecionado}</strong>?
+                </p>
+            </div>
+        </Dialog>
       <ToastContainer autoClose={2000} theme="colored" />
     </Paper>
   );
