@@ -6,6 +6,41 @@ import { getCookie } from "cookies-next";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
 
+interface DecodedToken {
+  groups?: string[];
+}
+
+interface AmbienteItem {
+  itemId: number;
+}
+
+interface TopicoAmbiente {
+  ambienteId: number;
+  area?: number;
+  posicao: number;
+  ambienteItens?: AmbienteItem[];
+}
+
+interface TopicoMaterial {
+  materialId: number;
+}
+
+interface EmpreendimentoTopico {
+  topicoId: number;
+  posicao: number;
+  topicoAmbientes?: TopicoAmbiente[];
+  topicoMateriais?: TopicoMaterial[];
+}
+
+interface EmpreendimentoOriginal {
+  nome?: string;
+  descricao?: string;
+  localizacao?: string;
+  tamanhoArea?: number;
+  padrao?: string | number;
+  empreendimentoTopicos?: EmpreendimentoTopico[];
+}
+
 export function useCopiarEmpreendimento() {
   const router = useRouter();
 
@@ -18,7 +53,7 @@ export function useCopiarEmpreendimento() {
         return null;
       }
 
-      const decoded: any = jwtDecode(token);
+      const decoded: DecodedToken = jwtDecode(token);
       const grupo = decoded.groups?.[0];
 
       const mapPerfil: Record<string, number> = {
@@ -27,7 +62,7 @@ export function useCopiarEmpreendimento() {
         Operador: 3,
       };
 
-      return mapPerfil[grupo] ?? null;
+      return grupo ? (mapPerfil[grupo] ?? null) : null;
 
     } catch (err) {
       console.error("Erro ao decodificar token:", err);
@@ -48,32 +83,32 @@ export function useCopiarEmpreendimento() {
     return tabela[padrao.toUpperCase()] ?? 1;
   }
 
-  function montarObjetoParaCriacao(empreendimentoOriginal: any) {
+  function montarObjetoParaCriacao(empreendimentoOriginal: EmpreendimentoOriginal) {
     return {
       nome: `Cópia de ${empreendimentoOriginal.nome ?? ""}`,
       descricao: empreendimentoOriginal.descricao ?? "",
       localizacao: empreendimentoOriginal.localizacao ?? "",
       tamanhoArea: empreendimentoOriginal.tamanhoArea ?? 0,
-      padrao: converterPadrao(empreendimentoOriginal.padrao),
+      padrao: converterPadrao(empreendimentoOriginal.padrao ?? 1),
 
       empreendimentoTopicos:
-        empreendimentoOriginal.empreendimentoTopicos?.map((topico: any) => ({
+        empreendimentoOriginal.empreendimentoTopicos?.map((topico: EmpreendimentoTopico) => ({
           topicoId: topico.topicoId,
           posicao: topico.posicao,
 
           topicoAmbientes:
-            topico.topicoAmbientes?.map((amb: any) => ({
+            topico.topicoAmbientes?.map((amb: TopicoAmbiente) => ({
               ambienteId: amb.ambienteId,
               area: amb.area ?? 0,
               posicao: amb.posicao,
               ambienteItens:
-                amb.ambienteItens?.map((i: any) => ({
+                amb.ambienteItens?.map((i: AmbienteItem) => ({
                   itemId: i.itemId,
                 })) ?? [],
             })) ?? [],
 
           topicoMateriais:
-            topico.topicoMateriais?.map((m: any) => ({
+            topico.topicoMateriais?.map((m: TopicoMaterial) => ({
               materialId: m.materialId,
             })) ?? [],
         })) ?? [],
