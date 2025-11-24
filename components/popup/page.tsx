@@ -76,7 +76,7 @@ export default function AnimatedChatbot() {
 
     try {
       const response = await fetch(
-        "http://localhost:5678/webhook-test/captarmensagem",
+        "https://n8natos-n8n.4ecf9x.easypanel.host/webhook/captarmensagem",
         {
           method: "POST",
           headers: {
