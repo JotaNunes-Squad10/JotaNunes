@@ -6,9 +6,61 @@ import { MenuItem } from 'primereact/menuitem';
 import { Dialog } from 'primereact/dialog';
 import { Plus } from 'lucide-react';
 import { useCopiarEmpreendimento } from "@/components/copiarEmpreendimento/useCopiarEmpreendimento";
+import { getCookie } from "cookies-next";
+import { jwtDecode } from "jwt-decode";
+import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 export default function Menu_acoes_rapidas() {
     const menu = useRef<TieredMenu | null>(null);
+
+    const router = useRouter();
+
+    async function validarPermissao() {
+        const token = getCookie("accessToken");
+
+        if (!token || typeof token !== "string") {
+            toast.error("Token inválido ou usuário não autenticado!");
+            return null;
+        }
+
+        try {
+            interface MyJwtPayload {
+                groups?: string[];
+                [key: string]: any;
+            }
+
+            const decoded = jwtDecode<MyJwtPayload>(token);
+
+            const grupo = decoded.groups?.[0];
+
+            const mapPerfil: Record<string, number> = {
+                Administrador: 1,
+                Gestor: 2,
+                Operador: 3,
+            };
+
+            // 🔥 Corrige o erro: não indexamos com undefined
+            if (!grupo) return null;
+
+            return mapPerfil[grupo] ?? null;
+
+        } catch (err) {
+            toast.error("Erro ao validar autenticação.");
+            return null;
+        }
+    }
+
+    const criarNovoDocumento = async () => {
+        const perfil = await validarPermissao();
+
+        if (perfil !== 1 && perfil !== 3) {
+            toast.warning("Usuário sem permissão");
+            return;
+        }
+
+        router.push("/createEmpreendimento");
+    };
 
     const { copiarEmpreendimento } = useCopiarEmpreendimento();
 
@@ -19,7 +71,15 @@ export default function Menu_acoes_rapidas() {
 
     const [selectedPadraoName, setSelectedPadraoName] = useState<string | null>(null);
 
-    const openConfirmModal = (padraoId: string, padraoName: string) => {
+    const openConfirmModal = async (padraoId: string, padraoName: string) => {
+        const perfil = await validarPermissao();
+
+        // Somente Administrador (1) ou Operador (3)
+        if (perfil !== 1 && perfil !== 3) {
+            toast.warning("Usuário sem permissão");
+            return;
+        }
+
         setSelectedPadraoId(padraoId);
         setSelectedPadraoName(padraoName);
         setShowConfirmModal(true);
@@ -48,7 +108,7 @@ export default function Menu_acoes_rapidas() {
     const items: MenuItem[] = [
         {
             label: 'Criar Novo Documento',
-            url: '/createEmpreendimento'
+            command: criarNovoDocumento
         },
         {
             label: "Criar a partir do Padrão - Mais Viver",
