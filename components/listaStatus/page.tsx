@@ -35,6 +35,7 @@ import { useRouter } from "next/navigation";
 import { Skeleton } from "primereact/skeleton";
 import { getCookie } from "cookies-next";
 import { jwtDecode } from "jwt-decode";
+import { useCopiarEmpreendimento } from "@/components/copiarEmpreendimento/useCopiarEmpreendimento";
 
 export type Empreendimento = {
   id: number;
@@ -61,6 +62,8 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   onSearchChange,
   loading = false,
 }) => {
+
+  const { copiarEmpreendimento } = useCopiarEmpreendimento();
 
   const router = useRouter();
 
@@ -489,6 +492,11 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                     if (opt === "Comparar") {
                       sessionStorage.setItem("empreendimentoSelecionado", String(selectedEmp.id)); 
                       router.push("/comparacao"); 
+                      return; 
+                    }
+
+                    if (opt === "Criar cópia") {
+                      copiarEmpreendimento(String(selectedEmp.id))
                       return; 
                     }
 
