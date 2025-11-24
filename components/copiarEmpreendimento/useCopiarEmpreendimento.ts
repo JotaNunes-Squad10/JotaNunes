@@ -127,7 +127,14 @@ export function useCopiarEmpreendimento() {
 
       const objetoParaCriacao = montarObjetoParaCriacao(empreendimentoDaVersao);
 
-      const criado = await empreendimentoService.createEmpreendimento(objetoParaCriacao);
+      // PEGAR TOKEN AQUI
+      const token = getCookie("accessToken");
+
+      // ENVIAR TOKEN SOMENTE NO CREATE
+      const criado = await empreendimentoService.createEmpreendimento(
+        objetoParaCriacao,
+        token as string
+      );
 
       const novoId = criado.data?.id ?? criado.id ?? null;
 

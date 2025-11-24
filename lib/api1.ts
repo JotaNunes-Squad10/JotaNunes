@@ -396,17 +396,15 @@ export const empreendimentoService = {
       throw error;
     }
   },
-      async createEmpreendimento(payload: any): Promise<any> {
-    try {
-      const response = await axios.post(
-        "https://jotanunesservice.onrender.com/api/v1/empreendimento/CreateEmpreendimento",
-        payload
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Erro ao criar empreendimento:", error);
-      throw error;
-    }
+      async createEmpreendimento(payload: any, token: string) {
+    const response = await axios.post(
+      "https://jotanunesservice.onrender.com/api/v1/empreendimento/CreateEmpreendimento",
+      payload,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data;
   },
   async getEmpreendimentoByVersion(id: string, versionNumber: number): Promise<any> {
     try {
