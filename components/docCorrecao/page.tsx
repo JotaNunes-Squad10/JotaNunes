@@ -744,19 +744,30 @@ export default function DocRevisao() {
         if (!topico) return;
         const material = topico.topicoMateriais?.[materialIndex];
         if (!material) return;
-        
+
         setDetalhe((prev) => {
             if (!prev) return prev;
-            const copy = { ...prev } as Empreendimento;
-            const arr = Array.isArray(copy.empreendimentoTopicos) ? [...copy.empreendimentoTopicos] : [];
-            const targetTop = arr[topicoIndex];
-            if (!targetTop.topicoMateriais || !Array.isArray(targetTop.topicoMateriais)) return prev;
-            targetTop.topicoMateriais.splice(materialIndex, 1);
-            copy.empreendimentoTopicos = arr;
-            return copy;
+            const newTopicos = (prev.empreendimentoTopicos || []).map((t, tIdx) => {
+                if (tIdx !== topicoIndex) return t;
+                const newTopico: EmpreendimentoTopico = { ...t } as EmpreendimentoTopico;
+                newTopico.topicoMateriais = (t.topicoMateriais || []).filter((_, idx) => idx !== materialIndex);
+                return newTopico;
+            });
+
+            return { ...prev, empreendimentoTopicos: newTopicos } as Empreendimento;
         });
-        
+
         const materialNome = materialNamesMap[material.materialId ?? 0] || `Material #${material.materialId}`;
+
+        const mapKey = Number(material.id ?? material.materialId ?? 0);
+        if (!Number.isNaN(mapKey) && mapKey !== 0) {
+            setSelectedMaterialsMap((prev) => {
+                const copy = { ...prev };
+                delete copy[mapKey];
+                return copy;
+            });
+        }
+
         toast.current?.show({ severity: 'success', summary: 'Removido', detail: `${materialNome} removido do tópico`, life: 3000 });
     };
 
@@ -1171,7 +1182,6 @@ export default function DocRevisao() {
         try {
             if (!detalhe?.id) { setCommentsMap({}); return; }
 
-            // Carregar comentários da estrutura retornada pela API (revisaoItem / revisaoMaterial)
             const newCommentsMap: Record<string, { text: string; createdAt: string }> = {};
 
             detalhe.empreendimentoTopicos?.forEach((topico) => {
@@ -1221,12 +1231,8 @@ export default function DocRevisao() {
 
             const emp = options.find(e => String(e.value.id) === String(storedId));
             if (!emp) return;
-
-            // Remove para evitar reuso ou loops
             sessionStorage.removeItem("empreendimentoSelecionado");
-
             setSelected(emp.value);        // preenche dropdown
-
             empreendimentoService
                 .getEmpreendimentoById(String(emp.value.id))
                 .then((resp) => {
@@ -1237,6 +1243,7 @@ export default function DocRevisao() {
                     }
                 })
                 .finally(() => setLoadingDetalhe(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [options]);
 
     return (
@@ -1663,7 +1670,7 @@ export default function DocRevisao() {
                                                         <tbody>
                                                             {topico.topicoMateriais.map((mat, mIdx) => (
                                                                 <tr
-                                                                    key={`${mat.id ?? mat.materialId ?? 'mat'}-${mIdx}`}
+                                                                    key={`${mat.id ?? mat.materialId ?? mIdx}`}
                                                                     className={
                                                                         `block md:table-row mb-3 md:mb-0 rounded md:rounded-none border-b border-gray-200 bg-white md:bg-transparent md:border-b md:border-gray-300 transition-colors duration-150 ease-in-out`
                                                                     }
