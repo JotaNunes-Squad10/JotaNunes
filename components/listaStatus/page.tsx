@@ -97,7 +97,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
     // REGRAS ESPECIAIS DO OPERADOR
     if (userProfile === 3) {
       if (status === "Pendente") {
-        return ["Criar cópia"];
+        return ["Comparar", "Criar cópia"];
       }
 
     }
@@ -105,25 +105,25 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
     // REGRAS ESPECIAIS DO GESTOR
     if (userProfile === 2) {
 
-      if (status === "Pendente") return ["Verificar", "Mudar status"];
+      if (status === "Pendente") return ["Verificar","Comparar","Mudar status"];
 
-      if (status === "Aprovado") return ["Visualizar"];
-      if (status === "Cancelado") return ["Visualizar"];
+      if (status === "Aprovado") return ["Visualizar","Comparar"];
+      if (status === "Cancelado") return ["Visualizar","Comparar"];
     }
 
 
     // REGRAS NORMAIS (ADMIN + restante do sistema)
     switch (status) {
       case "Editando":
-        return ["Editar","Criar cópia","Mudar status"];
+        return ["Editar","Comparar","Criar cópia","Mudar status"];
       case "Em revisão":
-        return ["Revisar","Criar cópia","Mudar status"];
+        return ["Revisar","Comparar","Criar cópia","Mudar status"];
       case "Pendente":
-        return ["Verificar","Criar cópia","Mudar status"];
+        return ["Verificar","Comparar","Criar cópia","Mudar status"];
       case "Aprovado":
-        return ["Visualizar","Criar cópia","Criar padrão"];
+        return ["Visualizar","Comparar","Criar cópia"];
       case "Cancelado":
-        return ["Visualizar","Criar cópia"];
+        return ["Visualizar","Comparar","Criar cópia"];
       default:
         return [];
     }
@@ -483,6 +483,12 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                     
                     if (opt === "Editar") {
                       router.push(`/empreendimento/${selectedEmp.id}`); 
+                      return; 
+                    }
+
+                    if (opt === "Comparar") {
+                      sessionStorage.setItem("empreendimentoSelecionado", String(selectedEmp.id)); 
+                      router.push("/comparacao"); 
                       return; 
                     }
 

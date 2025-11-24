@@ -53,6 +53,34 @@ export default function Comparacao() {
     fetchEmpreendimentos();
   }, []);
 
+  // Depois do useEffect que carrega os titulos:
+useEffect(() => {
+  const idSalvo = sessionStorage.getItem("empreendimentoSelecionado");
+  if (!idSalvo) return;
+
+  const encontrado = titulos.find(t => String(t.id) === String(idSalvo));
+  if (!encontrado) return;
+
+  // Preseleciona o título
+  setSelectedTitulo(encontrado);
+
+  // Preenche o dropdown de versões
+  const versoesArray = Array.from({ length: encontrado.versao }, (_, i) => encontrado.versao - i);
+  setVersoes(versoesArray);
+
+  // Já gera o documento atual automaticamente
+  DocumentoService.generateDocumento({
+    id: String(encontrado.id),
+    version: encontrado.versao,
+  })
+    .then((res) => setDocumentoAtual(res.data))
+    .catch((err) => console.error("Erro ao gerar documento atual:", err));
+
+  // Limpa o sessionStorage para não reaplicar ao recarregar a página
+  sessionStorage.removeItem("empreendimentoSelecionado");
+
+}, [titulos]);
+
   const handleChangeEmpreendimento = async (e: DropdownChangeEvent) => {
     const empreendimentoSelecionado = e.value as TituloEmpreendimento;
     setSelectedTitulo(empreendimentoSelecionado);
