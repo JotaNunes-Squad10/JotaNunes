@@ -79,6 +79,9 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   //estado botão habilitado ou desabilitado
   const [savingStatus, setSavingStatus] = useState(false);
 
+  // controla loading de uma ação do menu
+  const [menuLoading, setMenuLoading] = useState<string | null>(null);
+
   // Novo estado para dropdown
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedEmp, setSelectedEmp] = useState<Empreendimento | null>(null);
@@ -301,6 +304,55 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
     </TableCell>
   );
 
+  const handleMenuAction = async (opt: string) => {
+    if (!selectedEmp) return;
+
+    // evita clique duplo
+    if (menuLoading) return;
+
+    setMenuLoading(opt); // ativa loading da opção clicada
+
+    try {
+
+      if (opt === "Editar") {
+        router.push(`/empreendimento/${selectedEmp.id}`);
+        return;
+      }
+
+      if (opt === "Comparar") {
+        sessionStorage.setItem("empreendimentoSelecionado", String(selectedEmp.id));
+        router.push("/comparacao");
+        return;
+      }
+
+      if (opt === "Criar cópia") {
+        await copiarEmpreendimento(String(selectedEmp.id));
+        return;
+      }
+
+      if (opt === "Verificar") {
+        sessionStorage.setItem("empreendimentoSelecionado", String(selectedEmp.id));
+        router.push("/revisao");
+        return;
+      }
+
+      if (opt === "Revisar") {
+        sessionStorage.setItem("empreendimentoSelecionado", String(selectedEmp.id));
+        router.push("/docCorrecao");
+        return;
+      }
+
+      if (opt === "Visualizar") {
+        router.push(`/pdfEmpreendimento?id=${selectedEmp.id}`);
+        return;
+      }
+
+    } finally {
+      // evita travar o botão ao navegar dentro da página
+      setTimeout(() => setMenuLoading(null), 1500);
+    }
+  };
+
   return (
     <Paper elevation={0} sx={{ p: 3, border: "none" }}>
       {/* Cabeçalho */}
@@ -481,60 +533,23 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
         {selectedEmp &&
           (!selectedEmp.showStatusChange
             ? getDropdownOptions(selectedEmp.status).map((opt) => (
-                <MenuItem
-                  key={opt}
-                  onClick={() => {
-                    
-                    if (opt === "Editar") {
-                      router.push(`/empreendimento/${selectedEmp.id}`); 
-                      return; 
-                    }
-
-                    if (opt === "Comparar") {
-                      sessionStorage.setItem("empreendimentoSelecionado", String(selectedEmp.id)); 
-                      router.push("/comparacao"); 
-                      return; 
-                    }
-
-                    if (opt === "Criar cópia") {
-                      copiarEmpreendimento(String(selectedEmp.id))
-                      return; 
-                    }
-
-                    if (opt === "Verificar") {
-                      sessionStorage.setItem("empreendimentoSelecionado", String(selectedEmp.id)); 
-                      router.push("/revisao"); 
-                      return; 
-                    }
-
-                    if (opt === "Revisar") {
-                      sessionStorage.setItem("empreendimentoSelecionado", String(selectedEmp.id)); 
-                      router.push("/docCorrecao"); 
-                      return; 
-                    }
-
-                    if (opt === "Visualizar") {
-                      router.push(`/pdfEmpreendimento?id=${selectedEmp.id}`);
-                      return;
-                    }
-
-                    if (opt === "Mudar status") {
-                      setSelectedEmp((prev) => prev ? { ...prev, showStatusChange: true } : selectedEmp);
-                    } else {
-                      handleMenuClose();
-                    }
-                  }}
-                  sx={{
-                    fontWeight: "bold",
-                    borderBottom: "1px solid #d7d7d7",
-                    "&:last-of-type": { borderBottom: "none" },
-                    "&:hover": {
-                      backgroundColor: "#e9e9e9",
-                    },
-                  }}
-                >
-                  {opt}
-                </MenuItem>
+              <MenuItem
+                key={opt}
+                disabled={menuLoading === opt} // impede clique duplo
+                onClick={() => handleMenuAction(opt)}
+                sx={{
+                  fontWeight: "bold",
+                  borderBottom: "1px solid #d7d7d7",
+                  "&:last-of-type": { borderBottom: "none" },
+                  "&:hover": { backgroundColor: "#e9e9e9" },
+                  opacity: menuLoading === opt ? 0.6 : 1
+                }}
+              >
+                {menuLoading === opt ? (
+                  <i className="pi pi-spin pi-spinner" style={{ marginRight: 8 }}></i>
+                ) : null}
+                {opt}
+              </MenuItem>
               ))
             : (() => {
                 const status = selectedEmp.status;
