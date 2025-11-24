@@ -82,6 +82,11 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   // controla loading de uma ação do menu
   const [menuLoading, setMenuLoading] = useState<string | null>(null);
 
+  // ---- ESTADOS DO MODAL DE CÓPIA ----
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedPadraoName, setSelectedPadraoName] = useState<string | null>(null);
+  const [padraoIdSelecionado, setPadraoIdSelecionado] = useState<string | null>(null);
+
   // Novo estado para dropdown
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedEmp, setSelectedEmp] = useState<Empreendimento | null>(null);
@@ -310,7 +315,9 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
     // evita clique duplo
     if (menuLoading) return;
 
-    setMenuLoading(opt); // ativa loading da opção clicada
+    if (opt !== "Criar cópia" && opt !== "Mudar status") {
+        setMenuLoading(opt);
+    }
 
     try {
 
@@ -326,8 +333,16 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
       }
 
       if (opt === "Criar cópia") {
-        await copiarEmpreendimento(String(selectedEmp.id));
-        return;
+          handleMenuClose(); // fecha o menu
+          setPadraoIdSelecionado(String(selectedEmp.id));
+          setSelectedPadraoName(selectedEmp.nome);
+          setShowConfirmModal(true);
+          return;
+      }
+
+      if (opt === "Mudar status") {
+          setSelectedEmp({ ...selectedEmp, showStatusChange: true });
+          return;
       }
 
       if (opt === "Verificar") {
@@ -351,6 +366,30 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
       // evita travar o botão ao navegar dentro da página
       setTimeout(() => setMenuLoading(null), 1500);
     }
+  };
+
+  const cancelConfirmModal = () => {
+      setShowConfirmModal(false);
+      setPadraoIdSelecionado(null);
+      setSelectedPadraoName(null);
+  };
+
+  const applyCopy = async () => {
+      if (!padraoIdSelecionado) return;
+
+      setSavingStatus(true);
+
+      try {
+          await copiarEmpreendimento(padraoIdSelecionado);
+
+          setShowConfirmModal(false);
+
+      } catch (err) {
+          console.error(err);
+          toast.error("Erro ao criar empreendimento.");
+      } finally {
+          setSavingStatus(false);
+      }
   };
 
   return (
@@ -674,6 +713,38 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                     <strong>{selectedEmp?.nome}</strong> de{" "}
                     <strong>{selectedEmp?.status}</strong> para{" "}
                     <strong className="text-yellow-600">{novoStatusSelecionado}</strong>?
+                </p>
+            </div>
+        </Dialog>
+        {/* --- MODAL DE CONFIRMAÇÃO DE CÓPIA --- */}
+        <Dialog
+            header="Confirmar criação"
+            visible={showConfirmModal}
+            style={{ width: '90%', maxWidth: '520px' }}
+            modal
+            onHide={cancelConfirmModal}
+            footer={
+                <div className="flex justify-end gap-2">
+                    <Button
+                        label="Cancelar"
+                        onClick={cancelConfirmModal}
+                        className="p-button-secondary"
+                    />
+                    <Button
+                        label={savingStatus ? 'Criando...' : 'Confirmar'}
+                        icon={savingStatus ? 'pi pi-spin pi-spinner' : undefined}
+                        iconPos="left"
+                        onClick={applyCopy}
+                        disabled={savingStatus}
+                        className="p-button-danger"
+                    />
+                </div>
+            }
+        >
+            <div className="px-1 py-2 text-sm">
+                <p>
+                    Deseja criar um novo empreendimento a partir de{' '}
+                    <strong className="text-yellow-600">{selectedPadraoName}</strong>?
                 </p>
             </div>
         </Dialog>
