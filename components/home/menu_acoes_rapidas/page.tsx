@@ -27,7 +27,6 @@ export default function Menu_acoes_rapidas() {
         try {
             interface MyJwtPayload {
                 groups?: string[];
-                [key: string]: any;
             }
 
             const decoded = jwtDecode<MyJwtPayload>(token);
@@ -40,12 +39,11 @@ export default function Menu_acoes_rapidas() {
                 Operador: 3,
             };
 
-            // 🔥 Corrige o erro: não indexamos com undefined
             if (!grupo) return null;
 
             return mapPerfil[grupo] ?? null;
 
-        } catch (err) {
+        } catch {
             toast.error("Erro ao validar autenticação.");
             return null;
         }
