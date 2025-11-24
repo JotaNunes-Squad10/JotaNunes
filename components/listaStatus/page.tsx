@@ -632,7 +632,8 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                     },
                   });
                 }
-              } catch (e) {
+              } catch (error) {
+                console.error(error);
                 toast.error("Erro ao atualizar o status.");
               }
             }}

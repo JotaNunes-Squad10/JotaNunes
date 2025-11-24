@@ -2,6 +2,7 @@
 
 import EmpreendimentoEditor from "@/components/EmpreendimentoEditor/page";
 import { useParams } from "next/navigation";
+import Popup from '@/components/popup/page';
 
 export default function Empreendimento() {
   const params = useParams<{ documentId: string }>();
@@ -9,6 +10,7 @@ export default function Empreendimento() {
   return (
     <div>
       <EmpreendimentoEditor documentId={documentId} />
+      <Popup />
     </div>
   );
 }

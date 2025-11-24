@@ -25,7 +25,7 @@ const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos }) => {
   const [selected, setSelected] = useState<string | null>(null);
 
   useEffect(() => {
-    const statusFromUrl = searchParams.get("status");
+    const statusFromUrl = searchParams ? searchParams.get("status") : null;
     setSelected(statusFromUrl);
   }, [searchParams]);
 

@@ -11,6 +11,8 @@ import {
   empreendimentoService,
   DocumentoService,
 } from "@/lib/api";
+import Popup from '../../components/popup/page';
+
 
 interface TituloEmpreendimento {
   name: string;
@@ -97,6 +99,7 @@ export default function Comparacao() {
   return (
     <div>
       <Header />
+      <Popup />
 
       <div className="mt-[100px] mx-10 flex flex-col justify-between gap-6">
         <div>
