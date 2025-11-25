@@ -19,6 +19,39 @@ interface FormEmpreendimentoProps {
   idDocumento: string;
 }
 
+/**
+ * 🔥 Normaliza o payload antes de enviar ao backend
+ * (corrige exatamente o erro reportado no log)
+ */
+function normalizePayload(doc: UpdateEmpreendimento): UpdateEmpreendimento {
+  return {
+    id: doc.id,
+    nome: doc.nome ?? "",
+    descricao: doc.descricao ?? "",
+    localizacao: doc.localizacao ?? "",
+    tamanhoArea: Number(doc.tamanhoArea) || 0,
+    padrao: Number(doc.padrao) || 1,
+    empreendimentoTopicos: (doc.empreendimentoTopicos || []).map((t, idx) => ({
+      topicoId: Number(t.topicoId),
+      posicao: t.posicao ?? idx + 1,
+
+      topicoAmbientes: (t.topicoAmbientes || []).map((a, aidx) => ({
+        ambienteId: Number(a.ambienteId),
+        area: a.area ?? 0,
+        posicao: a.posicao ?? aidx + 1,
+        ambienteItens: (a.ambienteItens || []).map((i) => ({
+          itemId: Number(i.itemId),
+        })),
+      })),
+
+      topicoMateriais: (t.topicoMateriais || []).map((m) => ({
+        materialId: Number(m.materialId),
+        versoes: m.versoes ?? [],
+      })),
+    })),
+  };
+}
+
 export default function FormEmpreendimento({
   empreendimento,
   updateEmpreendimento,
@@ -31,10 +64,10 @@ export default function FormEmpreendimento({
   const handleSave = async () => {
     setLoading(true);
 
-    console.log(empreendimento);
-
     try {
-      await DocumentoService.updateEmpreendimento(empreendimento);
+      const payload = normalizePayload(empreendimento);
+
+      await DocumentoService.updateEmpreendimento(payload);
 
       toast.current?.show({
         severity: "success",

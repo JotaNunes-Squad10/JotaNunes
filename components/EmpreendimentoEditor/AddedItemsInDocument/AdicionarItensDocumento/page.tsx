@@ -121,7 +121,7 @@ export default function AdicionarItensDocumento({
           await subTopicosAmbienteService.getAllAmbiente();
 
         const ambiente = ambientes.find(
-          (a) => a.nome === itemAmbienteSelecionado
+          (a) => String(a.id) === itemAmbienteSelecionado
         );
 
         if (!ambiente) {
@@ -196,7 +196,9 @@ export default function AdicionarItensDocumento({
     // ------------- AMBIENTE NORMAL --------------
     const ambientes = await subTopicosAmbienteService.getAllAmbiente();
 
-    const ambiente = ambientes.find((a) => a.nome === itemAmbienteSelecionado);
+    const ambiente = ambientes.find(
+      (a) => String(a.id) === itemAmbienteSelecionado
+    );
     if (!ambiente) return;
 
     const idsToAdd = selectedAmbientes.map((i) => Number(i.code));

@@ -29,25 +29,32 @@ export default function SelecioneItemAmbiente({
   const [opcoesFiltradas, setOpcoesFiltradas] = useState<DropdownOption[]>([]);
   const [reloadFlag, setReloadFlag] = useState<boolean>(false);
 
+  // ---------------------------------------------------
+  // LOAD SUBTOPICOS QUANDO TROCA O TÓPICO PRINCIPAL
+  // ---------------------------------------------------
   useEffect(() => {
     async function fetchSubTopicos() {
       try {
         const allSubTopicos: SubTopic[] =
           await subTopicosAmbienteService.getAllAmbiente();
+
         const allTopics: Topico[] = await topicoService.getAllTopic();
 
-        let opcoes: DropdownOption[] = [];
+        const topicoMatch = allTopics.find(
+          (t) => t.nome === ambienteSelecionado
+        );
 
-        allTopics.forEach((t) => {
-          if (ambienteSelecionado === t.nome) {
-            opcoes = allSubTopicos
-              .filter((item) => item.topico.id === t.id)
-              .map((item) => ({
-                name: item.nome,
-                code: item.id.toString(),
-              }));
-          }
-        });
+        if (!topicoMatch) {
+          setOpcoesFiltradas([]);
+          return;
+        }
+
+        const opcoes = allSubTopicos
+          .filter((sub) => sub.topico.id === topicoMatch.id)
+          .map((sub) => ({
+            name: sub.nome,
+            code: String(sub.id),
+          }));
 
         setOpcoesFiltradas(opcoes);
       } catch (error) {
@@ -55,30 +62,27 @@ export default function SelecioneItemAmbiente({
       }
     }
 
-    if (ambienteSelecionado) {
-      fetchSubTopicos();
-    } else {
-      setOpcoesFiltradas([]);
-    }
-
-    console.log(ambienteSelecionado);
+    if (ambienteSelecionado) fetchSubTopicos();
+    else setOpcoesFiltradas([]);
   }, [ambienteSelecionado, reloadFlag]);
 
   const handleCreateNewSubItem = () => {
     setReloadFlag((prev) => !prev);
   };
 
+  // Valor selecionado deve bater pelo "code", não pelo "name"
+  const selectedValue =
+    opcoesFiltradas.find((o) => o.code === itemAmbienteSelecionado) || null;
+
   return (
     <div className="flex gap-3 mb-5">
       <div className="card flex justify-content-center w-[50%]">
         <Dropdown
-          value={
-            opcoesFiltradas.find((i) => i.name === itemAmbienteSelecionado) ||
-            null
-          }
-          onChange={(e: DropdownChangeEvent) =>
-            setItemAmbienteSelecionado(e.value.name)
-          }
+          value={selectedValue}
+          onChange={(e: DropdownChangeEvent) => {
+            const option = e.value as DropdownOption;
+            setItemAmbienteSelecionado(option.code);
+          }}
           options={opcoesFiltradas}
           optionLabel="name"
           placeholder="Selecione Item do Ambiente"

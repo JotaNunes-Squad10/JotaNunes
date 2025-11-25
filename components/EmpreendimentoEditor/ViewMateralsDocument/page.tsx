@@ -28,7 +28,6 @@ interface TabelaItem {
   descricao: string;
 }
 
-// tipo seguro para ambienteItens do doc
 type AmbienteItemSafe = {
   itemId: number;
   versoes?: number[];
@@ -51,6 +50,7 @@ export default function TabelaItens({
   const [itens, setItens] = useState<TabelaItem[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // ❗ Correção: comparação adequada
   const isMarcas = topicoSelecionado.toUpperCase() === "MARCAS";
   const TOPICO_MARCAS = 3;
 
@@ -66,9 +66,9 @@ export default function TabelaItens({
       // ------------------------------------------------------------
       if (isMarcas) {
         try {
-          const listaMarcas: MarcaMateriais[] = await subTopicosAmbienteService
-            .getAllAmbiente()
-            .then(() => marcaService.getAllMarcaMateriais());
+          // ✔ Correção: chamada direta ao serviço
+          const listaMarcas: MarcaMateriais[] =
+            await marcaService.getAllMarcaMateriais();
 
           const topicoMarcas = empreendimento.empreendimentoTopicos.find(
             (t: EmprendimentoTopico) => t.topicoId === TOPICO_MARCAS
@@ -89,7 +89,8 @@ export default function TabelaItens({
                 descricao: encontrado.material.nome,
               };
             })
-            .filter(Boolean) as TabelaItem[];
+            // ✔ Warning corrigido
+            .filter((x): x is TabelaItem => x !== null);
 
           setItens(itensTabela);
         } catch (e) {
@@ -114,7 +115,8 @@ export default function TabelaItens({
 
         const ambienteId =
           ambientes.find(
-            (a) => a.nome === ambienteSelecionado && a.topico.id === topicoId
+            (a) =>
+              String(a.id) === ambienteSelecionado && a.topico.id === topicoId
           )?.id ?? undefined;
 
         if (!topicoId || !ambienteId) {
@@ -156,7 +158,7 @@ export default function TabelaItens({
     };
 
     load();
-  }, [empreendimento, topicoSelecionado, ambienteSelecionado]);
+  }, [empreendimento, topicoSelecionado, ambienteSelecionado, isMarcas]);
 
   // ------------------------------------------------------------
   // 🔹 REMOVER
@@ -175,7 +177,7 @@ export default function TabelaItens({
 
     const topicoId = topics.find((t) => t.nome === topicoSelecionado)?.id;
     const ambienteId = ambientes.find(
-      (a) => a.nome === ambienteSelecionado && a.topico.id === topicoId
+      (a) => String(a.id) === ambienteSelecionado && a.topico.id === topicoId
     )?.id;
 
     if (!topicoId || !ambienteId) return;

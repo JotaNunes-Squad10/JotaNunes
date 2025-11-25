@@ -10,8 +10,23 @@ export default function CriarNovoAmbiente({
   setNovoTopico,
 }: CriarNovoAmbienteProp) {
   const [visible, setVisible] = useState<boolean>(false);
-
   const [novoAmbiente, setNovoAmbiente] = useState<string>("");
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const novoTopicoCreate: CreateTopicPayload = {
+      nome: novoAmbiente,
+    };
+
+    try {
+      await topicoService.createTopic(novoTopicoCreate);
+      setNovoTopico((prev) => [...prev, novoAmbiente]);
+      setVisible(false);
+    } catch (error) {
+      console.error("Erro ao criar ambiente:", error);
+    }
+  };
 
   return (
     <div className="card flex justify-content-center">
@@ -29,38 +44,23 @@ export default function CriarNovoAmbiente({
           cursor-pointer
         "
       >
-        {/* Ícone do PrimeIcons */}
         <i className="pi pi-plus mr-3 text-lg" />
         Criar novo ambiente
       </button>
+
       <Dialog
         header="Criar novo ambiente"
         visible={visible}
         modal={false}
         style={{ width: "35vw" }}
         breakpoints={{ "960px": "75vw", "640px": "90vw" }}
-        onHide={() => {
-          if (!visible) return;
-          setVisible(false);
-        }}
+        onHide={() => setVisible(false)}
       >
         <div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-
-              const novoTopicoCreate: CreateTopicPayload = {
-                nome: novoAmbiente,
-              };
-
-              topicoService.createTopic(novoTopicoCreate).then((res) => {
-                setNovoTopico((prev) => [...prev, novoAmbiente]);
-              });
-              setVisible(false);
-            }}
-          >
+          <form onSubmit={handleCreate}>
             <div className="flex flex-col">
               <label className="mb-4">Digite o nome do ambiente</label>
+
               <input
                 type="text"
                 placeholder="Nome do ambiente"
@@ -68,6 +68,7 @@ export default function CriarNovoAmbiente({
                 required
                 onChange={(e) => setNovoAmbiente(e.target.value)}
               />
+
               <button
                 type="submit"
                 className="cursor-pointer bg-green-700 p-3 text-white rounded-lg hover:opacity-95"

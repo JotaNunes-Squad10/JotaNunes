@@ -67,6 +67,8 @@ export default function ActionBarCreate({
 
         const response = await DocumentoService.createDocumento(payload);
 
+        console.log(response);
+
         toast.current?.show({
           severity: "success",
           summary: "Sucesso",

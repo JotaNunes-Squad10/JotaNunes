@@ -104,7 +104,6 @@ export default function EmpreendimentoEditor({
   const [empreendimento, setEmpreendimento] = useState<
     UpdateEmpreendimento | undefined
   >(undefined);
-  const [loading, setLoading] = useState<boolean>(false);
   const toast = useRef<Toast | null>(null);
   const [marcaMaterial, setMarcaMaterial] = useState<MarcaMateriais[]>([]);
   const [status, setStatus] = useState<string>("");
@@ -219,7 +218,6 @@ export default function EmpreendimentoEditor({
     let mounted = true;
     const loadDocument = async () => {
       try {
-        setLoading(true);
         const documentData = await DocumentoService.getDocumentoById(
           documentId
         );
@@ -310,8 +308,6 @@ export default function EmpreendimentoEditor({
           detail: "Falha ao carregar documento.",
           life: 4000,
         });
-      } finally {
-        if (mounted) setLoading(false);
       }
     };
 
@@ -413,7 +409,6 @@ export default function EmpreendimentoEditor({
     console.log("Payload gerado (ADD ITEMS em ambiente):", payload);
 
     try {
-      setLoading(true);
       await DocumentoService.updateEmpreendimento(payload);
       // mantém estado com o que foi enviado
       setEmpreendimento(payload);
@@ -432,8 +427,6 @@ export default function EmpreendimentoEditor({
         detail: "Falha ao salvar alterações (adição). Revertendo.",
         life: 5000,
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -497,7 +490,6 @@ export default function EmpreendimentoEditor({
     console.log("Payload gerado (REMOVE ITEM em ambiente):", payload);
 
     try {
-      setLoading(true);
       await DocumentoService.updateEmpreendimento(payload);
       setEmpreendimento(payload);
       toast.current?.show?.({
@@ -515,8 +507,6 @@ export default function EmpreendimentoEditor({
         detail: "Falha ao remover item no servidor. Revertendo.",
         life: 5000,
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -586,7 +576,6 @@ export default function EmpreendimentoEditor({
     console.log("PAYLOAD GERADO (ADD MATERIAIS):", payload);
 
     try {
-      setLoading(true);
       await DocumentoService.updateEmpreendimento(payload);
       setEmpreendimento(payload);
       toast.current?.show?.({
@@ -604,8 +593,6 @@ export default function EmpreendimentoEditor({
         detail: "Falha ao adicionar materiais. Revertendo.",
         life: 5000,
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -651,7 +638,6 @@ export default function EmpreendimentoEditor({
     console.log("PAYLOAD GERADO (REMOVE MATERIAL):", payload);
 
     try {
-      setLoading(true);
       await DocumentoService.updateEmpreendimento(payload);
       setEmpreendimento(payload);
       toast.current?.show?.({
@@ -669,8 +655,6 @@ export default function EmpreendimentoEditor({
         detail: "Falha ao remover material. Revertendo.",
         life: 5000,
       });
-    } finally {
-      setLoading(false);
     }
   };
 

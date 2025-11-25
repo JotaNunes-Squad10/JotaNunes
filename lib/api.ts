@@ -164,10 +164,8 @@ export interface ValidationResult {
 }
 
 export interface CreateEmpreendimentoResponse {
-  data: {
-    data: DocumentoPayloadResponse;
-    validationResult: ValidationResult;
-  };
+  data: DocumentoPayloadResponse;
+  validationResult: ValidationResult;
 }
 
 // Interface do GetTopicId

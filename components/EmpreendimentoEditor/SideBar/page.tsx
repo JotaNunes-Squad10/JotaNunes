@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Button } from "primereact/button";
+
 // Importações de CSS do PrimeReact
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
@@ -69,6 +70,7 @@ export default function CustomSidebarComponent({
             setItemAmbienteSelecionado={setItemAmbienteSelecionado}
             listaNovoAmbiente={novoTopicoLista}
           />
+
           <CriarNovoAmbiente setNovoTopico={setNovoTopicoLista} />
         </div>
       </div>

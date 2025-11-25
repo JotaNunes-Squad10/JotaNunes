@@ -39,12 +39,14 @@ export default function SelecionaAmbiente({
     fetchTopicos();
   }, []);
 
+  const selected = titulos.find((t) => t.code === ambienteSelecionado) || null;
+
   return (
     <div className="card flex justify-content-center mb-5 w-[50%]">
       <Dropdown
-        value={titulos.find((t) => t.code === ambienteSelecionado) || null}
+        value={selected}
         onChange={(e: DropdownChangeEvent) =>
-          setAmbienteSelecionado(e.value.code)
+          setAmbienteSelecionado((e.value as TituloAmbiente).code)
         }
         options={titulos}
         optionLabel="name"
