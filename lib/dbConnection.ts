@@ -4,11 +4,11 @@ import mysql from 'mysql2/promise';
 export const createConnection = async () => {
     try {
         const connection = await mysql.createConnection({
-            host: 'metro.proxy.rlwy.net',
-            user: 'root',
-            password: 'iOJZKMIVbfvAaRuZyFtZYUXbbMNheCcA',
-            database: 'railway',
-            port: 43457
+            host: '138.197.205.150',
+            user: 'mysql',
+            password: 'jotanunes',
+            database: 'jotanunes',
+            port: 3306
         });
         console.log('Conexão com o banco de dados estabelecida com sucesso.');
         return connection;

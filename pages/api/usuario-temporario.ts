@@ -4,12 +4,12 @@ import { createConnection } from '../../lib/dbConnection';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { id, usuario, numero, email, senha } = req.body;
+  const { usuario, numero, email, senha } = req.body;
   try {
     const conn = await createConnection();
     const [result] = await conn.execute(
-      'INSERT INTO temporarios (id, usuario, numero, email, senha) VALUES (?, ?, ?, ?, ?)',
-      [id, usuario, numero, email, senha]
+      'INSERT INTO temporarios (usuario, numero, email, senha) VALUES (?, ?, ?, ?)',
+      [usuario, numero, email, senha]
     );
     await conn.end();
     res.status(200).json({ ok: true, result });
