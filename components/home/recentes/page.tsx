@@ -3,6 +3,9 @@ import { Newspaper } from 'lucide-react';
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import { getCookie } from "cookies-next";
+import { jwtDecode } from "jwt-decode";
 
 interface Documento {
   id: number;
@@ -42,30 +45,73 @@ export default function Recentes() {
 
   const router = useRouter();
 
+  // PEGAR PERFIL DO TOKEN USANDO getCookie + jwtDecode
+  const [perfil, setPerfil] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = getCookie("accessToken");
+
+    if (!token || typeof token !== "string") {
+      console.warn("Token não encontrado.");
+      return;
+    }
+
+    try {
+      interface MyJwtPayload {
+        groups?: string[];
+      }
+
+      const decoded = jwtDecode<MyJwtPayload>(token);
+
+      const grupo = decoded.groups?.[0];
+
+      const mapPerfil: Record<string, string> = {
+        Administrador: "Administrador",
+        Gestor: "Gestor",
+        Operador: "Operador",
+      };
+
+      setPerfil(mapPerfil[grupo ?? ""] ?? null);
+
+    } catch (err) {
+      console.error("Erro ao decodificar JWT:", err);
+      toast.error("Erro na autenticação.");
+    }
+  }, []);
+
   const navigateByStatus = (id: number, status?: string) => {
+    if (!perfil) return; // ainda carregando
+
     const s = (status ?? "").toLowerCase();
     try { console.log("Recentes.navigateByStatus -> id:", id, "status:", status); } catch {}
 
+    const podeDocCorrecao = ["Operador", "Administrador"].includes(perfil);
+    const podeRevisao = ["Gestor", "Administrador"].includes(perfil);
+    const podeEmpreendimento = ["Operador", "Administrador"].includes(perfil);
+
     if (s.includes("revis")) {
-      try { sessionStorage.setItem("empreendimentoSelecionado", String(id)); } catch {}
-      router.push(`/docCorrecao`);
-      return;
+      if (!podeDocCorrecao) return toast.warning("Usuário sem permissão para Revisar");
+      sessionStorage.setItem("empreendimentoSelecionado", String(id));
+      return router.push(`/docCorrecao`);
     }
 
     if (s.includes("pend")) {
-      try { sessionStorage.setItem("empreendimentoSelecionado", String(id)); } catch {}
-      router.push(`/revisao`);
-      return;
+      if (!podeRevisao) return toast.warning("Usuário sem permissão para Verificar");
+      sessionStorage.setItem("empreendimentoSelecionado", String(id));
+      return router.push(`/revisao`);
     }
 
     if (s.includes("edit")) {
-      router.push(`/empreendimento/${id}`);
-      return;
+      if (!podeEmpreendimento) return toast.warning("Usuário sem permissão para Editar");
+      return router.push(`/empreendimento/${id}`);
     }
 
     if (s.includes("aprov")) {
-      router.push(`/pdfEmpreendimento?id=${id}`);
-      return;
+      return router.push(`/pdfEmpreendimento?id=${id}`);
+    }
+
+    if (!podeEmpreendimento) {
+      return toast.warning("Usuário sem permissão para Editar");
     }
 
     router.push(`/empreendimento/${id}`);
