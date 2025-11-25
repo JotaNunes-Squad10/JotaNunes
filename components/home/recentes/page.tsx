@@ -3,7 +3,7 @@ import { Newspaper } from 'lucide-react';
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import { getCookie } from "cookies-next";
 import { jwtDecode } from "jwt-decode";
 
@@ -218,6 +218,7 @@ export default function Recentes() {
           </div>
           ))}  
       </div>
+      <ToastContainer autoClose={2000} theme="colored" />
     </>
   );
 }
