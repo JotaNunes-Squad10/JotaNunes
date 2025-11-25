@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { FaUserTie } from "react-icons/fa6";
 
 interface Message {
   id: number;
@@ -184,8 +185,37 @@ export default function AnimatedChatbot() {
               }}
             ></div>
             
-            {/* Emoji */}
-            🤖
+            {/* Ícone do Robô - Fluent Emoji by Microsoft */}
+            <svg className="w-10 h-10 relative z-10" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Corpo principal (roxo/rosa gradiente) */}
+              <rect x="12" y="20" width="40" height="36" rx="10" fill="url(#robotGradient)"/>
+              
+              {/* Alça amarela no topo */}
+              <rect x="22" y="12" width="20" height="8" rx="4" fill="#F4A62A"/>
+              
+              {/* Antenas laterais (azul como os olhos) */}
+              <circle cx="12" cy="18" r="4" fill="#4FC3F7"/>
+              <rect x="10" y="18" width="4" height="28" rx="2" fill="#4FC3F7"/>
+              <circle cx="52" cy="18" r="4" fill="#4FC3F7"/>
+              <rect x="50" y="18" width="4" height="28" rx="2" fill="#4FC3F7"/>
+              
+              {/* Visor escuro */}
+              <rect x="18" y="28" width="28" height="14" rx="7" fill="#3D2C5F"/>
+              
+              {/* Olhos azuis */}
+              <rect x="24" y="32" width="6" height="10" rx="3" fill="#4FC3F7"/>
+              <rect x="34" y="32" width="6" height="10" rx="3" fill="#4FC3F7"/>
+              
+              {/* Boca */}
+              <rect x="26" y="48" width="12" height="4" rx="2" fill="#3D2C5F"/>
+              
+              <defs>
+                <linearGradient id="robotGradient" x1="32" y1="20" x2="32" y2="56" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#E1BEE7"/>
+                  <stop offset="1" stopColor="#CE93D8"/>
+                </linearGradient>
+              </defs>
+            </svg>
 
             {/* Bolinha verde do online */}
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
@@ -217,8 +247,25 @@ export default function AnimatedChatbot() {
               }}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-2xl animate-chatbot-pulse">
-                  🤖
+                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center animate-chatbot-pulse">
+                  <svg className="w-7 h-7" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="12" y="20" width="40" height="36" rx="10" fill="url(#robotGradient2)"/>
+                    <rect x="22" y="12" width="20" height="8" rx="4" fill="#F4A62A"/>
+                    <circle cx="12" cy="18" r="4" fill="#4FC3F7"/>
+                    <rect x="10" y="18" width="4" height="28" rx="2" fill="#4FC3F7"/>
+                    <circle cx="52" cy="18" r="4" fill="#4FC3F7"/>
+                    <rect x="50" y="18" width="4" height="28" rx="2" fill="#4FC3F7"/>
+                    <rect x="18" y="28" width="28" height="14" rx="7" fill="#3D2C5F"/>
+                    <rect x="24" y="32" width="6" height="10" rx="3" fill="#4FC3F7"/>
+                    <rect x="34" y="32" width="6" height="10" rx="3" fill="#4FC3F7"/>
+                    <rect x="26" y="48" width="12" height="4" rx="2" fill="#3D2C5F"/>
+                    <defs>
+                      <linearGradient id="robotGradient2" x1="32" y1="20" x2="32" y2="56" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#E1BEE7"/>
+                        <stop offset="1" stopColor="#CE93D8"/>
+                      </linearGradient>
+                    </defs>
+                  </svg>
                 </div>
                 <div>
                   <h3 className="font-semibold">Assistente Virtual JotaNunes</h3>
@@ -267,7 +314,28 @@ export default function AnimatedChatbot() {
                           : "bg-gray-200 text-gray-600"
                       }`}
                     >
-                      {message.sender === "user" ? "👤" : "🤖"}
+                      {message.sender === "user" ? (
+                        <FaUserTie className="w-5 h-5 text-black" />
+                      ) : (
+                        <svg className="w-6 h-6" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect x="12" y="20" width="40" height="36" rx="10" fill="url(#robotGradient3)"/>
+                          <rect x="22" y="12" width="20" height="8" rx="4" fill="#F4A62A"/>
+                          <circle cx="12" cy="18" r="4" fill="#4FC3F7"/>
+                          <rect x="10" y="18" width="4" height="28" rx="2" fill="#4FC3F7"/>
+                          <circle cx="52" cy="18" r="4" fill="#4FC3F7"/>
+                          <rect x="50" y="18" width="4" height="28" rx="2" fill="#4FC3F7"/>
+                          <rect x="18" y="28" width="28" height="14" rx="7" fill="#3D2C5F"/>
+                          <rect x="24" y="32" width="6" height="10" rx="3" fill="#4FC3F7"/>
+                          <rect x="34" y="32" width="6" height="10" rx="3" fill="#4FC3F7"/>
+                          <rect x="26" y="48" width="12" height="4" rx="2" fill="#3D2C5F"/>
+                          <defs>
+                            <linearGradient id="robotGradient3" x1="32" y1="20" x2="32" y2="56" gradientUnits="userSpaceOnUse">
+                              <stop stopColor="#E1BEE7"/>
+                              <stop offset="1" stopColor="#CE93D8"/>
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                      )}
                     </div>
                     <div
                       className={`rounded-2xl px-4 py-3 shadow-sm ${

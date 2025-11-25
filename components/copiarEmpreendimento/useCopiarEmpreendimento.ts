@@ -83,7 +83,31 @@ export function useCopiarEmpreendimento() {
     return tabela[padrao.toUpperCase()] ?? 1;
   }
 
-  function montarObjetoParaCriacao(empreendimentoOriginal: EmpreendimentoOriginal) {
+  function montarObjetoParaCriacao(empreendimentoOriginal: EmpreendimentoOriginal): {
+    nome: string;
+    descricao: string;
+    localizacao: string;
+    tamanhoArea: number;
+    padrao: number;
+    empreendimentoTopicos: Array<{
+      topicoId: number;
+      posicao: number;
+      versoes: number[];
+      ambienteItens: never[];
+      topicoAmbientes: Array<{
+        ambienteId: number;
+        posicao: number;
+        versoes: number[];
+        ambienteItens: Array<{
+          itemId: number;
+          versoes: number[];
+        }>;
+      }>;
+      topicoMateriais: Array<{
+        materialId: number;
+      }>;
+    }>;
+  } {
     return {
       nome: `Cópia de ${empreendimentoOriginal.nome ?? ""}`,
       descricao: empreendimentoOriginal.descricao ?? "",
@@ -95,15 +119,18 @@ export function useCopiarEmpreendimento() {
         empreendimentoOriginal.empreendimentoTopicos?.map((topico: EmpreendimentoTopico) => ({
           topicoId: topico.topicoId,
           posicao: topico.posicao,
+          versoes: [],
+          ambienteItens: [],
 
           topicoAmbientes:
             topico.topicoAmbientes?.map((amb: TopicoAmbiente) => ({
               ambienteId: amb.ambienteId,
-              area: amb.area ?? 0,
               posicao: amb.posicao,
+              versoes: [],
               ambienteItens:
                 amb.ambienteItens?.map((i: AmbienteItem) => ({
                   itemId: i.itemId,
+                  versoes: [],
                 })) ?? [],
             })) ?? [],
 
@@ -171,7 +198,7 @@ export function useCopiarEmpreendimento() {
         token as string
       );
 
-      const novoId = criado.data?.id ?? criado.id ?? null;
+      const novoId = criado.data?.id ?? null;
 
       if (novoId) {
         toast.success("Empreendimento copiado com sucesso!");

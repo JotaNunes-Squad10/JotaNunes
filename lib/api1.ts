@@ -146,7 +146,7 @@ export interface CreateDocumentoPayload {
   tamanhoArea: number;
   localizacao: string;
   padrao: number;
-  empreendimentoTopicos: EmpreendimentosTopicos[];
+  empreendimentoTopicos?: EmpreendimentosTopicos[];
 }
 
 export interface DocumentoPayloadResponse {
@@ -200,26 +200,33 @@ export interface Empreendimento {
 export interface EmpreendimentosTopicos {
   topicoId: number;
   posicao: number;
-  versoes: number[];
-  topicoAmbientes: TopicoAmbiente[];
-  ambienteItens: AmbienteItens[];
+  versoes?: number[];
+  topicoAmbientes?: (TopicoAmbiente | {
+    ambienteId: number;
+    area: number;
+    posicao: number;
+    ambienteItens: { itemId: number }[];
+  })[];
+  ambienteItens?: AmbienteItens[];
+  topicoMateriais?: ({ materialId: number; versoes?: number[] } | { materialId: number })[];
 }
 
 export interface TopicoAmbiente {
   ambienteId: number;
   posicao: number;
-  versoes: number[];
-  ambienteItens: AmbienteItens[];
+  area?: number;
+  versoes?: number[];
+  ambienteItens?: AmbienteItens[];
 }
 
 export interface AmbienteItens {
   itemId: number;
-  versoes: number[];
+  versoes?: number[];
 }
 
 export interface TopicoMaterial {
   materialId: number;
-  versoes: number[];
+  versoes?: number[];
 }
 
 export interface EmprendimentoTopico {
