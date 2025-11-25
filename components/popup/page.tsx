@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { FaUserTie } from "react-icons/fa6";
+import PersonIcon from "@mui/icons-material/Person";
 
 interface Message {
   id: number;
@@ -315,7 +315,7 @@ export default function AnimatedChatbot() {
                       }`}
                     >
                       {message.sender === "user" ? (
-                        <FaUserTie className="w-5 h-5 text-black" />
+                        <PersonIcon className="w-5 h-5 text-black" />
                       ) : (
                         <svg className="w-6 h-6" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <rect x="12" y="20" width="40" height="36" rx="10" fill="url(#robotGradient3)"/>
