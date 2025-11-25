@@ -9,11 +9,13 @@ import {
 interface AdicionarNovoAmbienteProps {
   ambienteSelecionado: string;
   onCreateNewSubItem?: () => void;
+  disabled?: boolean;
 }
 
 export default function AdicionarNovoAmbiente({
   ambienteSelecionado,
   onCreateNewSubItem,
+  disabled,
 }: AdicionarNovoAmbienteProps) {
   const [visible, setVisible] = useState<boolean>(false);
 
@@ -51,7 +53,14 @@ export default function AdicionarNovoAmbiente({
     <div className="card flex justify-content-center">
       <button
         onClick={() => setVisible(true)}
-        className="px-4 py-3 border border-gray-300 rounded-lg text-[#0f582a] cursor-pointer hover:bg-gray-100"
+        className={`
+    px-4 py-3 border rounded-lg
+    ${
+      disabled
+        ? "cursor-not-allowed opacity-40 bg-gray-200 border-gray-300 text-gray-400"
+        : "cursor-pointer hover:bg-gray-100 text-[#0f582a] border-gray-300"
+    }
+  `}
       >
         <i className="pi pi-plus"></i>
       </button>

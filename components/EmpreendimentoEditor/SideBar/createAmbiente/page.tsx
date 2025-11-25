@@ -45,11 +45,11 @@ export default function CriarNovoAmbiente({
         "
       >
         <i className="pi pi-plus mr-3 text-lg" />
-        Criar novo ambiente
+        Criar novo tópico
       </button>
 
       <Dialog
-        header="Criar novo ambiente"
+        header="Criar novo tópico"
         visible={visible}
         modal={false}
         style={{ width: "35vw" }}
@@ -59,11 +59,11 @@ export default function CriarNovoAmbiente({
         <div>
           <form onSubmit={handleCreate}>
             <div className="flex flex-col">
-              <label className="mb-4">Digite o nome do ambiente</label>
+              <label className="mb-4">Digite o nome do tópico</label>
 
               <input
                 type="text"
-                placeholder="Nome do ambiente"
+                placeholder="Nome do tópico"
                 className="p-2 border border-gray-300 rounded-lg mb-4"
                 required
                 onChange={(e) => setNovoAmbiente(e.target.value)}
