@@ -297,11 +297,10 @@ export const topicoService = {
     return response.data;
   },
 
-  async deleteTopic(payload: DeleteTopicPayload): Promise<any> {
-    const response = await axios.delete<DeleteTopicPayload>(
+  async deleteTopic(payload: DeleteTopicPayload): Promise<void> {
+    await axios.delete<DeleteTopicPayload>(
       `https://jotanunesservice.onrender.com/api/v1/topico/DeleteTopico/${payload.id}`
     );
-    return response.data;
   },
 };
 
