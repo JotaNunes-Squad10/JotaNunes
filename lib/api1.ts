@@ -258,6 +258,25 @@ export interface UpdateEmpreendimentoStatusResponse {
     validationResult: ValidationResult;
   };
 }
+export interface EmpreendimentoByIdData {
+  id: string;
+  nome: string;
+  descricao: string;
+  localizacao: string;
+  padrao: string;
+  status: string;
+  versao: number;
+  usuarioAlteracao: string;
+  dataHoraAlteracao: string;
+
+  empreendimentos: Empreendimento[];
+
+  empreendimentoTopicos: EmpreendimentosTopicos[];
+}
+export interface GetEmpreendimentoByIdResponse {
+  data: EmpreendimentoByIdData;
+  validationResult: ValidationResult;
+}
 
 // Configuração da API principal
 export const api = axios.create({
@@ -454,7 +473,7 @@ export const empreendimentoService = {
 
     return response.data.data;
   },
-    async getEmpreendimentoById(id: string): Promise<any> {
+    async getEmpreendimentoById(id: string): Promise<GetEmpreendimentoByIdResponse> {
     try {
       const response = await axios.get(
         `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${id}`
@@ -465,17 +484,21 @@ export const empreendimentoService = {
       throw error;
     }
   },
-      async createEmpreendimento(payload: any, token: string) {
-    const response = await axios.post(
-      "https://jotanunesservice.onrender.com/api/v1/empreendimento/CreateEmpreendimento",
-      payload,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-    return response.data;
-  },
-  async getEmpreendimentoByVersion(id: string, versionNumber: number): Promise<any> {
+    async createEmpreendimento(
+      payload: CreateDocumentoPayload,
+      token: string
+    ): Promise<CreateEmpreendimentoResponse> {
+      const response = await axios.post<CreateEmpreendimentoResponse>(
+        "https://jotanunesservice.onrender.com/api/v1/empreendimento/CreateEmpreendimento",
+        payload,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      return response.data;
+    },
+  async getEmpreendimentoByVersion(id: string, versionNumber: number): Promise<GetEmpreendimentoByIdResponse> {
     try {
       const response = await axios.get(
         `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoByVersion/${id}/${versionNumber}`
