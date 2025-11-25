@@ -18,10 +18,6 @@ export default function ActionBarCreate({
   localizacaoDocumento,
   descricaoDocumento,
 }: ActionBarCreateProps) {
-  const handleExportar = () => {
-    alert("Exportando arquivo...");
-  };
-
   const [status, setStatus] = useState("Editando");
   const menuRef = useRef<Menu>(null);
   const [loading, setLoading] = useState(false);

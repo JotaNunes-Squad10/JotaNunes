@@ -10,6 +10,7 @@ import {
   topicoService,
   UpdateEmpreendimento,
   MarcaMateriais,
+  EmprendimentoTopico,
   marcaService,
 } from "@/lib/api";
 
@@ -26,6 +27,19 @@ interface TabelaItem {
   item: string;
   descricao: string;
 }
+
+// tipo seguro para ambienteItens do doc
+type AmbienteItemSafe = {
+  itemId: number;
+  versoes?: number[];
+};
+
+type TopicoAmbienteSafe = {
+  ambienteId: number;
+  posicao: number;
+  area?: number;
+  ambienteItens: AmbienteItemSafe[];
+};
 
 export default function TabelaItens({
   empreendimento,
@@ -47,22 +61,22 @@ export default function TabelaItens({
       setLoading(true);
       setItens([]);
 
-      // ========================================
-      // 🔹 CASO ESPECIAL: MARCAS
-      // ========================================
+      // ------------------------------------------------------------
+      // 🔹 CASO MARCAS
+      // ------------------------------------------------------------
       if (isMarcas) {
         try {
-          const listaMarcas: MarcaMateriais[] =
-            await marcaService.getAllMarcaMateriais();
+          const listaMarcas: MarcaMateriais[] = await subTopicosAmbienteService
+            .getAllAmbiente()
+            .then(() => marcaService.getAllMarcaMateriais());
 
-          const topico = empreendimento.empreendimentoTopicos.find(
-            (t) => t.topicoId === TOPICO_MARCAS
+          const topicoMarcas = empreendimento.empreendimentoTopicos.find(
+            (t: EmprendimentoTopico) => t.topicoId === TOPICO_MARCAS
           );
 
-          const materiaisNoDocumento = topico?.topicoMateriais ?? [];
+          const materiaisNoDocumento = topicoMarcas?.topicoMateriais ?? [];
 
-          // filtramos somente os materiais presentes no documento
-          const itensTabela = materiaisNoDocumento
+          const itensTabela: TabelaItem[] = materiaisNoDocumento
             .map((m) => {
               const encontrado = listaMarcas.find(
                 (x) => x.material.id === m.materialId
@@ -86,19 +100,22 @@ export default function TabelaItens({
         return;
       }
 
-      // ========================================
-      // 🔹 CASO NORMAL: AMBIENTES
-      // ========================================
+      // ------------------------------------------------------------
+      // 🔹 CASO NORMAL (AMBIENTES)
+      // ------------------------------------------------------------
       try {
         const [topics, ambientes] = await Promise.all([
           topicoService.getAllTopic(),
           subTopicosAmbienteService.getAllAmbiente(),
         ]);
 
-        const topicoId = topics.find((t) => t.nome === topicoSelecionado)?.id;
-        const ambienteId = ambientes.find(
-          (a) => a.nome === ambienteSelecionado && a.topico.id === topicoId
-        )?.id;
+        const topicoId =
+          topics.find((t) => t.nome === topicoSelecionado)?.id ?? undefined;
+
+        const ambienteId =
+          ambientes.find(
+            (a) => a.nome === ambienteSelecionado && a.topico.id === topicoId
+          )?.id ?? undefined;
 
         if (!topicoId || !ambienteId) {
           setItens([]);
@@ -108,11 +125,12 @@ export default function TabelaItens({
         const topico = empreendimento.empreendimentoTopicos.find(
           (t) => t.topicoId === topicoId
         );
-        const ambiente = topico?.topicoAmbientes.find(
-          (a: any) => a.ambienteId === ambienteId
-        );
 
-        const ids = ambiente?.ambienteItens.map((i: any) => i.itemId) ?? [];
+        const ambiente = topico?.topicoAmbientes.find(
+          (a) => a.ambienteId === ambienteId
+        ) as TopicoAmbienteSafe | undefined;
+
+        const ids = ambiente?.ambienteItens.map((i) => i.itemId) ?? [];
 
         if (ids.length === 0) {
           setItens([]);
@@ -120,16 +138,16 @@ export default function TabelaItens({
         }
 
         const itensDetalhes = await Promise.all(
-          ids.map((id: number) => itemService.getItemById(id))
+          ids.map((id) => itemService.getItemById(id))
         );
 
-        setItens(
-          itensDetalhes.map((i) => ({
-            id: i.id!,
-            item: i.nome,
-            descricao: i.descricao,
-          }))
-        );
+        const tabela: TabelaItem[] = itensDetalhes.map((i) => ({
+          id: i.id!,
+          item: i.nome,
+          descricao: i.descricao,
+        }));
+
+        setItens(tabela);
       } catch (error) {
         console.error("Erro ao carregar itens:", error);
       } finally {
@@ -140,9 +158,9 @@ export default function TabelaItens({
     load();
   }, [empreendimento, topicoSelecionado, ambienteSelecionado]);
 
-  // ========================================
-  // 🔹 REMOVER ITEM OU MATERIAL
-  // ========================================
+  // ------------------------------------------------------------
+  // 🔹 REMOVER
+  // ------------------------------------------------------------
   const handleRemove = async (id: number) => {
     if (isMarcas) {
       onRemoveMaterial(id, TOPICO_MARCAS);
@@ -180,7 +198,7 @@ export default function TabelaItens({
         <Column
           header="Remover"
           style={{ width: "10%", textAlign: "center" }}
-          body={(rowData) => (
+          body={(rowData: TabelaItem) => (
             <Button
               icon="pi pi-times"
               rounded

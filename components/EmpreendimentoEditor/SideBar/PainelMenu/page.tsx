@@ -12,11 +12,11 @@ import {
   DeleteTopicPayload,
 } from "@/lib/api";
 
-interface CustomSideBarProps {
-  ambienteSelecionado: any;
-  setAmbienteSelecionado: any;
-  itemAmbienteSelecionado: any;
-  setItemAmbienteSelecionado: any;
+interface PainelMenuProps {
+  ambienteSelecionado: string;
+  setAmbienteSelecionado: React.Dispatch<React.SetStateAction<string>>;
+  itemAmbienteSelecionado: string;
+  setItemAmbienteSelecionado: React.Dispatch<React.SetStateAction<string>>;
   listaNovoAmbiente: string[];
 }
 
@@ -26,7 +26,7 @@ export default function PainelMenu({
   itemAmbienteSelecionado,
   setItemAmbienteSelecionado,
   listaNovoAmbiente,
-}: CustomSideBarProps) {
+}: PainelMenuProps) {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [topicos, setTopicos] = useState<Topico[]>([]);
   const [subTopicos, setSubTopicos] = useState<SubTopic[]>([]);
@@ -47,6 +47,7 @@ export default function PainelMenu({
     fetchData();
   }, []);
 
+  // 2. Recarregar quando listaNovoAmbiente mudar (novo ambiente criado)
   useEffect(() => {
     async function fetchData() {
       try {
@@ -62,22 +63,22 @@ export default function PainelMenu({
     fetchData();
   }, [listaNovoAmbiente]);
 
-  // 2. Recriar os menuItems sempre que os dados OU o estado de seleção mudar
+  // 3. Recriar a estrutura do menu sempre que qualquer estado mudar
   useEffect(() => {
     const mappedItems = mapTopicosToMenuItems(topicos, subTopicos);
     setMenuItems(mappedItems);
   }, [topicos, subTopicos, ambienteSelecionado, itemAmbienteSelecionado]);
 
-  // 3. Função para mapear os dados para itens de menu com estilo
+  // Mapeia tópicos e subtópicos para MenuItem[]
   const mapTopicosToMenuItems = (
     topicos: Topico[],
     subTopicos: SubTopic[]
   ): MenuItem[] => {
     return topicos.map((topico, index) => {
-      let childItems: MenuItem[] = [];
+      const childItems: MenuItem[] = [];
 
       subTopicos.forEach((sub) => {
-        // Tópicos que possui ambientes
+        // Subtópicos pertencentes ao tópico
         if (sub.topico.id === topico.id) {
           childItems.push({
             label: sub.nome,
@@ -95,7 +96,7 @@ export default function PainelMenu({
                 <div
                   onClick={options.onClick}
                   style={{
-                    backgroundColor: isSelected ? "#dc2626" : "transparent", // vermelho
+                    backgroundColor: isSelected ? "#dc2626" : "transparent",
                     color: isSelected ? "#ffffff" : "inherit",
                     fontWeight: isSelected ? "bold" : "normal",
                     padding: "0.5rem 0.75rem",
@@ -111,18 +112,16 @@ export default function PainelMenu({
         }
       });
 
+      // Apenas tópicos dinâmicos podem ser excluídos
       if (![1, 2, 3].includes(topico.id)) {
         childItems.push({
           label: "Excluir Ambiente",
           icon: "",
           command: async () => {
             try {
-              const idTopicoPayload: DeleteTopicPayload = {
-                id: topico.id,
-              };
-              await topicoService.deleteTopic(idTopicoPayload);
+              const payload: DeleteTopicPayload = { id: topico.id };
+              await topicoService.deleteTopic(payload);
 
-              // Realizando regarga dos tópicos
               const novosTopicos = await topicoService.getAllTopic();
               const novosSubTopicos =
                 await subTopicosAmbienteService.getAllAmbiente();
@@ -142,19 +141,19 @@ export default function PainelMenu({
               <div
                 onClick={options.onClick}
                 className={`
-                      flex items-center
-                      px-3 py-2
-                      rounded-md
-                      cursor-pointer
-                      text-red-700
-                      hover:bg-red-600
-                      hover:text-white
-                      ${
-                        isSelected
-                          ? "bg-red-600 text-white font-bold"
-                          : "bg-red-100 text-red-700"
-                      }
-                    `}
+                  flex items-center
+                  px-3 py-2
+                  rounded-md
+                  cursor-pointer
+                  text-red-700
+                  hover:bg-red-600
+                  hover:text-white
+                  ${
+                    isSelected
+                      ? "bg-red-600 text-white font-bold"
+                      : "bg-red-100 text-red-700"
+                  }
+                `}
               >
                 <i className="pi pi-times mr-3 text-lg" />
                 Excluir Ambiente

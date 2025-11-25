@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Dialog } from "primereact/dialog";
 import { Toast } from "primereact/toast";
 import { MultiSelect, MultiSelectChangeEvent } from "primereact/multiselect";
-import { CreateMarca, Marca, marcaService, MaterialService } from "@/lib/api";
+import { CreateMarca, marcaService, MaterialService } from "@/lib/api";
 
 interface Props {
   onReload: () => void;

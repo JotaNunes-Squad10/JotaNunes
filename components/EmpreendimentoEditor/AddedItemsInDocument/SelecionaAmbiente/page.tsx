@@ -1,5 +1,3 @@
-// components>EmpreendimentoEditor>AddedItemsInDocument>SelecionaAmbiente>page.tsx (Títulos)
-
 import React, { useEffect, useState } from "react";
 import { Dropdown, DropdownChangeEvent } from "primereact/dropdown";
 import { topicoService, Topico } from "@/lib/api";
@@ -10,8 +8,8 @@ interface TituloAmbiente {
 }
 
 interface Props {
-  ambienteSelecionado: any;
-  setAmbienteSelecionado: (value: any) => void;
+  ambienteSelecionado: string;
+  setAmbienteSelecionado: (value: string) => void;
 }
 
 export default function SelecionaAmbiente({

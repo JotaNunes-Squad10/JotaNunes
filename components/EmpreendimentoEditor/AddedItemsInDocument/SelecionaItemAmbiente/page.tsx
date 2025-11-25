@@ -11,14 +11,14 @@ import {
 import AdicionarNovoAmbiente from "./AdicionarNovoAmbiente/page";
 
 interface Props {
-  itemAmbienteSelecionado: any;
-  setItemAmbienteSelecionado: (value: any) => void;
+  itemAmbienteSelecionado: string;
+  setItemAmbienteSelecionado: (value: string) => void;
   ambienteSelecionado: string;
 }
 
 interface DropdownOption {
   name: string;
-  code: string;
+  code: string; // id do subtopico convertido para string
 }
 
 export default function SelecioneItemAmbiente({
@@ -27,7 +27,7 @@ export default function SelecioneItemAmbiente({
   ambienteSelecionado,
 }: Props) {
   const [opcoesFiltradas, setOpcoesFiltradas] = useState<DropdownOption[]>([]);
-  const [reloadFlag, setReloadFlag] = useState(false);
+  const [reloadFlag, setReloadFlag] = useState<boolean>(false);
 
   useEffect(() => {
     async function fetchSubTopicos() {
@@ -83,11 +83,10 @@ export default function SelecioneItemAmbiente({
           optionLabel="name"
           placeholder="Selecione Item do Ambiente"
           className="w-full md:w-14rem"
-          disabled={
-            ambienteSelecionado.toLocaleLowerCase() === "marcas" ? true : false
-          }
+          disabled={ambienteSelecionado.toLowerCase() === "marcas"}
         />
       </div>
+
       <AdicionarNovoAmbiente
         ambienteSelecionado={ambienteSelecionado}
         onCreateNewSubItem={handleCreateNewSubItem}
