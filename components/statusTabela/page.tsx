@@ -12,7 +12,7 @@ import EmpreendimentosTable, { Empreendimento } from "../listaStatus/page";
 
 const StatusTabela: React.FC = () => {
   const searchParams = useSearchParams();
-  const statusParam = searchParams.get("status");
+  const statusParam = searchParams?.get("status");
 
   const [empreendimentos, setEmpreendimentos] = useState<Empreendimento[]>([]);
   const [filtroAtivo, setFiltroAtivo] = useState<string>("Todos");
@@ -35,7 +35,14 @@ const StatusTabela: React.FC = () => {
 
         const data = response.data?.data || [];
 
-        const parsedData: Empreendimento[] = data.map((item: any) => ({
+        const parsedData: Empreendimento[] = data.map((item: {
+          id: string;
+          nome: string;
+          dataHoraAlteracao: string;
+          versao: string;
+          usuarioAlteracao: string;
+          status: string;
+        }) => ({
           id: item.id,
           nome: item.nome,
           ultimaAlteracao: item.dataHoraAlteracao,
@@ -45,7 +52,7 @@ const StatusTabela: React.FC = () => {
         }));
 
         setEmpreendimentos(parsedData);
-      } catch (error) {
+      } catch {
         toast.error("Erro ao buscar empreendimentos");
       } finally {
         setLoading(false);
