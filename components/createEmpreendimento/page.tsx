@@ -3,13 +3,11 @@
 import { useState } from "react";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primeicons/primeicons.css";
-import { useRouter } from "next/navigation";
 import Header from "../../components/headerUser/page";
 import FormCreateEmpreendimento from "./formCriarCabecalho/page";
 
 export default function CreateEmpreendimento() {
   // Estados para os campos do formulário
-  const router = useRouter();
 
   // const [ambienteSelecionado, setAmbienteSelecionado] = useState();
   // const [itemAmbienteSelecionado, setItemAmbienteSelecionado] = useState();

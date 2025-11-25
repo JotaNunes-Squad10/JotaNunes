@@ -1,5 +1,3 @@
-// components>EmpreendimentoEditor>AddedItemsInDocument>SelecionaAmbiente>page.tsx (Títulos)
-
 import React, { useEffect, useState } from "react";
 import { Dropdown, DropdownChangeEvent } from "primereact/dropdown";
 import { topicoService, Topico } from "@/lib/api1";
@@ -10,8 +8,8 @@ interface TituloAmbiente {
 }
 
 interface Props {
-  ambienteSelecionado: any;
-  setAmbienteSelecionado: (value: any) => void;
+  ambienteSelecionado: string;
+  setAmbienteSelecionado: (value: string) => void;
 }
 
 export default function SelecionaAmbiente({
@@ -41,12 +39,14 @@ export default function SelecionaAmbiente({
     fetchTopicos();
   }, []);
 
+  const selected = titulos.find((t) => t.code === ambienteSelecionado) || null;
+
   return (
     <div className="card flex justify-content-center mb-5 w-[50%]">
       <Dropdown
-        value={titulos.find((t) => t.code === ambienteSelecionado) || null}
+        value={selected}
         onChange={(e: DropdownChangeEvent) =>
-          setAmbienteSelecionado(e.value.code)
+          setAmbienteSelecionado((e.value as TituloAmbiente).code)
         }
         options={titulos}
         optionLabel="name"

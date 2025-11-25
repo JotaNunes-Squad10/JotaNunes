@@ -5,9 +5,13 @@ import {
   itemService,
   MarcaMateriais,
   subTopicosAmbienteService,
+  SubTopic,
   UpdateEmpreendimento,
+  Item,
+  EmprendimentoTopico,
 } from "@/lib/api1";
 import { Button } from "primereact/button";
+import AdicionarNovaMarca from "./AdicionarNovaMarca/page";
 
 interface Props {
   itemAmbienteSelecionado: string;
@@ -25,6 +29,19 @@ interface AmbienteOption {
   materialId?: number;
 }
 
+// TIPOS SEGUROS PARA O QUE VOLTA DO BACKEND
+type AmbienteItemSafe = {
+  itemId: number;
+  versoes?: number[];
+};
+
+type TopicoAmbienteSafe = {
+  ambienteId: number;
+  area?: number;
+  posicao: number;
+  ambienteItens: AmbienteItemSafe[];
+};
+
 export default function AdicionarItensDocumento({
   itemAmbienteSelecionado,
   empreendimento,
@@ -36,12 +53,10 @@ export default function AdicionarItensDocumento({
   const [selectedAmbientes, setSelectedAmbientes] = useState<AmbienteOption[]>(
     []
   );
-  const [loading, setLoading] = useState(true);
-  const [refreshTrigger, setRefreshTrigger] = useState(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshTrigger, setRefreshTrigger] = useState<boolean>(false);
 
-  // --------------------------------------------
-  // FORÇA RESETE AO TROCAR DE TÓPICO (AMBIENTE ⇄ MARCAS)
-  // --------------------------------------------
+  // RESET ao trocar AMBIENTE ↔ MARCAS
   useEffect(() => {
     setSelectedAmbientes([]);
     setItensAmbiente([]);
@@ -52,20 +67,20 @@ export default function AdicionarItensDocumento({
     setRefreshTrigger((prev) => !prev);
   };
 
-  // ========================================================
-  // 1) MODO MARCAS — SEMPRE PRIORITÁRIO
-  // ========================================================
+  // ==========================================================
+  // 1) MODO MARCAS
+  // ==========================================================
   useEffect(() => {
     if (ambienteSelecionado.toLowerCase() !== "marcas") return;
 
     setLoading(true);
 
     const topicoMarcas = empreendimento.empreendimentoTopicos.find(
-      (t: any) => t.topicoId === 3
+      (t: EmprendimentoTopico) => t.topicoId === 3
     );
 
     const materiaisExistentes = topicoMarcas?.topicoMateriais
-      ? topicoMarcas.topicoMateriais.map((m: any) => m.materialId)
+      ? topicoMarcas.topicoMateriais.map((m) => m.materialId)
       : [];
 
     const todasMarcas: AmbienteOption[] = itemMarcaMateriais.map((item) => ({
@@ -76,33 +91,37 @@ export default function AdicionarItensDocumento({
     }));
 
     const filtrado = todasMarcas.filter(
-      (m) => !materiaisExistentes.includes(m.materialId!)
+      (m) => !materiaisExistentes.includes(m.materialId || 0)
     );
 
     setItensAmbiente(filtrado);
     setLoading(false);
   }, [ambienteSelecionado, empreendimento, itemMarcaMateriais]);
 
-  // ========================================================
-  // 2) AMBIENTES NORMAIS (ÁREA COMUM, UNIDADES PRIVATIVAS etc.)
-  // ========================================================
+  // ==========================================================
+  // 2) AMBIENTES NORMAIS
+  // ==========================================================
   useEffect(() => {
     if (!itemAmbienteSelecionado) return;
-    if (ambienteSelecionado.toLowerCase() === "marcas") return; // impedir conflito
+    if (ambienteSelecionado.toLowerCase() === "marcas") return;
 
     const fetchItens = async () => {
       setLoading(true);
+
       try {
-        const data = await itemService.getAllItem();
-        const itensFormatados = data.map((item: any) => ({
+        const itensApi: Item[] = await itemService.getAllItem();
+
+        const itensFormatados: AmbienteOption[] = itensApi.map((item) => ({
           name: item.nome,
           code: String(item.id),
           descricao: item.descricao,
         }));
 
-        const ambientes = await subTopicosAmbienteService.getAllAmbiente();
+        const ambientes: SubTopic[] =
+          await subTopicosAmbienteService.getAllAmbiente();
+
         const ambiente = ambientes.find(
-          (a: any) => a.nome === itemAmbienteSelecionado
+          (a) => String(a.id) === itemAmbienteSelecionado
         );
 
         if (!ambiente) {
@@ -117,12 +136,13 @@ export default function AdicionarItensDocumento({
           (t) => t.topicoId === topicoId
         );
 
-        const ambienteExistente = topico?.topicoAmbientes?.find(
-          (a: any) => a.ambienteId === ambienteId
-        );
+        const ambienteExistente: TopicoAmbienteSafe | undefined =
+          topico?.topicoAmbientes?.find((a) => a.ambienteId === ambienteId) as
+            | TopicoAmbienteSafe
+            | undefined;
 
         const itensExistentes = ambienteExistente
-          ? ambienteExistente.ambienteItens.map((i: any) => i.itemId)
+          ? ambienteExistente.ambienteItens.map((i) => i.itemId)
           : [];
 
         const filtrados = itensFormatados.filter(
@@ -145,57 +165,45 @@ export default function AdicionarItensDocumento({
     ambienteSelecionado,
   ]);
 
-  // ========================================================
+  // ==========================================================
   // ADICIONAR ITENS
-  // ========================================================
+  // ==========================================================
   const handleAddItems = async () => {
     if (selectedAmbientes.length === 0) return;
 
-    // -----------------------
-    // MARCAS
-    // -----------------------
+    // ------------- MARCAS --------------
     if (ambienteSelecionado.toUpperCase() === "MARCAS") {
       const TOPICO_MARCAS = 3;
 
       const idsToAdd = selectedAmbientes
-        .map((sel) => {
-          const found = itemMarcaMateriais.find(
-            (mm) => mm.id === Number(sel.code)
-          );
-          return found?.material.id;
-        })
+        .map(
+          (s) =>
+            itemMarcaMateriais.find((mm) => mm.id === Number(s.code))?.material
+              .id
+        )
         .filter(Boolean) as number[];
-
-      if (idsToAdd.length === 0) return;
 
       onAddItems(idsToAdd, TOPICO_MARCAS, 0);
 
-      // Remove do MultiSelect
       setItensAmbiente((prev) =>
-        prev.filter(
-          (item) => !selectedAmbientes.some((sel) => sel.code === item.code)
-        )
+        prev.filter((i) => !selectedAmbientes.some((s) => s.code === i.code))
       );
 
       setSelectedAmbientes([]);
       return;
     }
 
-    // ------------------------
-    // ITENS NORMAIS
-    // ------------------------
+    // ------------- AMBIENTE NORMAL --------------
     const ambientes = await subTopicosAmbienteService.getAllAmbiente();
 
     const ambiente = ambientes.find(
-      (a: any) => a.nome === itemAmbienteSelecionado
+      (a) => String(a.id) === itemAmbienteSelecionado
     );
     if (!ambiente) return;
 
-    const topicoId = ambiente.topico.id;
-    const ambienteId = ambiente.id;
-
     const idsToAdd = selectedAmbientes.map((i) => Number(i.code));
-    onAddItems(idsToAdd, topicoId, ambienteId);
+
+    onAddItems(idsToAdd, ambiente.topico.id, ambiente.id);
 
     setSelectedAmbientes([]);
   };
@@ -207,7 +215,7 @@ export default function AdicionarItensDocumento({
           <MultiSelect
             value={selectedAmbientes}
             onChange={(e: MultiSelectChangeEvent) =>
-              setSelectedAmbientes(e.value)
+              setSelectedAmbientes(e.value as AmbienteOption[])
             }
             options={itensAmbiente}
             optionLabel="name"
@@ -220,9 +228,13 @@ export default function AdicionarItensDocumento({
             filter
           />
         </div>
-        {/* Recarrega apenas ambientes normais — não marcas */}
+
         {ambienteSelecionado.toLowerCase() !== "marcas" && (
           <AdicionarNovoItem onReload={handleRefresh} />
+        )}
+
+        {ambienteSelecionado.toLowerCase() === "marcas" && (
+          <AdicionarNovaMarca onReload={handleRefresh} />
         )}
       </div>
 

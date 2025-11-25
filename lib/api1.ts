@@ -62,6 +62,23 @@ interface MarcaMateriaisGet {
   data: MarcaMateriais[];
 }
 
+export interface CreateMarca {
+  nome: string;
+  materialIds: number[];
+}
+
+export interface CreateMarcaResponse {
+  data: {
+    id: number;
+    nome: string;
+  };
+  validationResult: {
+    isValid: boolean;
+    errors: string[];
+    ruleSetsExecuted: string[] | null;
+  };
+}
+
 export interface GetAllTopicResponse {
   data: Topico[];
 }
@@ -72,6 +89,22 @@ export interface CreateTopicPayload {
 
 export interface DeleteTopicPayload {
   id: number;
+}
+
+export interface DeleteTopicResponse {
+  data: {
+    id: number;
+    nome: string;
+  };
+  validationResult: {
+    isValid: boolean;
+    errors: string[];
+    ruleSetsExecuted: string | null;
+  };
+}
+
+export interface GetAllEmpreendimentoProps {
+  data: Empreendimento[];
 }
 
 export interface GetAllItemResponse {
@@ -101,10 +134,6 @@ export interface GetAllMarcaProps {
   data: Marca[];
 }
 
-export interface GetAllEmpreendimentoProps {
-  data: Empreendimento[];
-}
-
 // Interfaces do endpoint Ambiente
 export interface CreateAmbientePayload {
   nome: string;
@@ -118,6 +147,29 @@ export interface CreateDocumentoPayload {
   localizacao: string;
   padrao: number;
   empreendimentoTopicos: EmpreendimentosTopicos[];
+}
+
+export interface DocumentoPayloadResponse {
+  id: string;
+  nome: string;
+  descricao: string;
+  localizacao: string;
+  padrao: string;
+  status: string;
+  versao: number;
+  usuarioAlteracao: string | null;
+  dataHoraAlteracao: string;
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  ruleSetsExecuted: string[] | null;
+}
+
+export interface CreateEmpreendimentoResponse {
+  data: DocumentoPayloadResponse;
+  validationResult: ValidationResult;
 }
 
 // Interface do GetTopicId
@@ -141,9 +193,7 @@ export interface Empreendimento {
   nome: string;
   descricao: string;
   localizacao: string;
-  tamanhoArea: number;
   padrao: string;
-  status: string;
   versao: number;
 }
 
@@ -195,17 +245,17 @@ export interface UpdateEmpreendimento {
   empreendimentoTopicos: EmprendimentoTopico[];
 }
 
-export interface GenerateDocumentoPayload {
-  id: string;
-  version: number;
+export interface UpdateEmpreendimentoResponse {
+  data: {
+    data: DocumentoPayloadResponse;
+    validationResult: ValidationResult;
+  };
 }
 
-export interface GenerateDocumentoResponse {
-  data: string;
-  validationResult: {
-    isValid: boolean;
-    errors: string[];
-    ruleSetsExecuted?: string[] | null;
+export interface UpdateEmpreendimentoStatusResponse {
+  data: {
+    data: DocumentoPayloadResponse;
+    validationResult: ValidationResult;
   };
 }
 
@@ -297,10 +347,11 @@ export const topicoService = {
     return response.data;
   },
 
-  async deleteTopic(payload: DeleteTopicPayload): Promise<void> {
-    await axios.delete<DeleteTopicPayload>(
+  async deleteTopic(payload: DeleteTopicPayload): Promise<DeleteTopicResponse> {
+    const response = await axios.delete<DeleteTopicResponse>(
       `https://jotanunesservice.onrender.com/api/v1/topico/DeleteTopico/${payload.id}`
     );
+    return response.data;
   },
 };
 
@@ -347,6 +398,25 @@ export const marcaService = {
       "https://jotanunesservice.onrender.com/api/v1/marca-material/GetAllMarcaMateriais"
     );
 
+    return response.data.data;
+  },
+
+  async createMarca(payload: CreateMarca): Promise<CreateMarcaResponse> {
+    const response = await axios.post<CreateMarcaResponse>(
+      "https://jotanunesservice.onrender.com/api/v1/marca/CreateMarca",
+      payload
+    );
+
+    return response.data;
+  },
+};
+
+// Materiais marcas
+export const MaterialService = {
+  async getAllMateriais(): Promise<Marca[]> {
+    const response = await axios.get(
+      "https://jotanunesservice.onrender.com/api/v1/material/GetAllMateriais"
+    );
     return response.data.data;
   },
 };
@@ -421,8 +491,10 @@ export const empreendimentoService = {
 
 // Configuração da API do Documento
 export const DocumentoService = {
-  async createDocumento(payload: CreateDocumentoPayload): Promise<any> {
-    const response = await axios.post<CreateDocumentoPayload>(
+  async createDocumento(
+    payload: CreateDocumentoPayload
+  ): Promise<CreateEmpreendimentoResponse> {
+    const response = await axios.post<CreateEmpreendimentoResponse>(
       "https://jotanunesservice.onrender.com/api/v1/empreendimento/CreateEmpreendimento",
       payload
     );
@@ -434,23 +506,28 @@ export const DocumentoService = {
     documentId: string
   ): Promise<GetDocumentoById | undefined> {
     try {
-      const response = await axios.get(
+      const response = await axios.get<{
+        data: GetDocumentoById;
+      }>(
         `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${documentId}`
       );
+
       return response.data.data;
     } catch (error) {
       console.error("Erro ao buscar informações do documento:", error);
+      return undefined;
     }
-
-    return;
   },
 
-  async updateEmpreendimento(payload: UpdateEmpreendimento): Promise<any> {
+  async updateEmpreendimento(
+    payload: UpdateEmpreendimento
+  ): Promise<UpdateEmpreendimentoResponse> {
     try {
-      const response = await axios.put(
+      const response = await axios.put<UpdateEmpreendimentoResponse>(
         "https://jotanunesservice.onrender.com/api/v1/empreendimento/UpdateEmpreendimento",
         payload
       );
+
       return response.data;
     } catch (error) {
       console.error("Houve um erro ao tentar modificar o documento", error);
@@ -461,13 +538,14 @@ export const DocumentoService = {
   async updateEmpreendimentoStatus(
     idDocumento: string,
     status: number
-  ): Promise<any> {
+  ): Promise<UpdateEmpreendimentoStatusResponse> {
     const payload = {
       id: idDocumento,
       status: status,
     };
+
     try {
-      const response = await axios.patch(
+      const response = await axios.patch<UpdateEmpreendimentoStatusResponse>(
         "https://jotanunesservice.onrender.com/api/v1/empreendimento/UpdateEmpreendimentoStatus",
         payload
       );

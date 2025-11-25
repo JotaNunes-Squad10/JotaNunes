@@ -11,9 +11,45 @@ import { DocumentoService, UpdateEmpreendimento } from "@/lib/api1";
 
 interface FormEmpreendimentoProps {
   empreendimento: UpdateEmpreendimento;
-  updateEmpreendimento: (field: keyof UpdateEmpreendimento, value: any) => void;
+  updateEmpreendimento: (
+    field: keyof UpdateEmpreendimento,
+    value: UpdateEmpreendimento[keyof UpdateEmpreendimento]
+  ) => void;
   status: string;
   idDocumento: string;
+}
+
+/**
+ * 🔥 Normaliza o payload antes de enviar ao backend
+ * (corrige exatamente o erro reportado no log)
+ */
+function normalizePayload(doc: UpdateEmpreendimento): UpdateEmpreendimento {
+  return {
+    id: doc.id,
+    nome: doc.nome ?? "",
+    descricao: doc.descricao ?? "",
+    localizacao: doc.localizacao ?? "",
+    tamanhoArea: Number(doc.tamanhoArea) || 0,
+    padrao: Number(doc.padrao) || 1,
+    empreendimentoTopicos: (doc.empreendimentoTopicos || []).map((t, idx) => ({
+      topicoId: Number(t.topicoId),
+      posicao: t.posicao ?? idx + 1,
+
+      topicoAmbientes: (t.topicoAmbientes || []).map((a, aidx) => ({
+        ambienteId: Number(a.ambienteId),
+        area: a.area ?? 0,
+        posicao: a.posicao ?? aidx + 1,
+        ambienteItens: (a.ambienteItens || []).map((i) => ({
+          itemId: Number(i.itemId),
+        })),
+      })),
+
+      topicoMateriais: (t.topicoMateriais || []).map((m) => ({
+        materialId: Number(m.materialId),
+        versoes: m.versoes ?? [],
+      })),
+    })),
+  };
 }
 
 export default function FormEmpreendimento({
@@ -23,15 +59,15 @@ export default function FormEmpreendimento({
   idDocumento,
 }: FormEmpreendimentoProps) {
   const toast = useRef<Toast>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleSave = async () => {
     setLoading(true);
 
-    console.log(empreendimento);
-
     try {
-      await DocumentoService.updateEmpreendimento(empreendimento);
+      const payload = normalizePayload(empreendimento);
+
+      await DocumentoService.updateEmpreendimento(payload);
 
       toast.current?.show({
         severity: "success",
@@ -57,6 +93,7 @@ export default function FormEmpreendimento({
     <div>
       <Toast ref={toast} position="top-right" />
       <ActionBar statusEmpreendimento={status} idDocumento={idDocumento} />
+
       <Card className="shadow-md p-6 w-full ">
         {/* Campo Empreendimento */}
         <div className="flex flex-col sm:flex-row sm:items-center mb-6">
@@ -70,6 +107,7 @@ export default function FormEmpreendimento({
             className="flex-1"
           />
         </div>
+
         {/* Campo Localização */}
         <div className="flex flex-col sm:flex-row sm:items-center mb-6">
           <label className="sm:w-40 font-semibold text-gray-700 mb-2 sm:mb-0">
@@ -84,6 +122,7 @@ export default function FormEmpreendimento({
             className="flex-1"
           />
         </div>
+
         {/* Campo Descrição */}
         <div>
           <label className="block font-semibold mb-2 text-gray-700">
@@ -98,6 +137,7 @@ export default function FormEmpreendimento({
             className="w-full"
           />
         </div>
+
         <div className="flex justify-end gap-2 mt-3">
           <Button
             label="Guardar"

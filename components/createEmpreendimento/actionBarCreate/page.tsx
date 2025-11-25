@@ -18,10 +18,6 @@ export default function ActionBarCreate({
   localizacaoDocumento,
   descricaoDocumento,
 }: ActionBarCreateProps) {
-  const handleExportar = () => {
-    alert("Exportando arquivo...");
-  };
-
   const [status, setStatus] = useState("Editando");
   const menuRef = useRef<Menu>(null);
   const [loading, setLoading] = useState(false);
@@ -70,6 +66,8 @@ export default function ActionBarCreate({
         };
 
         const response = await DocumentoService.createDocumento(payload);
+
+        console.log(response);
 
         toast.current?.show({
           severity: "success",
