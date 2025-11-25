@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Box } from "@mui/material";
 import Header from "../../components/headerUser/page";
 import Popup from '../../components/popup/page';
@@ -22,7 +22,9 @@ const Dashboard: React.FC = () => {
       }}>
         {/* Status */}
         <Box mb={3}>
-          <StatusSummary />
+          <Suspense fallback={<div>Carregando...</div>}>
+            <StatusSummary />
+          </Suspense>
         </Box>
 
         {/* Conteúdo principal */}
