@@ -19,8 +19,6 @@ import {
   MenuItem,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import FirstPageIcon from "@mui/icons-material/FirstPage";
-import LastPageIcon from "@mui/icons-material/LastPage";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
@@ -30,6 +28,7 @@ import { Skeleton } from "primereact/skeleton";
 import { getCookie } from "cookies-next";
 import { jwtDecode } from "jwt-decode";
 import { useCopiarEmpreendimento } from "@/components/copiarEmpreendimento/useCopiarEmpreendimento";
+import Pagination from "@/components/pagination/page";
 
 import { Dialog } from "primereact/dialog";
 import { Button } from "primereact/button";
@@ -622,24 +621,17 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
               })())}
       </Menu>
 
-      {/* Paginação */}
-      {!loading && totalPages > 1 && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 3, gap: 4, alignItems: "center" }}>
-          <IconButton onClick={() => setPage((prev) => Math.max(prev - 1, 0))} disabled={page === 0} sx={{ color: "crimson" }}>
-            <FirstPageIcon />
-          </IconButton>
-          <Typography variant="body2" sx={{ fontWeight: "bold" }}>
-            Página {page + 1} de {totalPages}
-          </Typography>
-          <IconButton
-            onClick={() => setPage((prev) => Math.min(prev + 1, totalPages - 1))}
-            disabled={page === totalPages - 1}
-            sx={{ color: "crimson" }}
-          >
-            <LastPageIcon />
-          </IconButton>
-        </Box>
-      )}
+        {!loading && totalPages > 1 && (
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+            <Pagination
+              currentPage={page + 1}
+              totalPages={totalPages}
+              totalItems={empreendimentosFiltrados.length}        // <-- ADICIONE
+              itemsPerPage={rowsPerPage}    // <-- ADICIONE
+              onPageChange={(p) => setPage(p - 1)}
+            />
+          </Box>
+        )}
 
       {/* Modal de confirmação – PrimeReact */}
         <Dialog
