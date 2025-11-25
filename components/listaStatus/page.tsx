@@ -265,7 +265,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
       (filtroAtivo === "Todos" || emp.status === filtroAtivo) &&
       (emp.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.usuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (emp.ultimaAlteracao || "").toLowerCase().includes(searchTerm.toLowerCase()))
+        formatarData(emp.ultimaAlteracao).includes(searchTerm))
   );
 
   const empreendimentosOrdenados = [...empreendimentosFiltrados].sort((a, b) => {
