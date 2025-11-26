@@ -65,7 +65,7 @@ export default function AnimatedChatbot() {
         setCurrentMessage((prev) => (prev + 1) % welcomeMessages.length);
 
         setTimeout(() => setShowMessage(false), 4000);
-      }, 3000);
+      }, 60000);
 
       return () => clearInterval(interval);
     }
