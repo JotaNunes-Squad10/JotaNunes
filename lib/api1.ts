@@ -196,6 +196,8 @@ export interface Empreendimento {
   localizacao: string;
   padrao: string;
   versao: number;
+  usuarioAlteracao?: string;
+  dataHoraAlteracao?: string;
 }
 
 export interface EmpreendimentosTopicos {
