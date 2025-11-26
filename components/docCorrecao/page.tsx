@@ -48,6 +48,7 @@ export default function DocRevisao() {
     const [selectedCommentKey, setSelectedCommentKey] = useState<string | null>(null);
     const [commentBoxPos, setCommentBoxPos] = useState<{ top: number; left: number } | null>(null);
     const [tempComment, setTempComment] = useState<string>('');
+    const [padraoOriginal, setPadraoOriginal] = useState<string | number | null>(null);
 
     const statusOptions: Array<{ label: string; value: string; color: string }> = [
         { label: 'Pendente', value: 'Pendente', color: '#FFD966' },
@@ -241,9 +242,20 @@ export default function DocRevisao() {
         return 3;
     };
 
-    // Função para preparar o payload completo do empreendimento
     const prepareEmpreendimentoPayload = () => {
         if (!detalhe?.id) return null;
+        
+        const padraoParaEnviar = detalhe.padrao ?? padraoOriginal;
+        
+        let padraoNumerico = 0;
+        if (typeof padraoParaEnviar === 'string') {
+            const padraoLower = padraoParaEnviar.toLowerCase().trim();
+            if (padraoLower === 'residence') padraoNumerico = 1;
+            else if (padraoLower === 'mais viver') padraoNumerico = 2;
+            else if (padraoLower === 'vida bela') padraoNumerico = 3;
+        } else if (typeof padraoParaEnviar === 'number') {
+            padraoNumerico = padraoParaEnviar;
+        }
         
         const payload = {
             id: String(detalhe.id),
@@ -251,9 +263,7 @@ export default function DocRevisao() {
             descricao: detalhe.descricao,
             localizacao: detalhe.localizacao,
             tamanhoArea: 0,
-            padrao: typeof detalhe.padrao === 'string' ? 
-                (detalhe.padrao === 'Residence' ? 1 : detalhe.padrao === 'Mais Viver' ? 2 : detalhe.padrao === 'Vida Bela' ? 3 : 0) 
-                : (detalhe.padrao ?? 0),
+            padrao: padraoNumerico,
             empreendimentoTopicos: (detalhe.empreendimentoTopicos || []).map((topico, tIdx) => ({
                 topicoId: topico.topicoId ?? 0,
                 posicao: topico.posicao ?? (tIdx + 1),
@@ -1237,9 +1247,28 @@ export default function DocRevisao() {
                 .getEmpreendimentoById(String(emp.value.id))
                 .then((resp) => {
                     if (resp) {
-                        setDetalhe(resp);
-                        fetchItemsNames(resp);
-                        fetchAuxNames(resp);
+                        // Armazena o padrão original para usar ao salvar
+                        setPadraoOriginal(resp.padrao ?? null);
+                        
+                        // Converte o padrão numérico para string para exibição
+                        const detalheCopy = { ...resp } as Empreendimento;
+                        if (typeof detalheCopy.padrao === 'number') {
+                            switch (detalheCopy.padrao) {
+                                case 1:
+                                    detalheCopy.padrao = 'Residence';
+                                    break;
+                                case 2:
+                                    detalheCopy.padrao = 'Mais Viver';
+                                    break;
+                                case 3:
+                                    detalheCopy.padrao = 'Vida Bela';
+                                    break;
+                            }
+                        }
+                        
+                        setDetalhe(detalheCopy);
+                        fetchItemsNames(detalheCopy);
+                        fetchAuxNames(detalheCopy);
                     }
                 })
                 .finally(() => setLoadingDetalhe(false));
@@ -1265,9 +1294,28 @@ export default function DocRevisao() {
                             setLoadingDetalhe(true);
                             const resp = await empreendimentoService.getEmpreendimentoById(emp.id as string | number);
                             if (resp) {
-                                setDetalhe(resp);
-                                fetchItemsNames(resp);
-                                fetchAuxNames(resp);
+                                // Armazena o padrão original para usar ao salvar
+                                setPadraoOriginal(resp.padrao ?? null);
+                                
+                                // Converte o padrão numérico para string para exibição
+                                const detalheCopy = { ...resp } as Empreendimento;
+                                if (typeof detalheCopy.padrao === 'number') {
+                                    switch (detalheCopy.padrao) {
+                                        case 1:
+                                            detalheCopy.padrao = 'Residence';
+                                            break;
+                                        case 2:
+                                            detalheCopy.padrao = 'Mais Viver';
+                                            break;
+                                        case 3:
+                                            detalheCopy.padrao = 'Vida Bela';
+                                            break;
+                                    }
+                                }
+                                
+                                setDetalhe(detalheCopy);
+                                fetchItemsNames(detalheCopy);
+                                fetchAuxNames(detalheCopy);
                             } else {
                                 setErroDetalhe('Não foi possível obter os dados do empreendimento.');
                             }
@@ -1414,7 +1462,7 @@ export default function DocRevisao() {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium">Padrão</label>
+                                        <label className="block text-sm font-medium">Alterar padrão</label>
                                         <Dropdown
                                             value={detalhe.padrao ?? ''}
                                             options={[
@@ -1425,7 +1473,7 @@ export default function DocRevisao() {
                                             optionLabel="label"
                                             optionValue="value"
                                             onChange={(e: DropdownChangeEvent) => setDetalhe((prev) => prev ? ({ ...prev, padrao: e.value } as Empreendimento) : prev)}
-                                            placeholder="Selecione o padrão"
+                                            placeholder="Selecione um padrão"
                                             className="w-full"
                                         />
                                     </div>
