@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Box } from "@mui/material";
 import axios from "axios";
@@ -10,7 +10,7 @@ import Header from "../headerUser/page";
 import StatusSummary from "../home/status/page";
 import EmpreendimentosTable, { Empreendimento } from "../listaStatus/page";
 
-const StatusTabela: React.FC = () => {
+const StatusTabelaContent: React.FC = () => {
   const searchParams = useSearchParams();
   const statusParam = searchParams?.get("status");
 
@@ -63,25 +63,37 @@ const StatusTabela: React.FC = () => {
   }, []);   
 
   return (
+    <Box sx={{ px: 4, py: 2 }}>
+      {/* Cards de Status */}
+      <Box mb={3}>
+        <StatusSummary empreendimentos={empreendimentos} />
+      </Box>
+
+      {/* Tabela */}
+      <Box>
+        <EmpreendimentosTable
+          empreendimentos={empreendimentos}
+          filtroAtivo={filtroAtivo}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          loading={loading}
+        />
+      </Box>
+    </Box>
+  );
+};
+
+const StatusTabela: React.FC = () => {
+  return (
     <>
       <Header />
-      <Box sx={{ px: 4, py: 2 }}>
-        {/* Cards de Status */}
-        <Box mb={3}>
-          <StatusSummary empreendimentos={empreendimentos} />
+      <Suspense fallback={
+        <Box sx={{ px: 4, py: 2 }}>
+          <p className="text-gray-600 text-lg">Carregando...</p>
         </Box>
-
-        {/* Tabela */}
-        <Box>
-          <EmpreendimentosTable
-            empreendimentos={empreendimentos}
-            filtroAtivo={filtroAtivo}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            loading={loading}
-          />
-        </Box>
-      </Box>
+      }>
+        <StatusTabelaContent />
+      </Suspense>
     </>
   );
 };
