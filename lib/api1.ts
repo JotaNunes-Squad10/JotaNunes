@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getCookie } from "cookies-next";
 
 // Tipos para as respostas da API
 export interface LoginResponse {
@@ -285,6 +286,12 @@ export interface GetEmpreendimentoByIdResponse {
   validationResult: ValidationResult;
 }
 
+const getAuthToken = (): string => {
+  const token = getCookie("accessToken");
+  return token ? `Bearer ${token}` : "";
+};
+
+
 // Configuração da API principal
 export const api = axios.create({
   baseURL: "https://jotanunesservice.onrender.com",
@@ -448,7 +455,6 @@ export const MaterialService = {
 };
 
 export const AmbienteService = {
-  // A possibilidade de não estar funcionando
   async createAmbiente(
     payload: CreateAmbientePayload
   ): Promise<{ id: number; nome: string; topicoId: number }> {
@@ -555,7 +561,12 @@ export const DocumentoService = {
     try {
       const response = await axios.put<UpdateEmpreendimentoResponse>(
         "https://jotanunesservice.onrender.com/api/v1/empreendimento/UpdateEmpreendimento",
-        payload
+        payload,
+        {
+        headers: {
+          Authorization: getAuthToken(),
+        }
+      }
       );
 
       return response.data;
@@ -577,7 +588,12 @@ export const DocumentoService = {
     try {
       const response = await axios.patch<UpdateEmpreendimentoStatusResponse>(
         "https://jotanunesservice.onrender.com/api/v1/empreendimento/UpdateEmpreendimentoStatus",
-        payload
+        payload,
+        {
+        headers: {
+          Authorization: getAuthToken(),
+        }
+      }
       );
 
       return response.data;
