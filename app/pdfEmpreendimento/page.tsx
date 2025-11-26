@@ -1,7 +1,7 @@
 "use client";
 
 import Header from "../../components/headerUser/page";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -11,7 +11,7 @@ import {
   DocumentoService,
 } from "@/lib/api";
 
-export default function PdfEmpreendimento() {
+function PdfEmpreendimentoContent() {
 
   const searchParams = useSearchParams();
   const idParam = searchParams?.get("id") ?? null;
@@ -59,8 +59,6 @@ export default function PdfEmpreendimento() {
 
   return (
     <div>
-      <Header />
-
       <ToastContainer autoClose={2000} theme="colored" />
 
       <div className="mt-8 mx-4 md:mx-10 flex flex-col justify-between gap-6">
@@ -88,6 +86,21 @@ export default function PdfEmpreendimento() {
         )}
 
       </div>
+    </div>
+  );
+}
+
+export default function PdfEmpreendimento() {
+  return (
+    <div>
+      <Header />
+      <Suspense fallback={
+        <div className="mt-8 mx-4 md:mx-10">
+          <p className="text-gray-600 text-lg">Carregando...</p>
+        </div>
+      }>
+        <PdfEmpreendimentoContent />
+      </Suspense>
     </div>
   );
 }
