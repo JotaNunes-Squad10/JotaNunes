@@ -53,11 +53,39 @@ export default function AnimatedChatbot() {
         setTimeout(() => {
           setShowMessage(false);
         }, 4000);
-      }, 60000); // a cada 1 minuto
+      }, 60000);
 
       return () => clearInterval(interval);
     }
   }, [isOpen]);
+
+  // FUNÇÃO PARA LIMPAR O IFRAME
+  const cleanReply = (raw: string): string => {
+    let txt = raw;
+
+    // Detecta se é iframe
+    const iframeMatch = raw.match(
+      /<iframe[^>]*srcdoc="([^"]*)"[^>]*><\/iframe>/i
+    );
+
+    if (iframeMatch) {
+      const srcdoc = iframeMatch[1];
+      const parser = new DOMParser();
+      txt =
+        parser.parseFromString(srcdoc, "text/html").documentElement
+          .textContent || srcdoc;
+    }
+
+    // Remove aspas externas
+    if (txt.startsWith('"') && txt.endsWith('"')) {
+      txt = txt.slice(1, -1);
+    }
+
+    // Corrige \n
+    txt = txt.replace(/\\n/g, "\n");
+
+    return txt.trim();
+  };
 
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
@@ -82,7 +110,8 @@ export default function AnimatedChatbot() {
         }
       );
 
-      const botReply = await response.text();
+      const raw = await response.text();
+      const botReply = cleanReply(raw);
 
       const botMessage: Message = {
         id: messages.length + 2,
@@ -140,7 +169,7 @@ export default function AnimatedChatbot() {
         >
           {/* Mensagem flutuante */}
           <div
-            className={`absolute bottom-full right-0 mb-4 px-4 py-3 bg-white rounded-xl shadow-xl border border-gray-200 transition-all duration-300 after:content-[''] after:absolute after:top-full after:right-6 after:w-0 after:h-0 after:border-l-8 after:border-r-8 after:border-t-8 after:border-l-transparent after:border-r-transparent after:border-t-white ${
+            className={`absolute bottom-full right-0 mb-4 px-4 py-3 bg-white rounded-xl shadow-xl border border-gray-200 transition-all duration-300 ${
               showMessage
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-2"
@@ -155,9 +184,7 @@ export default function AnimatedChatbot() {
             </p>
             <div className="flex items-center gap-2 mt-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-xs text-gray-600">
-                JotaNunes Assistant
-              </span>
+              <span className="text-xs text-gray-600">JotaNunes Assistant</span>
             </div>
           </div>
 
