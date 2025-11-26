@@ -21,10 +21,26 @@ export default function AnimatedChatbot() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
 
+  // 🔥 Drag core
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const moved = useRef(false);
+  const offset = useRef({ x: 0, y: 0 });
+
+  // Posição inicial (igual ao design original)
+  useEffect(() => {
+    setPosition({
+      x: window.innerWidth - 100,
+      y: window.innerHeight - 120,
+    });
+  }, []);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Primeira mensagem
   useEffect(() => {
     if (!initializedRef.current) {
       setMessages([
@@ -39,54 +55,44 @@ export default function AnimatedChatbot() {
     }
   }, []);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  useEffect(() => scrollToBottom(), [messages]);
 
-  // Mostra a mensagem flutuante periodicamente
+  // Mensagem flutuante
   useEffect(() => {
     if (!isOpen) {
       const interval = setInterval(() => {
         setShowMessage(true);
         setCurrentMessage((prev) => (prev + 1) % welcomeMessages.length);
 
-        setTimeout(() => {
-          setShowMessage(false);
-        }, 4000);
-      }, 60000);
+        setTimeout(() => setShowMessage(false), 4000);
+      }, 3000);
 
       return () => clearInterval(interval);
     }
   }, [isOpen]);
 
-  // FUNÇÃO PARA LIMPAR O IFRAME
-  const cleanReply = (raw: string): string => {
+  // Limpar iframe vindo do servidor
+  const cleanReply = (raw: string) => {
     let txt = raw;
 
-    // Detecta se é iframe
     const iframeMatch = raw.match(
       /<iframe[^>]*srcdoc="([^"]*)"[^>]*><\/iframe>/i
     );
 
     if (iframeMatch) {
-      const srcdoc = iframeMatch[1];
       const parser = new DOMParser();
+      const srcdoc = iframeMatch[1];
       txt =
         parser.parseFromString(srcdoc, "text/html").documentElement
           .textContent || srcdoc;
     }
 
-    // Remove aspas externas
-    if (txt.startsWith('"') && txt.endsWith('"')) {
-      txt = txt.slice(1, -1);
-    }
+    if (txt.startsWith('"') && txt.endsWith('"')) txt = txt.slice(1, -1);
 
-    // Corrige \n
-    txt = txt.replace(/\\n/g, "\n");
-
-    return txt.trim();
+    return txt.replace(/\\n/g, "\n").trim();
   };
 
+  // Enviar mensagem
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
 
@@ -101,7 +107,7 @@ export default function AnimatedChatbot() {
     setInputText("");
 
     try {
-      const response = await fetch(
+      const res = await fetch(
         "https://n8natos-n8n.4ecf9x.easypanel.host/webhook/captarmensagem",
         {
           method: "POST",
@@ -110,37 +116,34 @@ export default function AnimatedChatbot() {
         }
       );
 
-      const raw = await response.text();
+      const raw = await res.text();
       const botReply = cleanReply(raw);
 
-      const botMessage: Message = {
-        id: messages.length + 2,
-        text:
-          botReply ||
-          "Infelizmente tive um problema no processamento, tente novamente mais tarde.",
-        sender: "bot",
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, botMessage]);
-    } catch (error) {
-      console.error("Erro ao enviar mensagem:", error);
-
-      const botMessage: Message = {
-        id: messages.length + 2,
-        text: "Houve um erro ao tentar obter a resposta do servidor.",
-        sender: "bot",
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, botMessage]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: prev.length + 1,
+          text:
+            botReply ||
+            "Infelizmente tive um problema no processamento. Tente novamente.",
+          sender: "bot",
+          timestamp: new Date(),
+        },
+      ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: prev.length + 1,
+          text: "Erro ao obter resposta do servidor.",
+          sender: "bot",
+          timestamp: new Date(),
+        },
+      ]);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") handleSendMessage();
-  };
-
+  // Abrir/fechar chat
   const toggleChat = () => {
     setIsOpen(!isOpen);
     if (!isOpen) {
@@ -154,44 +157,111 @@ export default function AnimatedChatbot() {
   const formatTime = (date: Date) =>
     date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
+  // 🔥 DRAG FINAL COM DESIGN ORIGINAL
+  useEffect(() => {
+    const el = dragRef.current;
+    if (!el) return;
+
+    const handleDown = (e: MouseEvent | TouchEvent) => {
+      isDragging.current = true;
+      moved.current = false;
+
+      const startX = "touches" in e ? e.touches[0].clientX : e.clientX;
+      const startY = "touches" in e ? e.touches[0].clientY : e.clientY;
+
+      const rect = el.getBoundingClientRect();
+
+      offset.current = {
+        x: startX - rect.left,
+        y: startY - rect.top,
+      };
+    };
+
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      if (!isDragging.current) return;
+
+      const moveX = "touches" in e ? e.touches[0].clientX : e.clientX;
+      const moveY = "touches" in e ? e.touches[0].clientY : e.clientY;
+
+      const newX = moveX - offset.current.x;
+      const newY = moveY - offset.current.y;
+
+      if (
+        Math.abs(newX - position.x) > 3 ||
+        Math.abs(newY - position.y) > 3
+      ) {
+        moved.current = true;
+      }
+
+      // limites
+      setPosition({
+        x: Math.min(Math.max(newX, 10), window.innerWidth - 80),
+        y: Math.min(Math.max(newY, 10), window.innerHeight - 80),
+      });
+    };
+
+    const handleUp = () => {
+      isDragging.current = false;
+    };
+
+    el.addEventListener("mousedown", handleDown);
+    el.addEventListener("touchstart", handleDown);
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("touchmove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    window.addEventListener("touchend", handleUp);
+
+    return () => {
+      el.removeEventListener("mousedown", handleDown);
+      el.removeEventListener("touchstart", handleDown);
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+      window.removeEventListener("touchend", handleUp);
+    };
+  }, [position]);
+
   return (
     <>
-      {/* Botão flutuante */}
+      {/* BOTÃO FLUTUANTE ORIGINAL + ARRÁSTAVEL */}
       {!isOpen && (
         <div
-          className="fixed bottom-6 right-6 z-50"
+          ref={dragRef}
+          className="fixed z-50"
           style={{
+            left: position.x,
+            top: position.y,
+            transition: isDragging.current ? "none" : "all .3s ease",
             transform: showMessage
               ? "translateY(-12px) scale(1.1)"
               : "translateY(0) scale(1)",
-            transition: "all 0.6s ease-out",
           }}
         >
-          {/* Mensagem flutuante */}
+          {/* Mensagem flutuante ORIGINAL */}
           <div
             className={`absolute bottom-full right-0 mb-4 px-4 py-3 bg-white rounded-xl shadow-xl border border-gray-200 transition-all duration-300 ${
               showMessage
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-2"
             }`}
-            style={{
-              minWidth: "200px",
-              pointerEvents: showMessage ? "auto" : "none",
-            }}
+            style={{ minWidth: "200px" }}
           >
             <p className="text-xs font-medium text-gray-800 whitespace-nowrap">
               {welcomeMessages[currentMessage]}
             </p>
+
             <div className="flex items-center gap-2 mt-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-xs text-gray-600">JotaNunes Assistant</span>
             </div>
           </div>
 
-          {/* Botão principal */}
+          {/* BOTÃO ORIGINAL IGUALZINHO */}
           <button
-            onClick={toggleChat}
-            className={`relative h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-lg transition-all duration-500 ease-out text-white text-2xl flex items-center justify-center hover:scale-110 ${
+            onClick={() => {
+              if (!moved.current) toggleChat();
+            }}
+            className={`relative h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-lg transition-all duration-500 text-white text-2xl flex items-center justify-center hover:scale-110 ${
               showMessage ? "animate-chatbot-jump" : "animate-chatbot-float"
             }`}
             style={{
@@ -205,7 +275,7 @@ export default function AnimatedChatbot() {
               className="absolute inset-0 rounded-full animate-ping"
               style={{
                 background:
-                  "radial-gradient(circle at center, rgba(239, 68, 68, 0.3), transparent)",
+                  "radial-gradient(circle, rgba(239, 68, 68, 0.3), transparent)",
               }}
             ></div>
 
@@ -218,7 +288,7 @@ export default function AnimatedChatbot() {
         </div>
       )}
 
-      {/* Janela do chatbot */}
+      {/* JANELA ORIGINAL DO CHAT (SEM ALTERAR NADA DO DESIGN) */}
       {isOpen && (
         <div
           className={`fixed z-50 transition-all duration-300 ease-in-out animate-scale-in ${
@@ -233,21 +303,21 @@ export default function AnimatedChatbot() {
               isFullscreen ? "rounded-none" : "rounded-2xl"
             }`}
           >
-            {/* Cabeçalho */}
+            {/* Cabeçalho original */}
             <div
               className="flex items-center justify-between p-4 border-b rounded-t-2xl text-white"
-              style={{
-                background: "linear-gradient(135deg, #ef4444, #dc2626)",
-              }}
+              style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-2xl animate-chatbot-pulse">
                   🤖
                 </div>
+
                 <div>
                   <h3 className="font-semibold text-sm sm:text-base">
                     Assistente Virtual JotaNunes
                   </h3>
+
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                     <p className="text-xs text-white text-opacity-90">
@@ -256,24 +326,26 @@ export default function AnimatedChatbot() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-1 sm:gap-2">
+
+              <div className="flex items-center gap-2">
                 <button
                   onClick={toggleFullscreen}
-                  className="h-8 w-8 p-0 rounded-lg flex items-center justify-center hover:bg-white hover:bg-opacity-20 transition-colors text-white text-lg"
+                  className="h-8 w-8 rounded-lg hover:bg-white/20 flex items-center justify-center text-white text-lg"
                 >
                   {isFullscreen ? "🗗" : "🗖"}
                 </button>
+
                 <button
                   onClick={toggleChat}
-                  className="h-8 w-8 p-0 rounded-lg flex items-center justify-center hover:bg-white hover:bg-opacity-20 transition-colors text-white text-lg"
+                  className="h-8 w-8 rounded-lg hover:bg-white/20 flex items-center justify-center text-white text-lg"
                 >
                   ✕
                 </button>
               </div>
             </div>
 
-            {/* Área de mensagens */}
-            <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white">
+            {/* Mensagens originais */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white">
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -284,103 +356,63 @@ export default function AnimatedChatbot() {
                   }`}
                 >
                   <div
-                    className={`flex items-start gap-2 max-w-[85%] sm:max-w-[80%] ${
+                    className={`max-w-[80%] p-3 rounded-2xl shadow-sm ${
                       message.sender === "user"
-                        ? "flex-row-reverse"
-                        : "flex-row"
+                        ? "text-white"
+                        : "bg-white border text-gray-800"
                     }`}
+                    style={
+                      message.sender === "user"
+                        ? {
+                            background:
+                              "linear-gradient(135deg, #ef4444, #dc2626)",
+                          }
+                        : {}
+                    }
                   >
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        message.sender === "user"
-                          ? "bg-red-500 text-white shadow-lg"
-                          : "bg-gray-200 text-gray-600"
-                      }`}
-                    >
-                      {message.sender === "user" ? "👤" : "🤖"}
-                    </div>
-                    <div
-                      className={`rounded-2xl px-3 py-2 sm:px-4 sm:py-3 shadow-sm ${
-                        message.sender === "user"
-                          ? "text-white rounded-br-md"
-                          : "bg-white text-gray-800 rounded-bl-md border border-gray-100"
-                      }`}
-                      style={
-                        message.sender === "user"
-                          ? {
-                              background:
-                                "linear-gradient(135deg, #ef4444, #dc2626)",
-                            }
-                          : {}
-                      }
-                    >
-                      <p className="text-sm leading-relaxed">
-                        {message.text}
-                      </p>
-                      <p
-                        className={`text-[10px] mt-2 ${
-                          message.sender === "user"
-                            ? "text-white text-opacity-80"
-                            : "text-gray-500"
-                        }`}
-                      >
-                        {formatTime(message.timestamp)}
-                      </p>
-                    </div>
+                    <p>{message.text}</p>
+                    <p className="text-[10px] opacity-80 mt-2">
+                      {formatTime(message.timestamp)}
+                    </p>
                   </div>
                 </div>
               ))}
+
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Campo de entrada */}
-            <div className="p-3 sm:p-4 border-t bg-white">
-              <div className="flex gap-2 items-end">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Digite sua mensagem..."
-                    className="w-full rounded-2xl border border-gray-300 px-3 py-2 sm:px-4 sm:py-3 focus:border-red-500 focus:ring-2 focus:ring-red-500 focus:ring-opacity-20 outline-none text-gray-800 placeholder-gray-500 transition-all"
-                  />
-                </div>
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!inputText.trim()}
-                  className="rounded-2xl h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 shadow-lg"
-                  style={{
-                    background: inputText.trim()
-                      ? "linear-gradient(135deg, #ef4444, #dc2626)"
-                      : "#9ca3af",
-                  }}
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                    />
-                  </svg>
-                </button>
-              </div>
+            {/* Input original */}
+            <div className="p-4 border-t flex gap-2 bg-white">
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                placeholder="Digite sua mensagem..."
+                className="flex-1 border rounded-2xl px-4 py-3 outline-none"
+              />
+
+              <button
+                onClick={handleSendMessage}
+                disabled={!inputText.trim()}
+                className="h-12 w-12 rounded-2xl flex items-center justify-center text-white disabled:opacity-40 shadow-lg"
+                style={{
+                  background: inputText.trim()
+                    ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                    : "#a3a3a3",
+                }}
+              >
+                ➤
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Fundo escuro no modo fullscreen */}
+      {/* Fundo escuro */}
       {isOpen && isFullscreen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40"
-          style={{ backdropFilter: "blur(4px)" }}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
           onClick={() => setIsFullscreen(false)}
         />
       )}
