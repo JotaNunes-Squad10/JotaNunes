@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import PersonIcon from "@mui/icons-material/Person";
 
 interface Message {
   id: number;
@@ -10,9 +9,7 @@ interface Message {
   timestamp: Date;
 }
 
-const welcomeMessages = [
-  "Precisa de informações? Estou online! "
-];
+const welcomeMessages = ["Precisa de informações? Estou online!"];
 
 export default function AnimatedChatbot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,21 +43,49 @@ export default function AnimatedChatbot() {
     scrollToBottom();
   }, [messages]);
 
-  // Animação mensagem
+  // Mostra a mensagem flutuante periodicamente
   useEffect(() => {
     if (!isOpen) {
       const interval = setInterval(() => {
         setShowMessage(true);
-        setCurrentMessage(prev => (prev + 1) % welcomeMessages.length);
-        
+        setCurrentMessage((prev) => (prev + 1) % welcomeMessages.length);
+
         setTimeout(() => {
           setShowMessage(false);
         }, 4000);
-      }, 60000); // De 1 em 1 minuto aparece a mensagem
+      }, 60000);
 
       return () => clearInterval(interval);
     }
   }, [isOpen]);
+
+  // FUNÇÃO PARA LIMPAR O IFRAME
+  const cleanReply = (raw: string): string => {
+    let txt = raw;
+
+    // Detecta se é iframe
+    const iframeMatch = raw.match(
+      /<iframe[^>]*srcdoc="([^"]*)"[^>]*><\/iframe>/i
+    );
+
+    if (iframeMatch) {
+      const srcdoc = iframeMatch[1];
+      const parser = new DOMParser();
+      txt =
+        parser.parseFromString(srcdoc, "text/html").documentElement
+          .textContent || srcdoc;
+    }
+
+    // Remove aspas externas
+    if (txt.startsWith('"') && txt.endsWith('"')) {
+      txt = txt.slice(1, -1);
+    }
+
+    // Corrige \n
+    txt = txt.replace(/\\n/g, "\n");
+
+    return txt.trim();
+  };
 
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
@@ -80,14 +105,13 @@ export default function AnimatedChatbot() {
         "https://n8natos-n8n.4ecf9x.easypanel.host/webhook/captarmensagem",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: userMessage.text }),
         }
       );
 
-      const botReply = await response.text();
+      const raw = await response.text();
+      const botReply = cleanReply(raw);
 
       const botMessage: Message = {
         id: messages.length + 2,
@@ -100,10 +124,7 @@ export default function AnimatedChatbot() {
 
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      console.error(
-        "Erro ao enviar mensagem para o nosso servidor, tente novamente:",
-        error
-      );
+      console.error("Erro ao enviar mensagem:", error);
 
       const botMessage: Message = {
         id: messages.length + 2,
@@ -135,31 +156,34 @@ export default function AnimatedChatbot() {
 
   return (
     <>
-      
-      {/* Botão flutuante "batimento coracao" */}
+      {/* Botão flutuante */}
       {!isOpen && (
-        <div 
+        <div
           className="fixed bottom-6 right-6 z-50"
           style={{
-            transform: showMessage ? 'translateY(-12px) scale(1.1)' : 'translateY(0) scale(1)',
-            transition: 'all 0.6s ease-out'
+            transform: showMessage
+              ? "translateY(-12px) scale(1.1)"
+              : "translateY(0) scale(1)",
+            transition: "all 0.6s ease-out",
           }}
         >
           {/* Mensagem flutuante */}
-          <div 
-            className={`absolute bottom-full right-0 mb-4 px-4 py-3 bg-white rounded-xl shadow-xl border border-gray-200 transition-all duration-300 after:content-[''] after:absolute after:top-full after:right-6 after:w-0 after:h-0 after:border-l-8 after:border-r-8 after:border-t-8 after:border-l-transparent after:border-r-transparent after:border-t-white ${
-              showMessage ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+          <div
+            className={`absolute bottom-full right-0 mb-4 px-4 py-3 bg-white rounded-xl shadow-xl border border-gray-200 transition-all duration-300 ${
+              showMessage
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-2"
             }`}
             style={{
-              minWidth: '200px',
-              pointerEvents: showMessage ? 'auto' : 'none'
+              minWidth: "200px",
+              pointerEvents: showMessage ? "auto" : "none",
             }}
           >
             <p className="text-xs font-medium text-gray-800 whitespace-nowrap">
               {welcomeMessages[currentMessage]}
             </p>
             <div className="flex items-center gap-2 mt-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-xs text-gray-600">JotaNunes Assistant</span>
             </div>
           </div>
@@ -167,59 +191,28 @@ export default function AnimatedChatbot() {
           {/* Botão principal */}
           <button
             onClick={toggleChat}
-            className={`relative h-16 w-16 rounded-full shadow-lg transition-all duration-500 ease-out text-white text-2xl flex items-center justify-center hover:scale-110 ${
-              showMessage ? 'animate-chatbot-jump' : 'animate-chatbot-float'
+            className={`relative h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-lg transition-all duration-500 ease-out text-white text-2xl flex items-center justify-center hover:scale-110 ${
+              showMessage ? "animate-chatbot-jump" : "animate-chatbot-float"
             }`}
             style={{
-              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-              boxShadow: showMessage 
-                ? '0 0 40px rgba(239, 68, 68, 0.6)' 
-                : '0 10px 30px -10px rgba(239, 68, 68, 0.4)'
+              background: "linear-gradient(135deg, #ef4444, #dc2626)",
+              boxShadow: showMessage
+                ? "0 0 40px rgba(239, 68, 68, 0.6)"
+                : "0 10px 30px -10px rgba(239, 68, 68, 0.4)",
             }}
           >
-            {/* Efeito de pulso */}
-            <div 
+            <div
               className="absolute inset-0 rounded-full animate-ping"
               style={{
-                background: 'radial-gradient(circle at center, rgba(239, 68, 68, 0.3), transparent)'
+                background:
+                  "radial-gradient(circle at center, rgba(239, 68, 68, 0.3), transparent)",
               }}
             ></div>
-            
-            {/* Ícone do Robô - Fluent Emoji by Microsoft */}
-            <svg className="w-10 h-10 relative z-10" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Corpo principal (roxo/rosa gradiente) */}
-              <rect x="12" y="20" width="40" height="36" rx="10" fill="url(#robotGradient)"/>
-              
-              {/* Alça amarela no topo */}
-              <rect x="22" y="12" width="20" height="8" rx="4" fill="#F4A62A"/>
-              
-              {/* Antenas laterais (azul como os olhos) */}
-              <circle cx="12" cy="18" r="4" fill="#4FC3F7"/>
-              <rect x="10" y="18" width="4" height="28" rx="2" fill="#4FC3F7"/>
-              <circle cx="52" cy="18" r="4" fill="#4FC3F7"/>
-              <rect x="50" y="18" width="4" height="28" rx="2" fill="#4FC3F7"/>
-              
-              {/* Visor escuro */}
-              <rect x="18" y="28" width="28" height="14" rx="7" fill="#3D2C5F"/>
-              
-              {/* Olhos azuis */}
-              <rect x="24" y="32" width="6" height="10" rx="3" fill="#4FC3F7"/>
-              <rect x="34" y="32" width="6" height="10" rx="3" fill="#4FC3F7"/>
-              
-              {/* Boca */}
-              <rect x="26" y="48" width="12" height="4" rx="2" fill="#3D2C5F"/>
-              
-              <defs>
-                <linearGradient id="robotGradient" x1="32" y1="20" x2="32" y2="56" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#E1BEE7"/>
-                  <stop offset="1" stopColor="#CE93D8"/>
-                </linearGradient>
-              </defs>
-            </svg>
 
-            {/* Bolinha verde do online */}
+            🤖
+
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             </div>
           </button>
         </div>
@@ -231,8 +224,9 @@ export default function AnimatedChatbot() {
           className={`fixed z-50 transition-all duration-300 ease-in-out animate-scale-in ${
             isFullscreen
               ? "inset-0"
-              : "bottom-6 right-6 w-96 h-[500px] max-w-[calc(100vw-3rem)] max-h-[calc(100vh-3rem)]"
+              : "bottom-4 right-4 w-[90vw] max-w-sm h-[70vh] max-h-[600px] sm:w-96 sm:h-[500px]"
           }`}
+          style={{ overflow: "hidden" }}
         >
           <div
             className={`h-full flex flex-col bg-white shadow-2xl border ${
@@ -240,42 +234,29 @@ export default function AnimatedChatbot() {
             }`}
           >
             {/* Cabeçalho */}
-            <div 
+            <div
               className="flex items-center justify-between p-4 border-b rounded-t-2xl text-white"
               style={{
-                background: 'linear-gradient(135deg, #ef4444, #dc2626)'
+                background: "linear-gradient(135deg, #ef4444, #dc2626)",
               }}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center animate-chatbot-pulse">
-                  <svg className="w-7 h-7" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="12" y="20" width="40" height="36" rx="10" fill="url(#robotGradient2)"/>
-                    <rect x="22" y="12" width="20" height="8" rx="4" fill="#F4A62A"/>
-                    <circle cx="12" cy="18" r="4" fill="#4FC3F7"/>
-                    <rect x="10" y="18" width="4" height="28" rx="2" fill="#4FC3F7"/>
-                    <circle cx="52" cy="18" r="4" fill="#4FC3F7"/>
-                    <rect x="50" y="18" width="4" height="28" rx="2" fill="#4FC3F7"/>
-                    <rect x="18" y="28" width="28" height="14" rx="7" fill="#3D2C5F"/>
-                    <rect x="24" y="32" width="6" height="10" rx="3" fill="#4FC3F7"/>
-                    <rect x="34" y="32" width="6" height="10" rx="3" fill="#4FC3F7"/>
-                    <rect x="26" y="48" width="12" height="4" rx="2" fill="#3D2C5F"/>
-                    <defs>
-                      <linearGradient id="robotGradient2" x1="32" y1="20" x2="32" y2="56" gradientUnits="userSpaceOnUse">
-                        <stop stopColor="#E1BEE7"/>
-                        <stop offset="1" stopColor="#CE93D8"/>
-                      </linearGradient>
-                    </defs>
-                  </svg>
+                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-2xl animate-chatbot-pulse">
+                  🤖
                 </div>
                 <div>
-                  <h3 className="font-semibold">Assistente Virtual JotaNunes</h3>
+                  <h3 className="font-semibold text-sm sm:text-base">
+                    Assistente Virtual JotaNunes
+                  </h3>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <p className="text-xs text-white text-opacity-90">Online agora</p>
+                    <p className="text-xs text-white text-opacity-90">
+                      Online agora
+                    </p>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <button
                   onClick={toggleFullscreen}
                   className="h-8 w-8 p-0 rounded-lg flex items-center justify-center hover:bg-white hover:bg-opacity-20 transition-colors text-white text-lg"
@@ -292,16 +273,18 @@ export default function AnimatedChatbot() {
             </div>
 
             {/* Área de mensagens */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white">
               {messages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex animate-fade-in ${
-                    message.sender === "user" ? "justify-end" : "justify-start"
+                    message.sender === "user"
+                      ? "justify-end"
+                      : "justify-start"
                   }`}
                 >
                   <div
-                    className={`flex items-start gap-2 max-w-[80%] ${
+                    className={`flex items-start gap-2 max-w-[85%] sm:max-w-[80%] ${
                       message.sender === "user"
                         ? "flex-row-reverse"
                         : "flex-row"
@@ -314,44 +297,28 @@ export default function AnimatedChatbot() {
                           : "bg-gray-200 text-gray-600"
                       }`}
                     >
-                      {message.sender === "user" ? (
-                        <PersonIcon className="w-5 h-5 text-black" />
-                      ) : (
-                        <svg className="w-6 h-6" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect x="12" y="20" width="40" height="36" rx="10" fill="url(#robotGradient3)"/>
-                          <rect x="22" y="12" width="20" height="8" rx="4" fill="#F4A62A"/>
-                          <circle cx="12" cy="18" r="4" fill="#4FC3F7"/>
-                          <rect x="10" y="18" width="4" height="28" rx="2" fill="#4FC3F7"/>
-                          <circle cx="52" cy="18" r="4" fill="#4FC3F7"/>
-                          <rect x="50" y="18" width="4" height="28" rx="2" fill="#4FC3F7"/>
-                          <rect x="18" y="28" width="28" height="14" rx="7" fill="#3D2C5F"/>
-                          <rect x="24" y="32" width="6" height="10" rx="3" fill="#4FC3F7"/>
-                          <rect x="34" y="32" width="6" height="10" rx="3" fill="#4FC3F7"/>
-                          <rect x="26" y="48" width="12" height="4" rx="2" fill="#3D2C5F"/>
-                          <defs>
-                            <linearGradient id="robotGradient3" x1="32" y1="20" x2="32" y2="56" gradientUnits="userSpaceOnUse">
-                              <stop stopColor="#E1BEE7"/>
-                              <stop offset="1" stopColor="#CE93D8"/>
-                            </linearGradient>
-                          </defs>
-                        </svg>
-                      )}
+                      {message.sender === "user" ? "👤" : "🤖"}
                     </div>
                     <div
-                      className={`rounded-2xl px-4 py-3 shadow-sm ${
+                      className={`rounded-2xl px-3 py-2 sm:px-4 sm:py-3 shadow-sm ${
                         message.sender === "user"
                           ? "text-white rounded-br-md"
                           : "bg-white text-gray-800 rounded-bl-md border border-gray-100"
                       }`}
                       style={
-                        message.sender === "user" 
-                          ? { background: 'linear-gradient(135deg, #ef4444, #dc2626)' }
+                        message.sender === "user"
+                          ? {
+                              background:
+                                "linear-gradient(135deg, #ef4444, #dc2626)",
+                            }
                           : {}
                       }
                     >
-                      <p className="text-sm leading-relaxed">{message.text}</p>
+                      <p className="text-sm leading-relaxed">
+                        {message.text}
+                      </p>
                       <p
-                        className={`text-xs mt-2 ${
+                        className={`text-[10px] mt-2 ${
                           message.sender === "user"
                             ? "text-white text-opacity-80"
                             : "text-gray-500"
@@ -367,8 +334,8 @@ export default function AnimatedChatbot() {
             </div>
 
             {/* Campo de entrada */}
-            <div className="p-4 border-t bg-white">
-              <div className="flex gap-3 items-end">
+            <div className="p-3 sm:p-4 border-t bg-white">
+              <div className="flex gap-2 items-end">
                 <div className="flex-1">
                   <input
                     type="text"
@@ -376,17 +343,17 @@ export default function AnimatedChatbot() {
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Digite sua mensagem..."
-                    className="w-full rounded-2xl border border-gray-300 px-4 py-3 focus:border-red-500 focus:ring-2 focus:ring-red-500 focus:ring-opacity-20 outline-none text-gray-800 placeholder-gray-500 transition-all"
+                    className="w-full rounded-2xl border border-gray-300 px-3 py-2 sm:px-4 sm:py-3 focus:border-red-500 focus:ring-2 focus:ring-red-500 focus:ring-opacity-20 outline-none text-gray-800 placeholder-gray-500 transition-all"
                   />
                 </div>
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputText.trim()}
-                  className="rounded-2xl h-12 w-12 flex items-center justify-center text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 shadow-lg"
-                  style={{ 
-                    background: inputText.trim() 
-                      ? 'linear-gradient(135deg, #ef4444, #dc2626)' 
-                      : '#9ca3af'
+                  className="rounded-2xl h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 shadow-lg"
+                  style={{
+                    background: inputText.trim()
+                      ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                      : "#9ca3af",
                   }}
                 >
                   <svg
@@ -413,9 +380,7 @@ export default function AnimatedChatbot() {
       {isOpen && isFullscreen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40"
-          style={{
-            backdropFilter: 'blur(4px)'
-          }}
+          style={{ backdropFilter: "blur(4px)" }}
           onClick={() => setIsFullscreen(false)}
         />
       )}
