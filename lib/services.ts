@@ -92,7 +92,7 @@ export const userService = {
     }
 
     // Enviar dados para o banco via API
-    await fetch('http://localhost:3000/api/usuario-temporario', {
+    await fetch('/api/usuario-temporario', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
