@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import { Box, Paper, Typography } from "@mui/material";
 import { FilePen, FileCheck2, Eye, ThumbsUp, BookX } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import axios from "axios";
 import { Skeleton } from "primereact/skeleton";
 
 type Empreendimento = {
@@ -15,13 +14,13 @@ type Empreendimento = {
 
 type StatusSummaryProps = {
   empreendimentos?: Empreendimento[];
+  loading?: boolean;
 };
 
-const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos }) => {
+const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos, loading }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [data, setData] = useState<Empreendimento[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,26 +29,9 @@ const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos }) => {
   }, [searchParams]);
 
   useEffect(() => {
-    if (empreendimentos && empreendimentos.length > 0) {
+    if (empreendimentos) {
       setData(empreendimentos);
-      setLoading(false);
-      return;
     }
-
-    const fetchData = async () => {
-      try {
-        const response = await axios.get(
-          "https://jotanunesservice.onrender.com/api/v1/empreendimento/GetAllEmpreendimentos"
-        );
-        setData(response.data?.data || []);
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
   }, [empreendimentos]);
 
   const counts: Record<string, number> = {};
@@ -126,7 +108,7 @@ const StatusSummary: React.FC<StatusSummaryProps> = ({ empreendimentos }) => {
                 />
               ) : (
                 <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                  {counts[stat.key] || 0}
+                  {counts[stat.key] ?? 0}
                 </Typography>
               )}
               {stat.icon}

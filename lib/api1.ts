@@ -195,6 +195,7 @@ export interface Empreendimento {
   descricao: string;
   localizacao: string;
   padrao: string;
+  status: string;
   versao: number;
   usuarioAlteracao?: string;
   dataHoraAlteracao?: string;

@@ -1,7 +1,6 @@
 "use client";
 import { Newspaper } from 'lucide-react';
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import { getCookie } from "cookies-next";
@@ -17,31 +16,34 @@ interface Documento {
   dataHoraAlteracao?: string;
 }
 
-export default function Recentes() {
+type RecentesProps = {
+  documentos?: Documento[]; // dados vindos da página
+  loading?: boolean;        // loading controlado pela página
+};
+
+export default function Recentes({ documentos: propDocumentos, loading: propLoading }: RecentesProps) {
   const [documentos, setDocumentos] = useState<Documento[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(propLoading ?? true);
+  const [error] = useState<string | null>(null);
 
-
+  // quando a página passar os documentos, ordena por data e atualiza local state
   useEffect(() => {
-    axios.get("https://jotanunesservice.onrender.com/api/v1/empreendimento/GetAllEmpreendimentos")
-      .then((res) => {
-      const lista = Array.isArray(res.data) ? res.data : res.data.data;
-      const sorted = (lista || []).slice().sort((a: { [key: string]: unknown }, b: { [key: string]: unknown }) => {
-        const ta = a['dataHoraAlteracao'] ? new Date(String(a['dataHoraAlteracao'])).getTime() : 0;
-        const tb = b['dataHoraAlteracao'] ? new Date(String(b['dataHoraAlteracao'])).getTime() : 0;
-        return tb - ta;
-      });
-      setDocumentos(sorted);
-      setLoading(false);
-    })
-    .catch(err => {
-      console.error("Erro ao buscar documentos recentes:", err);
-      const erro = "Erro ao consultar o arquivos recentes. Tente mais tarde ou entre em contato com o suporte. " + err;
-      setError(erro);
-      setLoading(false);
+    if (!propDocumentos) return;
+
+    const lista: Documento[] = Array.isArray(propDocumentos)
+      ? propDocumentos
+      : [];
+
+    const sorted = lista.slice().sort((a, b) => {
+      const ta = a.dataHoraAlteracao ? new Date(a.dataHoraAlteracao).getTime() : 0;
+      const tb = b.dataHoraAlteracao ? new Date(b.dataHoraAlteracao).getTime() : 0;
+      return tb - ta;
     });
-  }, []);
+
+    setDocumentos(sorted as Documento[]);
+    // usa o loading controlado pela página; se não informado, assume false (dados já chegaram)
+    setLoading(Boolean(propLoading ?? false));
+  }, [propDocumentos, propLoading]);
 
   const router = useRouter();
 

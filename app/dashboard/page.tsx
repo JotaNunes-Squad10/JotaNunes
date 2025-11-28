@@ -1,12 +1,54 @@
-import React, { Suspense } from "react";
+"use client";
+
+import React, { Suspense, useEffect, useState } from "react";
 import { Box } from "@mui/material";
 import Header from "../../components/headerUser/page";
 import Popup from '../../components/popup/page';
 import StatusSummary from "../../components/home/status/page";
 import Recentes from "../../components/home/recentes/page";
 import AcoesRapidas from "../../components/home/acoesRapidas/page";
+import axios from "axios";
+import type { Empreendimento } from "../../lib/api1";
 
 const Dashboard: React.FC = () => {
+  const [documentos, setDocumentos] = useState<Empreendimento[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(
+          "https://jotanunesservice.onrender.com/api/v1/empreendimento/GetAllEmpreendimentos"
+        );
+
+        const data = response.data?.data || response.data || [];
+
+        // converte para o shape esperado pelo Recentes (se necessário)
+        const parsed = (data as Empreendimento[]).map((item: Empreendimento) => ({
+          id: item.id,
+          nome: item.nome,
+          descricao: item.descricao ?? "",
+          localizacao: item.localizacao ?? "",
+          padrao: item.padrao ?? "",
+          versao: item.versao ?? 0,
+          status: item.status,
+          usuarioAlteracao: item.usuarioAlteracao,
+          dataHoraAlteracao: item.dataHoraAlteracao,
+        }));
+
+        setDocumentos(parsed);
+      } catch (err) {
+        console.error("Erro ao buscar documentos no dashboard:", err);
+        // opcional: set algum estado de erro se quiser exibir
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <Box sx={{ 
       position: "relative",
@@ -23,7 +65,7 @@ const Dashboard: React.FC = () => {
         {/* Status */}
         <Box mb={3}>
           <Suspense fallback={<div>Carregando...</div>}>
-            <StatusSummary />
+            <StatusSummary empreendimentos={documentos} loading={loading} />
           </Suspense>
         </Box>
 
@@ -55,7 +97,8 @@ const Dashboard: React.FC = () => {
               order: { xs: 2, md: 1 } 
             }}
           >
-            <Recentes />
+            {/* passa documentos e loading para Recentes */}
+            <Recentes documentos={documentos} loading={loading} />
           </Box>
         </Box>
       </Box>
