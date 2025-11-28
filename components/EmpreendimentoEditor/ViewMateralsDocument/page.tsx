@@ -4,16 +4,24 @@ import React, { useEffect, useState } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
+
 import {
   itemService,
   subTopicosAmbienteService,
   topicoService,
   UpdateEmpreendimento,
-  MarcaMateriais,
   EmprendimentoTopico,
-  marcaService,
+  MarcaMaterial,
+  GetAllMarcasByMaterialId,
+  Item,
 } from "@/lib/api";
 
+import EditItemModal from "@/components/EditItemModal/page";
+import EditMaterialModal from "@/components/EditMaterialModal/page";
+
+//
+// TYPES
+//
 interface Props {
   empreendimento: UpdateEmpreendimento;
   topicoSelecionado: string;
@@ -28,17 +36,17 @@ interface TabelaItem {
   descricao: string;
 }
 
-type AmbienteItemSafe = {
+interface AmbienteItemSafe {
   itemId: number;
   versoes?: number[];
-};
+}
 
-type TopicoAmbienteSafe = {
+interface TopicoAmbienteSafe {
   ambienteId: number;
   posicao: number;
   area?: number;
   ambienteItens: AmbienteItemSafe[];
-};
+}
 
 export default function TabelaItens({
   empreendimento,
@@ -50,60 +58,68 @@ export default function TabelaItens({
   const [itens, setItens] = useState<TabelaItem[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // ❗ Correção: comparação adequada
+  // REFRESH CONTROL
+  const [refresh, setRefresh] = useState(false);
+
+  // EDIT MODALS
+  const [editItemData, setEditItemData] = useState<{
+    id: number;
+    nome: string;
+    descricao: string;
+  } | null>(null);
+
+  const [editMaterialData, setEditMaterialData] = useState<{
+    id: number;
+    nome: string;
+    marcaId: number;
+  } | null>(null);
+
+  const [showEditItem, setShowEditItem] = useState(false);
+  const [showEditMaterial, setShowEditMaterial] = useState(false);
+
   const isMarcas = topicoSelecionado.toUpperCase() === "MARCAS";
   const TOPICO_MARCAS = 3;
 
+  // ======================================================
+  // LOADING TABLE ITEMS
+  // ======================================================
   useEffect(() => {
     const load = async () => {
       if (!topicoSelecionado) return;
-
       setLoading(true);
       setItens([]);
 
-      // ------------------------------------------------------------
-      // 🔹 CASO MARCAS
-      // ------------------------------------------------------------
+      // ---------- CASO MARCAS ----------
       if (isMarcas) {
         try {
-          // ✔ Correção: chamada direta ao serviço
-          const listaMarcas: MarcaMateriais[] =
-            await marcaService.getAllMarcaMateriais();
-
           const topicoMarcas = empreendimento.empreendimentoTopicos.find(
             (t: EmprendimentoTopico) => t.topicoId === TOPICO_MARCAS
           );
 
-          const materiaisNoDocumento = topicoMarcas?.topicoMateriais ?? [];
+          const materiaisNoDoc = topicoMarcas?.topicoMateriais ?? [];
+          const lista: TabelaItem[] = [];
 
-          const itensTabela: TabelaItem[] = materiaisNoDocumento
-            .map((m) => {
-              const encontrado = listaMarcas.find(
-                (x) => x.material.id === m.materialId
-              );
-              if (!encontrado) return null;
+          for (const m of materiaisNoDoc) {
+            const detalhe: GetAllMarcasByMaterialId =
+              await MarcaMaterial.getAllMarcasByMaterialId(m.materialId);
 
-              return {
-                id: encontrado.material.id,
-                item: encontrado.marca.nome,
-                descricao: encontrado.material.nome,
-              };
-            })
-            // ✔ Warning corrigido
-            .filter((x): x is TabelaItem => x !== null);
+            lista.push({
+              id: detalhe.materialId,
+              item: detalhe.material,
+              descricao: detalhe.marcas.join(", "),
+            });
+          }
 
-          setItens(itensTabela);
-        } catch (e) {
-          console.error("Erro ao carregar marcas:", e);
+          setItens(lista);
+        } catch (error) {
+          console.error("Erro ao carregar materiais:", error);
         }
 
         setLoading(false);
         return;
       }
 
-      // ------------------------------------------------------------
-      // 🔹 CASO NORMAL (AMBIENTES)
-      // ------------------------------------------------------------
+      // ---------- CASO AMBIENTES ----------
       try {
         const [topics, ambientes] = await Promise.all([
           topicoService.getAllTopic(),
@@ -139,11 +155,11 @@ export default function TabelaItens({
           return;
         }
 
-        const itensDetalhes = await Promise.all(
+        const detalhados: Item[] = await Promise.all(
           ids.map((id) => itemService.getItemById(id))
         );
 
-        const tabela: TabelaItem[] = itensDetalhes.map((i) => ({
+        const tabela: TabelaItem[] = detalhados.map((i) => ({
           id: i.id!,
           item: i.nome,
           descricao: i.descricao,
@@ -158,15 +174,21 @@ export default function TabelaItens({
     };
 
     load();
-  }, [empreendimento, topicoSelecionado, ambienteSelecionado, isMarcas]);
+  }, [
+    empreendimento,
+    topicoSelecionado,
+    ambienteSelecionado,
+    isMarcas,
+    refresh, // 🔥 FORÇA RELOAD APÓS UPDATE
+  ]);
 
-  // ------------------------------------------------------------
-  // 🔹 REMOVER
-  // ------------------------------------------------------------
+  // ======================================================
+  // REMOVE ITEM OR MATERIAL
+  // ======================================================
   const handleRemove = async (id: number) => {
     if (isMarcas) {
       onRemoveMaterial(id, TOPICO_MARCAS);
-      setItens((prev) => prev.filter((i) => i.id !== id));
+      setRefresh((prev) => !prev);
       return;
     }
 
@@ -183,9 +205,32 @@ export default function TabelaItens({
     if (!topicoId || !ambienteId) return;
 
     onRemoveItem(id, topicoId, ambienteId);
-    setItens((prev) => prev.filter((i) => i.id !== id));
+    setRefresh((prev) => !prev);
   };
 
+  // ======================================================
+  // OPEN EDIT MODALS
+  // ======================================================
+  const openEdit = (row: TabelaItem) => {
+    if (isMarcas) {
+      setEditMaterialData({
+        id: row.id,
+        nome: row.item,
+        marcaId: 0,
+      });
+      setShowEditMaterial(true);
+      return;
+    }
+
+    setEditItemData({
+      id: row.id,
+      nome: row.item,
+      descricao: row.descricao,
+    });
+    setShowEditItem(true);
+  };
+
+  // ======================================================
   return (
     <div className="card mt-8">
       <DataTable
@@ -195,23 +240,57 @@ export default function TabelaItens({
         emptyMessage={loading ? "Carregando..." : "Nenhum item neste local."}
         tableStyle={{ minWidth: "50rem" }}
       >
-        <Column field="item" header="Item" style={{ width: "40%" }} />
-        <Column field="descricao" header="Descrição" style={{ width: "50%" }} />
+        <Column field="item" header="Item" style={{ width: "35%" }} />
+        <Column field="descricao" header="Descrição" style={{ width: "45%" }} />
+
+        {/* EDITAR */}
+        <Column
+          header="Editar"
+          style={{ width: "10%", textAlign: "center" }}
+          body={(row: TabelaItem) => (
+            <Button
+              icon="pi pi-pencil"
+              rounded
+              text
+              severity="info"
+              onClick={() => openEdit(row)}
+              disabled={loading}
+            />
+          )}
+        />
+
+        {/* REMOVER */}
         <Column
           header="Remover"
           style={{ width: "10%", textAlign: "center" }}
-          body={(rowData: TabelaItem) => (
+          body={(row: TabelaItem) => (
             <Button
               icon="pi pi-times"
               rounded
               text
               severity="danger"
-              onClick={() => handleRemove(rowData.id)}
+              onClick={() => handleRemove(row.id)}
               disabled={loading}
             />
           )}
         />
       </DataTable>
+
+      {/* MODAL EDIT ITEM */}
+      <EditItemModal
+        visible={showEditItem}
+        onHide={() => setShowEditItem(false)}
+        item={editItemData}
+        onUpdated={() => setRefresh((prev) => !prev)}
+      />
+
+      {/* MODAL EDIT MATERIAL */}
+      <EditMaterialModal
+        visible={showEditMaterial}
+        onHide={() => setShowEditMaterial(false)}
+        material={editMaterialData}
+        onUpdated={() => setRefresh((prev) => !prev)}
+      />
     </div>
   );
 }

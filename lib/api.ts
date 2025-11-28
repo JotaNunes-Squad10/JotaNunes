@@ -79,6 +79,17 @@ export interface CreateMarcaResponse {
   };
 }
 
+export interface CreateMaterialPayload {
+  nome: string;
+  marcaIds: number[];
+}
+
+export interface GetAllMarcasByMaterialId {
+  materialId: number;
+  material: string;
+  marcas: string[];
+}
+
 export interface GetAllTopicResponse {
   data: Topico[];
 }
@@ -378,6 +389,14 @@ export const itemService = {
 
     return response.data.data;
   },
+
+  async updateItem(payload: { id: number; nome: string; descricao: string }) {
+    const response = await axios.patch(
+      "https://jotanunesservice.onrender.com/api/v1/items/UpdateItem",
+      payload
+    );
+    return response.data;
+  },
 };
 
 export const marcaService = {
@@ -407,6 +426,23 @@ export const marcaService = {
   },
 };
 
+export const MarcaMaterial = {
+  async getAllMarcasByMaterialId(
+    materialId: number
+  ): Promise<GetAllMarcasByMaterialId> {
+    try {
+      const response = await axios.get(
+        `https://jotanunesservice.onrender.com/api/v1/marca-material/GetAllMarcasByMaterialId/${materialId}`
+      );
+
+      return response.data.data;
+    } catch (error) {
+      console.error("Erro ao buscar marcas pelo id do matérial", error);
+      throw error;
+    }
+  },
+};
+
 // Materiais marcas
 export const MaterialService = {
   async getAllMateriais(): Promise<Marca[]> {
@@ -414,6 +450,22 @@ export const MaterialService = {
       "https://jotanunesservice.onrender.com/api/v1/material/GetAllMateriais"
     );
     return response.data.data;
+  },
+
+  async createMaterial(payload: CreateMaterialPayload) {
+    const response = await axios.post(
+      "https://jotanunesservice.onrender.com/api/v1/material/CreateMaterial",
+      payload
+    );
+    return response.data;
+  },
+
+  async updateMaterial(payload: { id: number; nome: string; marcaId: number }) {
+    const response = await axios.patch(
+      "https://jotanunesservice.onrender.com/api/v1/material/UpdateMaterial",
+      payload
+    );
+    return response.data;
   },
 };
 
