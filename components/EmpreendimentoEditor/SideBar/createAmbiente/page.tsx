@@ -1,35 +1,83 @@
-import React, { useState } from "react";
+// components/.../CriarNovoAmbiente.tsx
+"use client";
+
+import React, { useState, useRef } from "react";
 import { Dialog } from "primereact/dialog";
+import { Toast } from "primereact/toast";
 import { CreateTopicPayload, topicoService } from "@/lib/api";
 
-interface CriarNovoAmbienteProp {
+interface CriarNovoTopicoProps {
+  // recebe a lista de nomes já existentes (string[]) ou um setter para atualizar o array de nomes
   setNovoTopico: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 export default function CriarNovoAmbiente({
   setNovoTopico,
-}: CriarNovoAmbienteProp) {
+}: CriarNovoTopicoProps) {
   const [visible, setVisible] = useState<boolean>(false);
-  const [novoAmbiente, setNovoAmbiente] = useState<string>("");
+  const [nomeTopico, setNomeTopico] = useState<string>("");
+  const toast = useRef<Toast | null>(null);
+  const [saving, setSaving] = useState<boolean>(false);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const showError = (detail: string) =>
+    toast.current?.show({
+      severity: "error",
+      summary: "Erro",
+      detail,
+      life: 3000,
+    });
 
-    const novoTopicoCreate: CreateTopicPayload = {
-      nome: novoAmbiente,
-    };
+  const showSuccess = (detail: string) =>
+    toast.current?.show({
+      severity: "success",
+      summary: "Sucesso",
+      detail,
+      life: 3000,
+    });
+
+  const handleCreate = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+
+    const nome = nomeTopico.trim();
+    if (!nome) {
+      showError("Digite um nome válido para o tópico.");
+      return;
+    }
 
     try {
-      await topicoService.createTopic(novoTopicoCreate);
-      setNovoTopico((prev) => [...prev, novoAmbiente]);
+      setSaving(true);
+
+      // valida duplicata (case-insensitive)
+      const todosTopicos = await topicoService.getAllTopic();
+      const existe = todosTopicos.some(
+        (t) => String(t.nome).trim().toLowerCase() === nome.toLowerCase()
+      );
+
+      if (existe) {
+        showError("Já existe um tópico com esse nome.");
+        return;
+      }
+
+      const payload: CreateTopicPayload = { nome };
+      await topicoService.createTopic(payload);
+
+      // atualiza lista local de tópicos (só nomes)
+      setNovoTopico((prev) => [...prev, nome]);
+
+      showSuccess("Tópico criado com sucesso!");
+      setNomeTopico("");
       setVisible(false);
-    } catch (error) {
-      console.error("Erro ao criar ambiente:", error);
+    } catch (err) {
+      console.error("Erro ao criar tópico:", err);
+      showError("Erro ao criar tópico.");
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <div className="card flex justify-content-center">
+      <Toast ref={toast} />
       <button
         type="button"
         onClick={() => setVisible(true)}
@@ -66,14 +114,19 @@ export default function CriarNovoAmbiente({
                 placeholder="Nome do tópico"
                 className="p-2 border border-gray-300 rounded-lg mb-4"
                 required
-                onChange={(e) => setNovoAmbiente(e.target.value)}
+                value={nomeTopico}
+                onChange={(ev: React.ChangeEvent<HTMLInputElement>) =>
+                  setNomeTopico(ev.target.value)
+                }
+                disabled={saving}
               />
 
               <button
                 type="submit"
                 className="cursor-pointer bg-green-700 p-3 text-white rounded-lg hover:opacity-95"
+                disabled={saving}
               >
-                Enviar
+                {saving ? "Salvando..." : "Enviar"}
               </button>
             </div>
           </form>

@@ -95,7 +95,7 @@ export default function AdicionarNovoMaterial({ onReload }: Props) {
 
       <button
         onClick={() => setVisible(true)}
-        className="px-4 py-3 border rounded-lg text-[#0f582a]"
+        className="px-4 py-3 border rounded-lg cursor-pointer hover:bg-gray-100 text-[#0f582a] border-gray-300"
       >
         <i className="pi pi-plus"></i>
       </button>
@@ -104,6 +104,7 @@ export default function AdicionarNovoMaterial({ onReload }: Props) {
         header="Novo Material"
         visible={visible}
         style={{ width: "40vw" }}
+        breakpoints={{ "960px": "75vw", "640px": "90vw" }}
         onHide={() => setVisible(false)}
       >
         <div className="flex flex-col gap-4">

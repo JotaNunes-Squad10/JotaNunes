@@ -91,6 +91,7 @@ export default function EditItemModal({
         visible={visible}
         header="Editar Item"
         style={{ width: "40vw" }}
+        breakpoints={{ "960px": "75vw", "640px": "90vw" }}
         onHide={onHide}
       >
         <div className="flex flex-col gap-3">

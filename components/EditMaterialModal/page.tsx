@@ -119,6 +119,7 @@ export default function EditMaterialModal({
         visible={visible}
         header="Editar Material"
         style={{ width: "40vw" }}
+        breakpoints={{ "960px": "75vw", "640px": "90vw" }}
         onHide={onHide}
       >
         <div className="flex flex-col gap-3">
