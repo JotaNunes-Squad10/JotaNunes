@@ -21,26 +21,34 @@ export default function AnimatedChatbot() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
 
-  // 🔥 Drag core
+  // ⭐ POSIÇÃO INICIAL (0,0) e só depois define
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const dragRef = useRef<HTMLDivElement>(null);
-  const isDragging = useRef(false);
-  const moved = useRef(false);
-  const offset = useRef({ x: 0, y: 0 });
 
-  // Posição inicial (igual ao design original)
+  // ⭐ O chatbot só aparece depois da posição final estar calculada
+  const [isReady, setIsReady] = useState(false);
+
+  // Ajusta a posição no canto inferior direito
   useEffect(() => {
     setPosition({
       x: window.innerWidth - 100,
       y: window.innerHeight - 120,
     });
+
+    setIsReady(true);
   }, []);
 
+  // DRAG CORE
+  const dragRef = useRef<HTMLButtonElement>(null);
+  const isDragging = useRef(false);
+  const moved = useRef(false);
+  const offset = useRef({ x: 0, y: 0 });
+
+  // Scroll automático
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Primeira mensagem
+  // Primeira mensagem automática
   useEffect(() => {
     if (!initializedRef.current) {
       setMessages([
@@ -57,13 +65,12 @@ export default function AnimatedChatbot() {
 
   useEffect(() => scrollToBottom(), [messages]);
 
-  // Mensagem flutuante
+  // Balão flutuante
   useEffect(() => {
     if (!isOpen) {
       const interval = setInterval(() => {
         setShowMessage(true);
         setCurrentMessage((prev) => (prev + 1) % welcomeMessages.length);
-
         setTimeout(() => setShowMessage(false), 4000);
       }, 60000);
 
@@ -71,7 +78,7 @@ export default function AnimatedChatbot() {
     }
   }, [isOpen]);
 
-  // Limpar iframe vindo do servidor
+  // Limpeza de frame vindo do n8n
   const cleanReply = (raw: string) => {
     let txt = raw;
 
@@ -92,7 +99,7 @@ export default function AnimatedChatbot() {
     return txt.replace(/\\n/g, "\n").trim();
   };
 
-  // Enviar mensagem
+  // Envio de mensagem
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
 
@@ -143,7 +150,7 @@ export default function AnimatedChatbot() {
     }
   };
 
-  // Abrir/fechar chat
+  // Abrir e fechar chat
   const toggleChat = () => {
     setIsOpen(!isOpen);
     if (!isOpen) {
@@ -157,7 +164,7 @@ export default function AnimatedChatbot() {
   const formatTime = (date: Date) =>
     date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
-  // 🔥 DRAG FINAL COM DESIGN ORIGINAL
+  // ⭐ DRAG FUNCIONAL COM TIPAGEM PERFEITA
   useEffect(() => {
     const el = dragRef.current;
     if (!el) return;
@@ -166,8 +173,10 @@ export default function AnimatedChatbot() {
       isDragging.current = true;
       moved.current = false;
 
-      const startX = "touches" in e ? e.touches[0].clientX : e.clientX;
-      const startY = "touches" in e ? e.touches[0].clientY : e.clientY;
+      const startX =
+        e instanceof TouchEvent ? e.touches[0].clientX : e.clientX;
+      const startY =
+        e instanceof TouchEvent ? e.touches[0].clientY : e.clientY;
 
       const rect = el.getBoundingClientRect();
 
@@ -180,20 +189,18 @@ export default function AnimatedChatbot() {
     const handleMove = (e: MouseEvent | TouchEvent) => {
       if (!isDragging.current) return;
 
-      const moveX = "touches" in e ? e.touches[0].clientX : e.clientX;
-      const moveY = "touches" in e ? e.touches[0].clientY : e.clientY;
+      const moveX =
+        e instanceof TouchEvent ? e.touches[0].clientX : e.clientX;
+      const moveY =
+        e instanceof TouchEvent ? e.touches[0].clientY : e.clientY;
 
       const newX = moveX - offset.current.x;
       const newY = moveY - offset.current.y;
 
-      if (
-        Math.abs(newX - position.x) > 3 ||
-        Math.abs(newY - position.y) > 3
-      ) {
+      if (Math.abs(newX - position.x) > 3 || Math.abs(newY - position.y) > 3) {
         moved.current = true;
       }
 
-      // limites
       setPosition({
         x: Math.min(Math.max(newX, 10), window.innerWidth - 80),
         y: Math.min(Math.max(newY, 10), window.innerHeight - 80),
@@ -219,25 +226,24 @@ export default function AnimatedChatbot() {
       window.removeEventListener("mouseup", handleUp);
       window.removeEventListener("touchend", handleUp);
     };
-  }, [position]);
+  }, [isOpen, position]);
 
   return (
     <>
-      {/* BOTÃO FLUTUANTE ORIGINAL + ARRÁSTAVEL */}
-      {!isOpen && (
+      {/* BOTÃO FLUTUANTE */}
+      {!isOpen && isReady && (
         <div
-          ref={dragRef}
           className="fixed z-50"
           style={{
             left: position.x,
             top: position.y,
-            transition: isDragging.current ? "none" : "all .3s ease",
+            transition: isDragging.current ? "none" : "all 0.3s ease",
             transform: showMessage
               ? "translateY(-12px) scale(1.1)"
               : "translateY(0) scale(1)",
           }}
         >
-          {/* Mensagem flutuante ORIGINAL */}
+          {/* Mensagem flutuante */}
           <div
             className={`absolute bottom-full right-0 mb-4 px-4 py-3 bg-white rounded-xl shadow-xl border border-gray-200 transition-all duration-300 ${
               showMessage
@@ -251,24 +257,26 @@ export default function AnimatedChatbot() {
             </p>
 
             <div className="flex items-center gap-2 mt-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
               <span className="text-xs text-gray-600">JotaNunes Assistant</span>
             </div>
           </div>
 
-          {/* BOTÃO ORIGINAL IGUALZINHO */}
+          {/* BOTÃO PRINCIPAL */}
           <button
+            ref={dragRef}
             onClick={() => {
               if (!moved.current) toggleChat();
             }}
-            className={`relative h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-lg transition-all duration-500 text-white text-2xl flex items-center justify-center hover:scale-110 ${
-              showMessage ? "animate-chatbot-jump" : "animate-chatbot-float"
+            className={`relative h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-lg text-white text-2xl flex items-center justify-center transition-all hover:scale-110 ${
+              !isReady
+                ? "opacity-0"
+                : showMessage
+                ? "animate-chatbot-jump"
+                : "animate-chatbot-float"
             }`}
             style={{
               background: "linear-gradient(135deg, #ef4444, #dc2626)",
-              boxShadow: showMessage
-                ? "0 0 40px rgba(239, 68, 68, 0.6)"
-                : "0 10px 30px -10px rgba(239, 68, 68, 0.4)",
             }}
           >
             <div
@@ -277,18 +285,18 @@ export default function AnimatedChatbot() {
                 background:
                   "radial-gradient(circle, rgba(239, 68, 68, 0.3), transparent)",
               }}
-            ></div>
+            />
 
             🤖
 
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             </div>
           </button>
         </div>
       )}
 
-      {/* JANELA ORIGINAL DO CHAT (SEM ALTERAR NADA DO DESIGN) */}
+      {/* JANELA DO CHAT */}
       {isOpen && (
         <div
           className={`fixed z-50 transition-all duration-300 ease-in-out animate-scale-in ${
@@ -303,13 +311,13 @@ export default function AnimatedChatbot() {
               isFullscreen ? "rounded-none" : "rounded-2xl"
             }`}
           >
-            {/* Cabeçalho original */}
+            {/* HEADER */}
             <div
-              className="flex items-center justify-between p-4 border-b rounded-t-2xl text-white"
+              className="flex items-center justify-between p-4 border-b text-white rounded-t-2xl"
               style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-2xl animate-chatbot-pulse">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-2xl animate-chatbot-pulse">
                   🤖
                 </div>
 
@@ -319,10 +327,8 @@ export default function AnimatedChatbot() {
                   </h3>
 
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <p className="text-xs text-white text-opacity-90">
-                      Online agora
-                    </p>
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                    <p className="text-xs">Online agora</p>
                   </div>
                 </div>
               </div>
@@ -344,16 +350,16 @@ export default function AnimatedChatbot() {
               </div>
             </div>
 
-            {/* Mensagens originais */}
+            {/* MENSAGENS */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white">
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex animate-fade-in ${
+                  className={`flex ${
                     message.sender === "user"
                       ? "justify-end"
                       : "justify-start"
-                  }`}
+                  } animate-fade-in`}
                 >
                   <div
                     className={`max-w-[80%] p-3 rounded-2xl shadow-sm ${
@@ -377,11 +383,10 @@ export default function AnimatedChatbot() {
                   </div>
                 </div>
               ))}
-
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input original */}
+            {/* INPUT MODIFICADO (placeholder preto, texto preto, borda preta fina) */}
             <div className="p-4 border-t flex gap-2 bg-white">
               <input
                 type="text"
@@ -389,7 +394,8 @@ export default function AnimatedChatbot() {
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                 placeholder="Digite sua mensagem..."
-                className="flex-1 border rounded-2xl px-4 py-3 outline-none"
+                className="flex-1 rounded-2xl px-4 py-3 outline-none
+                           placeholder-black text-black border border-black/40"
               />
 
               <button
@@ -409,7 +415,7 @@ export default function AnimatedChatbot() {
         </div>
       )}
 
-      {/* Fundo escuro */}
+      {/* Fundo do fullscreen */}
       {isOpen && isFullscreen && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
