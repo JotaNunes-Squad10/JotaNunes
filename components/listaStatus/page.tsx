@@ -530,7 +530,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                   </TableCell>
 
                   {possuiPermissaoGeral && (
-                    <TableCell align="center" onClick={(e) => handleMenuOpen(e, empreendimento) } sx={{cursor: "pointer", "&:hover": {boxShadow: "0 0 8px rgba(0, 0, 0, 0.2)"}}}>
+                    <TableCell align="center" onClick={(e) => handleMenuOpen(e, empreendimento) } sx={{cursor: "pointer"}}>
                       {(
                         // Se Operador e status é Pendente ícone aparece
                         (userProfile === 3 && empreendimento.status === "Pendente") ||
@@ -539,7 +539,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                         podeEditar(userProfile, empreendimento.status)
                       ) && (
                         <IconButton>
-                          <i className="pi pi-pen-to-square" style={{ fontSize: "1.2rem" }}></i>
+                          <i className="pi pi-pen-to-square" style={{ fontSize: "1.2rem", color: "red" }}></i>
                         </IconButton>
                       )}
                     </TableCell>
