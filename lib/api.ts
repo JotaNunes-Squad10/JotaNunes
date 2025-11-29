@@ -471,7 +471,7 @@ export const MaterialService = {
     nome: string;
     marcaIds: number[];
   }) {
-    const response = await axios.patch(
+    const response = await axios.put(
       "https://jotanunesservice.onrender.com/api/v1/material/UpdateMaterial",
       payload
     );
