@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { createPortal } from 'react-dom';
 import Header from "../headerUser/page";
+import CommentBox from '../docCorrecao/CommentBox';
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
 import { Dialog } from 'primereact/dialog';
@@ -26,7 +27,6 @@ export default function DocRevisao() {
     const [commentsMap, setCommentsMap] = useState<Record<string, { text: string; createdAt: string }>>({});
     const [selectedCommentKey, setSelectedCommentKey] = useState<string | null>(null);
     const [commentBoxPos, setCommentBoxPos] = useState<{ top: number; left: number } | null>(null);
-    const [tempComment, setTempComment] = useState<string>('');
 
     const statusOptions: Array<{ label: string; value: string; color: string }> = [
         { label: 'Revisao', value: 'Revisao', color: '#FF9800' },
@@ -59,6 +59,24 @@ export default function DocRevisao() {
         document.addEventListener('mousedown', onDocClick);
         return () => document.removeEventListener('mousedown', onDocClick);
     }, [showStatusMenu]);
+
+    const getTopicoPriority = (name?: string) => {
+        if (!name) return 99;
+        const n = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        if (n.includes('area comum') || n.includes('área comum')) return 1;
+        if (n.includes('unidades privativas') || n.includes('unidade privativa')) return 2;
+        if (n.includes('marca') || n.includes('marcas') || n.includes('material') || n.includes('materiais')) return 3;
+        return 99;
+    };
+
+    const compareTopicos = useCallback((a: { topicoId?: number; id?: number }, b: { topicoId?: number; id?: number }, nameMap: Record<number, { nome?: string }> = topicosMap) => {
+        const aName = String(nameMap[a.topicoId ?? 0]?.nome ?? a.topicoId ?? a.id ?? '');
+        const bName = String(nameMap[b.topicoId ?? 0]?.nome ?? b.topicoId ?? b.id ?? '');
+        const pa = getTopicoPriority(aName);
+        const pb = getTopicoPriority(bName);
+        if (pa !== pb) return pa - pb;
+        return aName.localeCompare(bName, 'pt-BR', { sensitivity: 'base' });
+    }, [topicosMap]);
 
     const getColorForStatus = (s: string) => {
         const found = statusOptions.find((o) => o.value === s || o.label === s);
@@ -195,6 +213,21 @@ export default function DocRevisao() {
             .finally(() => setLoadingDetalhe(false));
 
     }, [options]);
+
+    useEffect(() => {
+        if (!detalhe || !detalhe.empreendimentoTopicos || Object.keys(topicosMap).length === 0) return;
+        try {
+            const current = detalhe.empreendimentoTopicos;
+            const sorted = [...current].sort((a, b) => compareTopicos(a, b));
+            const sameOrder = current.length === sorted.length && current.every((c, idx) => Number(c.topicoId ?? c.id) === Number(sorted[idx].topicoId ?? sorted[idx].id));
+            if (!sameOrder) {
+                setDetalhe((prev) => {
+                    if (!prev) return prev;
+                    return { ...prev, empreendimentoTopicos: sorted } as Empreendimento;
+                });
+            }
+        } catch {}
+    }, [topicosMap, detalhe, compareTopicos]);
 
     const fetchItemsNames = async (d: Empreendimento) => {
         try {
@@ -333,9 +366,8 @@ export default function DocRevisao() {
 
         setSelectedCommentKey(key);
         setCommentBoxPos({ top, left });
-        setTempComment(commentsMap[key]?.text ?? '');
     };
-    const handleSaveComment = async (itemKey: string) => {
+    const handleSaveComment = async (comment: string, itemKey: string) => {
         try {
             // Extrair itemId do itemKey
             // itemKey formato: "item:123" ou "material:456"
@@ -356,17 +388,17 @@ export default function DocRevisao() {
             const statusId = mapStatusToNumber(selectedStatus);
             
             // Salvar comentário via API
-            await itemService.setItemComentario(itemId, statusId, tempComment.trim());
+            await itemService.setItemComentario(itemId, statusId, comment.trim());
             
             // Atualizar o mapa local
-            if (!tempComment || tempComment.trim() === '') {
+            if (!comment || comment.trim() === '') {
                 setCommentsMap((prev) => {
                     const copy = { ...prev };
                     delete copy[itemKey];
                     return copy;
                 });
             } else {
-                const next = { ...commentsMap, [itemKey]: { text: tempComment.trim(), createdAt: new Date().toISOString() } };
+                const next = { ...commentsMap, [itemKey]: { text: comment.trim(), createdAt: new Date().toISOString() } };
                 setCommentsMap(next);
             }
             
@@ -377,7 +409,6 @@ export default function DocRevisao() {
         }
         setSelectedCommentKey(null);
         setCommentBoxPos(null);
-        setTempComment('');
     };
 
     const handleDeleteComment = async (itemKey: string) => {
@@ -414,7 +445,6 @@ export default function DocRevisao() {
         }
         setSelectedCommentKey(null);
         setCommentBoxPos(null);
-        setTempComment('');
     };
 
     useEffect(() => {
@@ -463,7 +493,6 @@ export default function DocRevisao() {
     const handleCloseComment = () => {
         setSelectedCommentKey(null);
         setCommentBoxPos(null);
-        setTempComment('');
     };
 
     const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
@@ -705,21 +734,14 @@ export default function DocRevisao() {
                             )}
                                 {/* Caixa flutuante de comentário (fixa, posicionada) */}
                                 {selectedCommentKey !== null && commentBoxPos && portalEl && createPortal(
-                                    <div style={{ position: 'fixed', top: commentBoxPos.top, left: commentBoxPos.left, width: 340, zIndex: 9999 }}>
-                                        <div className="bg-white border rounded shadow-lg p-3 text-sm">
-                                            <label className="block text-xs font-semibold mb-1">Comentário</label>
-                                            <textarea
-                                                value={tempComment}
-                                                onChange={(ev) => setTempComment(ev.target.value)}
-                                                className="w-full h-28 p-2 border rounded text-sm resize-none"
-                                            />
-                                            <div className="mt-2 flex justify-end gap-2">
-                                                <button onClick={() => handleCloseComment()} className="px-3 py-1 text-sm rounded hover:bg-gray-400 bg-gray-300">Cancelar</button>
-                                                <button onClick={() => selectedCommentKey !== null && handleDeleteComment(selectedCommentKey)} className="px-3 py-1 text-sm rounded hover:bg-red-600 bg-red-400">Excluir</button>
-                                                <button onClick={() => selectedCommentKey !== null && handleSaveComment(selectedCommentKey)} className="px-3 py-1 text-sm bg-yellow-400 hover:bg-yellow-600 rounded">Salvar</button>
-                                            </div>
-                                        </div>
-                                    </div>,
+                                    <CommentBox
+                                        position={commentBoxPos}
+                                        initialComment={commentsMap[selectedCommentKey]?.text ?? ''}
+                                        onSave={(comment) => handleSaveComment(comment, selectedCommentKey)}
+                                        onDelete={() => handleDeleteComment(selectedCommentKey)}
+                                        onClose={handleCloseComment}
+                                        hasExistingComment={!!commentsMap[selectedCommentKey]}
+                                    />,
                                     portalEl
                                 )}
                         </article>

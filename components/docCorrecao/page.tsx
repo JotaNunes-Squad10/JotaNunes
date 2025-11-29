@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { createPortal } from 'react-dom';
 import Header from "../headerUser/page";
+import CommentBox from './CommentBox';
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import { MultiSelect } from 'primereact/multiselect';
 import { Toast } from 'primereact/toast';
@@ -47,7 +48,6 @@ export default function DocRevisao() {
     const [addMaterialOptions, setAddMaterialOptions] = useState<Array<{ label: string; value: number | undefined }>>([]);
     const [selectedCommentKey, setSelectedCommentKey] = useState<string | null>(null);
     const [commentBoxPos, setCommentBoxPos] = useState<{ top: number; left: number } | null>(null);
-    const [tempComment, setTempComment] = useState<string>('');
     const [padraoOriginal, setPadraoOriginal] = useState<string | number | null>(null);
 
     const statusOptions: Array<{ label: string; value: string; color: string }> = [
@@ -287,8 +287,8 @@ export default function DocRevisao() {
     const getTopicoPriority = (name?: string) => {
         if (!name) return 99;
         const n = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        if (n.includes('unidades privativas') || n.includes('unidade privativa')) return 1;
-        if (n.includes('area comum') || n.includes('área comum')) return 2;
+        if (n.includes('area comum') || n.includes('área comum')) return 1;
+        if (n.includes('unidades privativas') || n.includes('unidade privativa')) return 2;
         if (n.includes('marca') || n.includes('marcas') || n.includes('material') || n.includes('materiais')) return 3;
         return 99;
     };
@@ -1103,9 +1103,8 @@ export default function DocRevisao() {
 
         setSelectedCommentKey(key);
         setCommentBoxPos({ top, left });
-        setTempComment(commentsMap[key]?.text ?? '');
     };
-    const handleSaveComment = async (itemKey: string) => {
+    const handleSaveComment = async (comment: string, itemKey: string) => {
         try {
             const parts = itemKey.split(':');
             if (parts.length !== 2) {
@@ -1121,16 +1120,16 @@ export default function DocRevisao() {
             const statusId = mapStatusToNumber(detalhe?.status ?? selectedStatus);
 
             if (parts[0] === 'item') {
-                await itemService.setItemComentario(id, statusId, tempComment.trim());
+                await itemService.setItemComentario(id, statusId, comment.trim());
 
-                if (!tempComment || tempComment.trim() === '') {
+                if (!comment || comment.trim() === '') {
                     setCommentsMap((prev) => {
                         const copy = { ...prev };
                         delete copy[itemKey];
                         return copy;
                     });
                 } else {
-                    const next = { ...commentsMap, [itemKey]: { text: tempComment.trim(), createdAt: new Date().toISOString() } };
+                    const next = { ...commentsMap, [itemKey]: { text: comment.trim(), createdAt: new Date().toISOString() } };
                     setCommentsMap(next);
                 }
 
@@ -1144,7 +1143,6 @@ export default function DocRevisao() {
         } finally {
             setSelectedCommentKey(null);
             setCommentBoxPos(null);
-            setTempComment('');
         }
     };
 
@@ -1184,7 +1182,6 @@ export default function DocRevisao() {
         } finally {
             setSelectedCommentKey(null);
             setCommentBoxPos(null);
-            setTempComment('');
         }
     };
 
@@ -1218,7 +1215,6 @@ export default function DocRevisao() {
     const handleCloseComment = () => {
         setSelectedCommentKey(null);
         setCommentBoxPos(null);
-        setTempComment('');
     };
 
     const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
@@ -1917,21 +1913,14 @@ export default function DocRevisao() {
 
                                 {/* Caixa flutuante de comentário (fixa, posicionada) */}
                                 {selectedCommentKey !== null && commentBoxPos && portalEl && createPortal(
-                                    <div style={{ position: 'fixed', top: commentBoxPos.top, left: commentBoxPos.left, width: 340, zIndex: 9999 }}>
-                                        <div className="bg-white border rounded shadow-lg p-3 text-sm">
-                                            <label className="block text-xs font-semibold mb-1">Comentário</label>
-                                            <textarea
-                                                value={tempComment}
-                                                onChange={(ev) => setTempComment(ev.target.value)}
-                                                className="w-full h-28 p-2 border rounded text-sm resize-none"
-                                            />
-                                            <div className="mt-2 flex justify-end gap-2">
-                                                <button onClick={() => handleCloseComment()} className="px-3 py-1 text-sm rounded hover:bg-gray-400 bg-gray-300">Cancelar</button>
-                                                <button onClick={() => selectedCommentKey !== null && handleDeleteComment(selectedCommentKey)} className="px-3 py-1 text-sm rounded hover:bg-red-600 bg-red-400">Excluir</button>
-                                                <button onClick={() => selectedCommentKey !== null && handleSaveComment(selectedCommentKey)} className="px-3 py-1 text-sm bg-yellow-400 hover:bg-yellow-600 rounded">Salvar</button>
-                                            </div>
-                                        </div>
-                                    </div>,
+                                    <CommentBox
+                                        position={commentBoxPos}
+                                        initialComment={commentsMap[selectedCommentKey]?.text ?? ''}
+                                        onSave={(comment) => handleSaveComment(comment, selectedCommentKey)}
+                                        onDelete={() => handleDeleteComment(selectedCommentKey)}
+                                        onClose={handleCloseComment}
+                                        hasExistingComment={!!commentsMap[selectedCommentKey]}
+                                    />,
                                     portalEl
                                 )}
                         </article>
