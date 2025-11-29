@@ -90,6 +90,12 @@ export interface GetAllMarcasByMaterialId {
   marcas: string[];
 }
 
+export interface Material {
+  id: number;
+  nome: string;
+  marcaIds: number[];
+}
+
 export interface GetAllTopicResponse {
   data: Topico[];
 }
@@ -445,7 +451,7 @@ export const MarcaMaterial = {
 
 // Materiais marcas
 export const MaterialService = {
-  async getAllMateriais(): Promise<Marca[]> {
+  async getAllMateriais(): Promise<Material[]> {
     const response = await axios.get(
       "https://jotanunesservice.onrender.com/api/v1/material/GetAllMateriais"
     );
@@ -460,7 +466,11 @@ export const MaterialService = {
     return response.data;
   },
 
-  async updateMaterial(payload: { id: number; nome: string; marcaId: number }) {
+  async updateMaterial(payload: {
+    id: number;
+    nome: string;
+    marcaIds: number[];
+  }) {
     const response = await axios.patch(
       "https://jotanunesservice.onrender.com/api/v1/material/UpdateMaterial",
       payload

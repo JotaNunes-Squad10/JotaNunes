@@ -2,8 +2,8 @@
 
 import { Dialog } from "primereact/dialog";
 import { Toast } from "primereact/toast";
-import { useRef, useState } from "react";
-import { itemService } from "@/lib/api";
+import { useRef, useState, useEffect } from "react";
+import { itemService, Item } from "@/lib/api";
 
 interface Props {
   visible: boolean;
@@ -19,18 +19,44 @@ export default function EditItemModal({
   onUpdated,
 }: Props) {
   const toast = useRef<Toast>(null);
-  const [nome, setNome] = useState(item?.nome ?? "");
-  const [descricao, setDescricao] = useState(item?.descricao ?? "");
+  const [nome, setNome] = useState("");
+  const [descricao, setDescricao] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // atualizar campos ao abrir modal
+  useEffect(() => {
+    setNome(item?.nome ?? "");
+    setDescricao(item?.descricao ?? "");
+  }, [item]);
 
   const save = async () => {
     if (!item) return;
 
     try {
       setLoading(true);
+
+      // VALIDAR NOME EXISTENTE
+      const all: Item[] = await itemService.getAllItem();
+
+      const existe = all.some(
+        (i) =>
+          i.nome.toLowerCase() === nome.trim().toLowerCase() && i.id !== item.id
+      );
+
+      if (existe) {
+        toast.current?.show({
+          severity: "error",
+          summary: "Erro",
+          detail: "Já existe um item com esse nome.",
+          life: 3000,
+        });
+        setLoading(false);
+        return;
+      }
+
       await itemService.updateItem({
         id: item.id,
-        nome,
+        nome: nome.trim(),
         descricao,
       });
 
@@ -51,7 +77,7 @@ export default function EditItemModal({
         life: 3000,
       });
 
-      console.error("Erro ao atualizar o item", err);
+      console.error("Erro ao atualizar item", err);
     } finally {
       setLoading(false);
     }

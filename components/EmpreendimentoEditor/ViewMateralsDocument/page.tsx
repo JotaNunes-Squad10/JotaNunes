@@ -71,7 +71,7 @@ export default function TabelaItens({
   const [editMaterialData, setEditMaterialData] = useState<{
     id: number;
     nome: string;
-    marcaId: number;
+    marcaIds: number[];
   } | null>(null);
 
   const [showEditItem, setShowEditItem] = useState(false);
@@ -216,7 +216,7 @@ export default function TabelaItens({
       setEditMaterialData({
         id: row.id,
         nome: row.item,
-        marcaId: 0,
+        marcaIds: [],
       });
       setShowEditMaterial(true);
       return;

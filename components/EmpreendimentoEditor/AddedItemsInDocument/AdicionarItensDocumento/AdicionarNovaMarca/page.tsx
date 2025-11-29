@@ -4,8 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Dialog } from "primereact/dialog";
 import { Toast } from "primereact/toast";
 import { MultiSelect, MultiSelectChangeEvent } from "primereact/multiselect";
-import { MaterialService, marcaService } from "@/lib/api";
-import { CreateMaterialPayload } from "@/lib/api"; // vamos criar essa interface abaixo!
+import { MaterialService, marcaService, Material } from "@/lib/api";
 
 interface Props {
   onReload: () => void;
@@ -17,85 +16,74 @@ interface MarcaOption {
 }
 
 export default function AdicionarNovoMaterial({ onReload }: Props) {
-  const [visible, setVisible] = useState<boolean>(false);
-  const [nomeMaterial, setNomeMaterial] = useState<string>("");
-
+  const [visible, setVisible] = useState(false);
+  const [nome, setNome] = useState("");
   const [marcas, setMarcas] = useState<MarcaOption[]>([]);
-  const [selectedMarcas, setSelectedMarcas] = useState<MarcaOption[]>([]);
-
-  const [loading, setLoading] = useState<boolean>(false);
+  const [selected, setSelected] = useState<MarcaOption[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const toast = useRef<Toast>(null);
 
-  const showSuccess = () => {
-    toast.current?.show({
-      severity: "success",
-      summary: "Sucesso",
-      detail: "Material criado com sucesso!",
-      life: 3000,
-    });
-  };
-
-  const showError = () => {
-    toast.current?.show({
-      severity: "error",
-      summary: "Erro",
-      detail: "Não foi possível criar o material.",
-      life: 3000,
-    });
-  };
-
-  // ----------------------------------------------------------
-  // Carregar marcas existentes
-  // ----------------------------------------------------------
   useEffect(() => {
-    const loadMarcas = async () => {
-      try {
-        const listaMarcas = await marcaService.getAllMarca();
-
-        const formatted = listaMarcas.map((m) => ({
+    async function load() {
+      const todas = await marcaService.getAllMarca();
+      setMarcas(
+        todas.map((m) => ({
           name: m.nome,
           code: String(m.id),
-        }));
-
-        setMarcas(formatted);
-      } catch (error) {
-        console.error("Erro ao buscar marcas:", error);
-      }
-    };
-
-    loadMarcas();
+        }))
+      );
+    }
+    load();
   }, []);
 
-  // ----------------------------------------------------------
-  // Criar Material
-  // ----------------------------------------------------------
-  const handleCreateMaterial = async () => {
-    if (!nomeMaterial.trim()) {
-      showError();
-      return;
-    }
-
-    const payload: CreateMaterialPayload = {
-      nome: nomeMaterial.trim(),
-      marcaIds: selectedMarcas.map((m) => Number(m.code)),
-    };
-
+  const save = async () => {
     try {
       setLoading(true);
 
-      await MaterialService.createMaterial(payload);
+      // VALIDAR DUPLICIDADE
+      const all: Material[] = await MaterialService.getAllMateriais();
 
-      showSuccess();
+      const exists = all.some(
+        (m) => m.nome.toLowerCase() === nome.trim().toLowerCase()
+      );
+
+      if (exists) {
+        toast.current?.show({
+          severity: "error",
+          summary: "Erro",
+          detail: "Já existe um material com esse nome.",
+          life: 3000,
+        });
+        setLoading(false);
+        return;
+      }
+
+      await MaterialService.createMaterial({
+        nome: nome.trim(),
+        marcaIds: selected.map((m) => Number(m.code)),
+      });
+
+      toast.current?.show({
+        severity: "success",
+        summary: "Sucesso",
+        detail: "Material criado!",
+        life: 3000,
+      });
+
       onReload();
       setVisible(false);
-
-      // resetar modal
-      setNomeMaterial("");
-      setSelectedMarcas([]);
+      setNome("");
+      setSelected([]);
     } catch (err) {
-      console.error("Erro ao criar material:", err);
-      showError();
+      toast.current?.show({
+        severity: "error",
+        summary: "Erro",
+        detail: "Falha ao criar material.",
+        life: 3000,
+      });
+
+      console.error("Erro ao criar material", err);
     } finally {
       setLoading(false);
     }
@@ -107,7 +95,7 @@ export default function AdicionarNovoMaterial({ onReload }: Props) {
 
       <button
         onClick={() => setVisible(true)}
-        className="px-4 py-3 border border-gray-300 rounded-lg text-[#0f582a] cursor-pointer hover:bg-gray-100"
+        className="px-4 py-3 border rounded-lg text-[#0f582a]"
       >
         <i className="pi pi-plus"></i>
       </button>
@@ -115,50 +103,34 @@ export default function AdicionarNovoMaterial({ onReload }: Props) {
       <Dialog
         header="Novo Material"
         visible={visible}
-        modal={false}
         style={{ width: "40vw" }}
         onHide={() => setVisible(false)}
       >
-        <div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleCreateMaterial();
-            }}
+        <div className="flex flex-col gap-4">
+          <label>Nome</label>
+          <input
+            className="p-2 border rounded"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+          />
+
+          <label>Marcas</label>
+          <MultiSelect
+            value={selected}
+            onChange={(e: MultiSelectChangeEvent) => setSelected(e.value)}
+            options={marcas}
+            optionLabel="name"
+            display="chip"
+            filter
+          />
+
+          <button
+            onClick={save}
+            disabled={loading}
+            className="bg-[#0f582a] text-white p-3 rounded"
           >
-            <div className="flex flex-col gap-4">
-              <label>Nome do novo material</label>
-              <input
-                type="text"
-                placeholder="Nome do material"
-                className="p-2 border border-gray-300 rounded-lg"
-                value={nomeMaterial}
-                onChange={(e) => setNomeMaterial(e.target.value)}
-              />
-
-              <label>Selecione as marcas do material</label>
-              <MultiSelect
-                value={selectedMarcas}
-                onChange={(e: MultiSelectChangeEvent) =>
-                  setSelectedMarcas(e.value)
-                }
-                options={marcas}
-                optionLabel="name"
-                placeholder="Selecione uma ou mais marcas"
-                className="w-full md:w-14rem"
-                display="chip"
-                filter
-              />
-
-              <button
-                type="submit"
-                className="cursor-pointer bg-[#0f582a] p-3 text-white rounded-lg hover:opacity-95"
-                disabled={loading}
-              >
-                Criar Material
-              </button>
-            </div>
-          </form>
+            Criar Material
+          </button>
         </div>
       </Dialog>
     </div>

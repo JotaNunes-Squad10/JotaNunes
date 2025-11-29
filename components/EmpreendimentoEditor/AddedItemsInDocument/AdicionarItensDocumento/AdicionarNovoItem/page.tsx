@@ -1,6 +1,8 @@
+"use client";
+
 import React, { useRef, useState } from "react";
 import { Dialog } from "primereact/dialog";
-import { Item, ItemsServie } from "@/lib/api";
+import { Item, itemService, ItemsServie } from "@/lib/api";
 import { Toast } from "primereact/toast";
 
 interface Props {
@@ -8,46 +10,58 @@ interface Props {
 }
 
 export default function AdicionarNovoItem({ onReload }: Props) {
-  const [visible, setVisible] = useState<boolean>(false);
-  const [nomeItem, setNomeItem] = useState<string>("");
-  const [descricaoItem, setDescricaoItem] = useState<string>("");
+  const [visible, setVisible] = useState(false);
+  const [nome, setNome] = useState("");
+  const [descricao, setDescricao] = useState("");
   const toast = useRef<Toast>(null);
 
-  const showSuccess = () => {
-    toast.current?.show({
-      severity: "success",
-      summary: "Success",
-      detail: "Item criado com sucesso!",
-      life: 3000,
-    });
-  };
-
-  const handleCreateNewItem = async () => {
+  const create = async () => {
     try {
-      const newItem: Item = {
-        nome: nomeItem,
-        descricao: descricaoItem,
-      };
+      // validar duplicidade
+      const all: Item[] = await itemService.getAllItem();
 
-      console.log(newItem);
-      const createdItem = await ItemsServie.createItem(newItem);
+      const exists = all.some(
+        (i) => i.nome.toLowerCase() === nome.trim().toLowerCase()
+      );
 
-      console.log("Item criado com sucesso:", createdItem);
+      if (exists) {
+        toast.current?.show({
+          severity: "error",
+          summary: "Erro",
+          detail: "Já existe um item com esse nome.",
+          life: 3000,
+        });
+        return;
+      }
+
+      await ItemsServie.createItem({
+        nome: nome.trim(),
+        descricao,
+      });
+
+      toast.current?.show({
+        severity: "success",
+        summary: "Sucesso",
+        detail: "Item criado!",
+        life: 3000,
+      });
 
       onReload();
-      showSuccess();
       setVisible(false);
-    } catch (error) {
-      console.error("Erro ao criar novo item:", error);
+      setNome("");
+      setDescricao("");
+    } catch (err) {
+      console.error("Erro ao criar item:", err);
     }
   };
 
   return (
     <div className="card flex justify-content-center">
       <Toast ref={toast} />
+
       <button
         onClick={() => setVisible(true)}
-        className="px-4 py-3 border border-gray-300 rounded-lg text-[#0f582a] cursor-pointer hover:bg-gray-100"
+        className="px-4 py-3 border rounded-lg text-[#0f582a]"
       >
         <i className="pi pi-plus"></i>
       </button>
@@ -55,46 +69,30 @@ export default function AdicionarNovoItem({ onReload }: Props) {
       <Dialog
         header="Novo Item"
         visible={visible}
-        modal={false}
         style={{ width: "50vw" }}
-        breakpoints={{ "960px": "75vw", "640px": "90vw" }}
-        onHide={() => {
-          if (!visible) return;
-          setVisible(false);
-        }}
+        onHide={() => setVisible(false)}
       >
-        <div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-            }}
+        <div className="flex flex-col gap-3">
+          <label>Nome</label>
+          <input
+            className="p-2 border rounded"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+          />
+
+          <label>Descrição</label>
+          <input
+            className="p-2 border rounded"
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+          />
+
+          <button
+            onClick={create}
+            className="bg-[#0f582a] text-white p-3 rounded"
           >
-            <div className="flex flex-col">
-              <label className="mb-4">Digite o nome do item</label>
-              <input
-                type="text"
-                placeholder="Nome do item"
-                className="p-2 border border-gray-300 rounded-lg mb-4"
-                required
-                onChange={(e) => setNomeItem(e.target.value)}
-              />
-              <label className="mb-4">Digite a descrição do item</label>
-              <input
-                type="text"
-                placeholder="Descrição do item"
-                className="p-2 border border-gray-300 rounded-lg mb-4"
-                required
-                onChange={(e) => setDescricaoItem(e.target.value)}
-              />
-              <button
-                type="submit"
-                className="cursor-pointer bg-[#0f582a] p-3 text-white rounded-lg hover:opacity-95"
-                onClick={handleCreateNewItem}
-              >
-                Enviar
-              </button>
-            </div>
-          </form>
+            Criar Item
+          </button>
         </div>
       </Dialog>
     </div>
