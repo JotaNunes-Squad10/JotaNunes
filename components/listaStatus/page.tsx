@@ -530,7 +530,9 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                   </TableCell>
 
                   {possuiPermissaoGeral && (
-                    <TableCell align="center" onClick={(e) => handleMenuOpen(e, empreendimento) } sx={{cursor: "pointer"}}>
+                    <TableCell align="center" onClick={
+                      userProfile === 2 && (empreendimento.status === "Editando" || empreendimento.status === "Em revisão") ? undefined : 
+                      (e) => handleMenuOpen(e, empreendimento) } sx={{cursor: userProfile === 2 && (empreendimento.status === "Editando" || empreendimento.status === "Em revisão") ? "default" : "pointer"}}>
                       {(
                         // Se Operador e status é Pendente ícone aparece
                         (userProfile === 3 && empreendimento.status === "Pendente") ||
