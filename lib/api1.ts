@@ -1,6 +1,5 @@
 import axios from "axios";
 import { getCookie } from "cookies-next";
-
 // Tipos para as respostas da API
 export interface LoginResponse {
   data: {
@@ -80,6 +79,23 @@ export interface CreateMarcaResponse {
   };
 }
 
+export interface CreateMaterialPayload {
+  nome: string;
+  marcaIds: number[];
+}
+
+export interface GetAllMarcasByMaterialId {
+  materialId: number;
+  material: string;
+  marcas: string[];
+}
+
+export interface Material {
+  id: number;
+  nome: string;
+  marcaIds: number[];
+}
+
 export interface GetAllTopicResponse {
   data: Topico[];
 }
@@ -103,7 +119,6 @@ export interface DeleteTopicResponse {
     ruleSetsExecuted: string | null;
   };
 }
-
 export interface GetAllEmpreendimentoProps {
   data: Empreendimento[];
 }
@@ -147,7 +162,7 @@ export interface CreateDocumentoPayload {
   tamanhoArea: number;
   localizacao: string;
   padrao: number;
-  empreendimentoTopicos?: EmpreendimentosTopicos[];
+  empreendimentoTopicos: EmpreendimentosTopicos[];
 }
 
 export interface DocumentoPayloadResponse {
@@ -204,33 +219,26 @@ export interface Empreendimento {
 export interface EmpreendimentosTopicos {
   topicoId: number;
   posicao: number;
-  versoes?: number[];
-  topicoAmbientes?: (TopicoAmbiente | {
-    ambienteId: number;
-    area: number;
-    posicao: number;
-    ambienteItens: { itemId: number }[];
-  })[];
-  ambienteItens?: AmbienteItens[];
-  topicoMateriais?: ({ materialId: number; versoes?: number[] } | { materialId: number })[];
+  versoes: number[];
+  topicoAmbientes: TopicoAmbiente[];
+  ambienteItens: AmbienteItens[];
 }
 
 export interface TopicoAmbiente {
   ambienteId: number;
   posicao: number;
-  area?: number;
-  versoes?: number[];
-  ambienteItens?: AmbienteItens[];
+  versoes: number[];
+  ambienteItens: AmbienteItens[];
 }
 
 export interface AmbienteItens {
   itemId: number;
-  versoes?: number[];
+  versoes: number[];
 }
 
 export interface TopicoMaterial {
   materialId: number;
-  versoes?: number[];
+  versoes: number[];
 }
 
 export interface EmprendimentoTopico {
@@ -293,7 +301,6 @@ const getAuthToken = (): string => {
   const token = getCookie("accessToken");
   return token ? `Bearer ${token}` : "";
 };
-
 
 // Configuração da API principal
 export const api = axios.create({
@@ -418,6 +425,14 @@ export const itemService = {
 
     return response.data.data;
   },
+
+  async updateItem(payload: { id: number; nome: string; descricao: string }) {
+    const response = await axios.patch(
+      "https://jotanunesservice.onrender.com/api/v1/items/UpdateItem",
+      payload
+    );
+    return response.data;
+  },
 };
 
 export const marcaService = {
@@ -447,17 +462,55 @@ export const marcaService = {
   },
 };
 
+export const MarcaMaterial = {
+  async getAllMarcasByMaterialId(
+    materialId: number
+  ): Promise<GetAllMarcasByMaterialId> {
+    try {
+      const response = await axios.get(
+        `https://jotanunesservice.onrender.com/api/v1/marca-material/GetAllMarcasByMaterialId/${materialId}`
+      );
+
+      return response.data.data;
+    } catch (error) {
+      console.error("Erro ao buscar marcas pelo id do matérial", error);
+      throw error;
+    }
+  },
+};
+
 // Materiais marcas
 export const MaterialService = {
-  async getAllMateriais(): Promise<Marca[]> {
+  async getAllMateriais(): Promise<Material[]> {
     const response = await axios.get(
       "https://jotanunesservice.onrender.com/api/v1/material/GetAllMateriais"
     );
     return response.data.data;
   },
+
+  async createMaterial(payload: CreateMaterialPayload) {
+    const response = await axios.post(
+      "https://jotanunesservice.onrender.com/api/v1/material/CreateMaterial",
+      payload
+    );
+    return response.data;
+  },
+
+  async updateMaterial(payload: {
+    id: number;
+    nome: string;
+    marcaIds: number[];
+  }) {
+    const response = await axios.put(
+      "https://jotanunesservice.onrender.com/api/v1/material/UpdateMaterial",
+      payload
+    );
+    return response.data;
+  },
 };
 
 export const AmbienteService = {
+  // A possibilidade de não estar funcionando
   async createAmbiente(
     payload: CreateAmbientePayload
   ): Promise<{ id: number; nome: string; topicoId: number }> {
@@ -480,7 +533,6 @@ export const ItemsServie = {
     return response.data;
   },
 };
-
 export const empreendimentoService = {
   async getAllEmpreendimento(): Promise<Empreendimento[]> {
     const response = await axios.get<GetAllEmpreendimentoProps>(

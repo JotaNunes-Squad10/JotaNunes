@@ -42,7 +42,7 @@ export default function FormCreateEmpreendimento({
         descricaoDocumento={params.descricaoDocumento}
         localizacaoDocumento={params.localizacaoDocumento}
       />
-      <Card className="shadow-md p-6 w-full ">
+      <Card className="border-1 border-gray-300 p-0 w-full ">
         {/* Campo Empreendimento */}
         <div className="flex flex-col sm:flex-row sm:items-center mb-6">
           <label className="sm:w-40 font-semibold text-gray-700 mb-2 sm:mb-0">

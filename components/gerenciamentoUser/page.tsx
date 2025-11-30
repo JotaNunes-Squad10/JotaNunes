@@ -424,8 +424,8 @@ export default function GerenciamentoUser() {
                         </td>
                         <td className="px-2 sm:px-6 py-1 sm:py-2">
                           <button
-                            className="p-2 rounded hover:bg-gray-300 active:scale-90 transition-transform duration-150"
-                            style={{ outline: 'none' }}
+                            className="p-2 rounded hover:bg-gray-300 active:scale-90 transition-transform duration-150 cursor-pointer"
+                            style={{ outline: 'none'}}
                             onClick={() => {
                               const userForEdit = {
                                 ...user,
@@ -436,8 +436,7 @@ export default function GerenciamentoUser() {
                             }}
                           >
                             <i
-                              className="pi pi-pen-to-square text-gray-800 hover:text-blue-500 text-lg sm:text-xl transition-transform duration-300 hover:scale-110"
-                              style={{ cursor: 'pointer' }}
+                              className="pi pi-pen-to-square text-gray-800 hover:text-red-500 text-lg sm:text-xl transition-transform duration-300 hover:scale-110"
                             />
                           </button>
                         </td>

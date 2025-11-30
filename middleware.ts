@@ -34,6 +34,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  // Verifica se o token expirou
+  const now = Math.floor(Date.now() / 1000); 
+  if (payload.exp && payload.exp < now) {
+    const response = NextResponse.redirect(new URL("/login", request.url));
+    response.cookies.delete("accessToken"); 
+    return response;
+  }
+
   const groups = payload?.groups;
   const isAdmin = Array.isArray(groups)
     ? groups.includes("Administrador")

@@ -1,7 +1,7 @@
 import SelecionaAmbiente from "./SelecionaAmbiente/page";
 import SelecioneItemAmbiente from "./SelecionaItemAmbiente/page";
 import AdicionarItensDocumento from "./AdicionarItensDocumento/page";
-import { MarcaMateriais, UpdateEmpreendimento } from "@/lib/api1";
+import { UpdateEmpreendimento } from "@/lib/api1";
 import { useEffect } from "react";
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
 
   itensDocumento: number[];
 
-  itemMarcaMateriais: MarcaMateriais[];
+  itemMarcaMateriais: { id: number; nome: string }[];
 
   onAddItems: (ids: number[], topicoId: number, ambienteId: number) => void;
   onAddMateriais: (ids: number[], topicoId: number) => void;

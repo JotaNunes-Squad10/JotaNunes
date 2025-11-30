@@ -11,8 +11,7 @@ import { Toast } from "primereact/toast";
 import {
   DocumentoService,
   UpdateEmpreendimento,
-  MarcaMateriais,
-  marcaService,
+  MaterialService,
 } from "@/lib/api1";
 
 /**
@@ -105,7 +104,9 @@ export default function EmpreendimentoEditor({
     UpdateEmpreendimento | undefined
   >(undefined);
   const toast = useRef<Toast | null>(null);
-  const [marcaMaterial, setMarcaMaterial] = useState<MarcaMateriais[]>([]);
+  const [materiais, setMateriais] = useState<{ id: number; nome: string }[]>(
+    []
+  );
   const [status, setStatus] = useState<string>("");
   const [idDocumento, setIdDocumento] = useState<string>("");
 
@@ -113,8 +114,8 @@ export default function EmpreendimentoEditor({
   useEffect(() => {
     const getMarcaMaterial = async () => {
       try {
-        const response = await marcaService.getAllMarcaMateriais();
-        setMarcaMaterial(response);
+        const response = await MaterialService.getAllMateriais();
+        setMateriais(response);
       } catch (error) {
         console.error("Erro ao buscar marca-material:", error);
       }
@@ -673,7 +674,7 @@ export default function EmpreendimentoEditor({
         setItemAmbienteSelecionado={setItemAmbienteSelecionado}
       />
 
-      <div className="pt-30 flex justify-center w-full">
+      <div className="pt-8 flex justify-center w-full">
         <div className="flex flex-col w-full max-screen-lg px-4 lg:w-[60%]">
           <FormEmpreendimento
             empreendimento={empreendimento}
@@ -689,7 +690,7 @@ export default function EmpreendimentoEditor({
             setItemAmbienteSelecionado={setItemAmbienteSelecionado}
             empreendimento={empreendimento}
             itensDocumento={[]} // componente lê do empreendimento
-            itemMarcaMateriais={marcaMaterial}
+            itemMarcaMateriais={materiais}
             // handlers: itens ambientes e materiais (marcas)
             onAddItems={handleAddItems}
             onAddMateriais={handleAddMateriais}

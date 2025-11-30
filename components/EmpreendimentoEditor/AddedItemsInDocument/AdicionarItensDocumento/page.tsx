@@ -3,12 +3,11 @@ import { MultiSelect, MultiSelectChangeEvent } from "primereact/multiselect";
 import AdicionarNovoItem from "./AdicionarNovoItem/page";
 import {
   itemService,
-  MarcaMateriais,
+  MaterialService,
   subTopicosAmbienteService,
   SubTopic,
   UpdateEmpreendimento,
   Item,
-  EmprendimentoTopico,
 } from "@/lib/api1";
 import { Button } from "primereact/button";
 import AdicionarNovaMarca from "./AdicionarNovaMarca/page";
@@ -17,7 +16,7 @@ interface Props {
   itemAmbienteSelecionado: string;
   empreendimento: UpdateEmpreendimento;
   itensDocumento: number[];
-  itemMarcaMateriais: MarcaMateriais[];
+  itemMarcaMateriais: { id: number; nome: string }[];
   ambienteSelecionado: string;
   onAddItems: (ids: number[], topicoId: number, ambienteId: number) => void;
 }
@@ -46,7 +45,6 @@ export default function AdicionarItensDocumento({
   itemAmbienteSelecionado,
   empreendimento,
   onAddItems,
-  itemMarcaMateriais,
   ambienteSelecionado,
 }: Props) {
   const [itensAmbiente, setItensAmbiente] = useState<AmbienteOption[]>([]);
@@ -75,28 +73,43 @@ export default function AdicionarItensDocumento({
 
     setLoading(true);
 
-    const topicoMarcas = empreendimento.empreendimentoTopicos.find(
-      (t: EmprendimentoTopico) => t.topicoId === 3
-    );
+    const load = async () => {
+      try {
+        // 1. Buscar todos os materiais
+        const materiais = await MaterialService.getAllMateriais();
 
-    const materiaisExistentes = topicoMarcas?.topicoMateriais
-      ? topicoMarcas.topicoMateriais.map((m) => m.materialId)
-      : [];
+        // 2. Quais materiais já foram adicionados ao doc?
+        const topicoMarcas = empreendimento.empreendimentoTopicos.find(
+          (t) => t.topicoId === 3
+        );
 
-    const todasMarcas: AmbienteOption[] = itemMarcaMateriais.map((item) => ({
-      name: item.marca.nome,
-      code: String(item.id),
-      descricao: item.material.nome,
-      materialId: item.material.id,
-    }));
+        const materiaisExistentes = topicoMarcas?.topicoMateriais
+          ? topicoMarcas.topicoMateriais.map((m) => m.materialId)
+          : [];
 
-    const filtrado = todasMarcas.filter(
-      (m) => !materiaisExistentes.includes(m.materialId || 0)
-    );
+        // 3. Remover materiais já selecionados no doc
+        const disponiveis = materiais.filter(
+          (m) => !materiaisExistentes.includes(m.id)
+        );
 
-    setItensAmbiente(filtrado);
-    setLoading(false);
-  }, [ambienteSelecionado, empreendimento, itemMarcaMateriais]);
+        // 4. Formatar para MultiSelect
+        setItensAmbiente(
+          disponiveis.map((m) => ({
+            name: m.nome,
+            code: String(m.id),
+            descricao: "",
+            materialId: m.id,
+          }))
+        );
+      } catch (error) {
+        console.error("Erro ao carregar materiais:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [ambienteSelecionado, empreendimento]);
 
   // ==========================================================
   // 2) AMBIENTES NORMAIS
@@ -175,13 +188,7 @@ export default function AdicionarItensDocumento({
     if (ambienteSelecionado.toUpperCase() === "MARCAS") {
       const TOPICO_MARCAS = 3;
 
-      const idsToAdd = selectedAmbientes
-        .map(
-          (s) =>
-            itemMarcaMateriais.find((mm) => mm.id === Number(s.code))?.material
-              .id
-        )
-        .filter(Boolean) as number[];
+      const idsToAdd = selectedAmbientes.map((s) => Number(s.code));
 
       onAddItems(idsToAdd, TOPICO_MARCAS, 0);
 

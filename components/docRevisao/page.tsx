@@ -688,7 +688,7 @@ export default function DocRevisao() {
 
                                             {/* Materiais */}
                                             {topico.topicoMateriais && topico.topicoMateriais.length > 0 && (
-                                                <div className="mt-2">
+                                                <div className="mt-2 bg-gray-100 md:bg-transparent p-3 md:p-0 rounded">
                                                     <h5 className="font-medium">Materiais</h5>
                                                     <div className="overflow-x-auto px-3 md:px-0">
                                                     <table className="w-full text-sm border-collapse mt-2">

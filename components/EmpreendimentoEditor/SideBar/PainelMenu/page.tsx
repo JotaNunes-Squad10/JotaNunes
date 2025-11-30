@@ -113,7 +113,7 @@ export default function PainelMenu({
         // Apenas tópicos dinâmicos podem ser excluídos
         if (![1, 2, 3].includes(topico.id)) {
           childItems.push({
-            label: "Excluir Ambiente",
+            label: "Excluir Tópico",
             icon: "",
             command: async () => {
               try {
@@ -154,7 +154,7 @@ export default function PainelMenu({
                   `}
                 >
                   <i className="pi pi-times mr-3 text-lg" />
-                  Excluir Ambiente
+                  Excluir Tópico
                 </div>
               );
             },

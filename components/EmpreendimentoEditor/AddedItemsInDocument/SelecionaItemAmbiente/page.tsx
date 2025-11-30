@@ -94,6 +94,7 @@ export default function SelecioneItemAmbiente({
       <AdicionarNovoAmbiente
         ambienteSelecionado={ambienteSelecionado}
         onCreateNewSubItem={handleCreateNewSubItem}
+        disabled={ambienteSelecionado.toLowerCase() === "marcas"}
       />
     </div>
   );

@@ -56,60 +56,6 @@ export default function ActionBar({
         }
       },
     },
-    {
-      label: "Em revisão",
-      command: async () => {
-        setStatus("Em revisão");
-        // 2
-        try {
-          await DocumentoService.updateEmpreendimentoStatus(idDocumento, 2);
-          toast.current?.show({
-            severity: "success",
-            summary: "Sucesso",
-            detail: "Status do documento salvo com sucesso!",
-            life: 3000,
-          });
-        } catch (error) {
-          console.error("Houve um erro ao salvar status", error);
-        }
-      },
-    },
-    {
-      label: "Aprovado",
-      command: async () => {
-        setStatus("Aprovado");
-        // 1
-        try {
-          await DocumentoService.updateEmpreendimentoStatus(idDocumento, 1);
-          toast.current?.show({
-            severity: "success",
-            summary: "Sucesso",
-            detail: "Status do documento salvo com sucesso!",
-            life: 3000,
-          });
-        } catch (error) {
-          console.error("Houve um erro ao salvar status", error);
-        }
-      },
-    },
-    {
-      label: "Cancelado",
-      command: async () => {
-        setStatus("Cancelado");
-        // 5
-        try {
-          await DocumentoService.updateEmpreendimentoStatus(idDocumento, 5);
-          toast.current?.show({
-            severity: "success",
-            summary: "Sucesso",
-            detail: "Status do documento salvo com sucesso!",
-            life: 3000,
-          });
-        } catch (error) {
-          console.error("Houve um erro ao salvar status", error);
-        }
-      },
-    },
   ];
 
   const getStatuscolor = () => {
@@ -118,12 +64,8 @@ export default function ActionBar({
         return { backgroundColor: "#A8E6A1", color: "white", border: "none" };
       case "Pendente":
         return { backgroundColor: "#FFD966", color: "white", border: "none" };
-      case "Em revisão":
-        return { backgroundColor: "#FF9800", color: "white", border: "none" };
-      case "Aprovado":
-        return { backgroundColor: "#4CAF50", color: "white", border: "none" };
-      case "Cancelado":
-        return { backgroundColor: "#F44336", color: "white", border: "none" };
+      default:
+        return { backgroundColor: "#E0E0E0", color: "white", border: "none" };
     }
   };
 

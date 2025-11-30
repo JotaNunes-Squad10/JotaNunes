@@ -31,7 +31,7 @@ export default function CreateEmpreendimento() {
         setItemAmbienteSelecionado={setItemAmbienteSelecionado}
       /> */}
 
-      <div className="pt-30 flex justify-center w-full">
+      <div className="pt-8 flex justify-center w-full">
         <div className="flex flex-col w-full max-screen-lg px-4 lg:w-[60%]">
           <div>
             <FormCreateEmpreendimento

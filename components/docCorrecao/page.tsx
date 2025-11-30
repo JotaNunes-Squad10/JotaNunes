@@ -1702,9 +1702,9 @@ export default function DocRevisao() {
                                                             <i className="pi pi-plus" />
                                                         </button>
                                                     </div>
-                                                    <div className="overflow-x-auto px-3 md:px-0">
-                                                    <table className="w-full text-sm border-collapse mt-2">
-                                                        <thead className="hidden md:table-header-group">
+                                                    <div className="md:overflow-x-auto px-0 md:px-0">
+                                                    <table className="block md:table w-full text-sm border-collapse mt-2">
+                                                        <thead className="hidden md:table-header-group ">
                                                             <tr className="bg-gray-100 md:border-b md:border-gray-300">
                                                                 <th className="px-3 py-2 text-left w-1/3">Material</th>
                                                                 <th className="px-3 py-2 text-left">Marcas</th>
@@ -1716,7 +1716,7 @@ export default function DocRevisao() {
                                                                 <tr
                                                                     key={`${mat.id ?? mat.materialId ?? mIdx}`}
                                                                     className={
-                                                                        `block md:table-row mb-3 md:mb-0 rounded md:rounded-none border-b border-gray-200 bg-white md:bg-transparent md:border-b md:border-gray-300 transition-colors duration-150 ease-in-out`
+                                                                        `block md:table-row mb-3 md:mb-0 hover:bg-gray-100 rounded md:rounded-none border-b border-gray-200 bg-gray-100 md:bg-transparent md:border-b md:border-gray-300 transition-colors duration-150 ease-in-out`
                                                                     }
                                                                 >
                                                                     <td className="block md:table-cell px-3 py-2">

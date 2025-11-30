@@ -142,7 +142,7 @@ export const authService = {
   async authenticate(payload: AuthenticatePayload): Promise<LoginResponse> {
     const response = await api.post<LoginResponse>(
       "/api/v1/authentication/Authenticate",
-      payload
+      payload, { timeout: 30000 }
     );
     return response.data;
   },
