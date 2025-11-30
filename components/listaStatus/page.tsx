@@ -108,33 +108,33 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
     // REGRAS ESPECIAIS DO OPERADOR
     if (userProfile === 3) {
       if (status === "Pendente") {
-        return ["Comparar", "Criar cópia"];
+        return ["Imprimir","Comparar", "Criar cópia"];
       }
 
     }
 
     // REGRAS ESPECIAIS DO GESTOR
     if (userProfile === 2) {
-
-      if (status === "Pendente") return ["Verificar","Comparar","Mudar status"];
-
-      if (status === "Aprovado") return ["Visualizar","Comparar"];
-      if (status === "Cancelado") return ["Visualizar","Comparar"];
+      if (status === "Editando") return ["Imprimir","Comparar"];
+      if (status === "Em revisão") return ["Imprimir","Comparar"];
+      if (status === "Pendente") return ["Imprimir","Comparar","Verificar","Mudar status"];
+      if (status === "Aprovado") return ["Imprimir","Comparar"];
+      if (status === "Cancelado") return ["Imprimir","Comparar"];
     }
 
 
     // REGRAS NORMAIS (ADMIN + restante do sistema)
     switch (status) {
       case "Editando":
-        return ["Editar","Comparar","Criar cópia","Mudar status"];
+        return ["Imprimir","Comparar","Editar","Criar cópia","Mudar status"];
       case "Em revisão":
-        return ["Revisar","Comparar","Criar cópia","Mudar status"];
+        return ["Imprimir","Comparar","Revisar","Criar cópia","Mudar status"];
       case "Pendente":
-        return ["Verificar","Comparar","Criar cópia","Mudar status"];
+        return ["Imprimir","Comparar","Verificar","Criar cópia","Mudar status"];
       case "Aprovado":
-        return ["Visualizar","Comparar","Criar cópia"];
+        return ["Imprimir","Comparar","Criar cópia"];
       case "Cancelado":
-        return ["Visualizar","Comparar","Criar cópia"];
+        return ["Imprimir","Comparar","Criar cópia"];
       default:
         return [];
     }
@@ -179,7 +179,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   // Define quais status cada perfil pode editar
   const permissoes: Record<number, string[]> = {
     1: ["Editando", "Pendente", "Em revisão", "Aprovado", "Cancelado"], // Admin
-    2: ["Pendente", "Aprovado", "Cancelado"], // Gestor
+    2: ["Editando", "Pendente", "Em revisão", "Aprovado", "Cancelado"], // Gestor
     3: ["Editando", "Pendente", "Em revisão", "Aprovado", "Cancelado"], // Operador
   };
 
@@ -356,7 +356,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
         return;
       }
 
-      if (opt === "Visualizar") {
+      if (opt === "Imprimir") {
         router.push(`/pdfEmpreendimento?id=${selectedEmp.id}`);
         return;
       }
@@ -530,9 +530,8 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                   </TableCell>
 
                   {possuiPermissaoGeral && (
-                    <TableCell align="center" onClick={
-                      userProfile === 2 && (empreendimento.status === "Editando" || empreendimento.status === "Em revisão") ? undefined : 
-                      (e) => handleMenuOpen(e, empreendimento) } sx={{cursor: userProfile === 2 && (empreendimento.status === "Editando" || empreendimento.status === "Em revisão") ? "default" : "pointer"}}>
+                    <TableCell align="center" onClick={ 
+                      (e) => handleMenuOpen(e, empreendimento) } sx={{cursor : "pointer"}}>
                       {(
                         // Se Operador e status é Pendente ícone aparece
                         (userProfile === 3 && empreendimento.status === "Pendente") ||
