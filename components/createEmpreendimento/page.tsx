@@ -21,7 +21,7 @@ export default function CreateEmpreendimento() {
   const [versaoDocumento, setVersaoDocumento] = useState<number>();
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pt-[60px] sm:pt-[70px]">
       <Header />
 
       {/* <CustomSidebarComponent

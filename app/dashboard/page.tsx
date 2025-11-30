@@ -9,6 +9,7 @@ import Recentes from "../../components/home/recentes/page";
 import AcoesRapidas from "../../components/home/acoesRapidas/page";
 import axios from "axios";
 import type { Empreendimento } from "../../lib/api1";
+import { toast } from "react-toastify";
 
 const Dashboard: React.FC = () => {
   const [documentos, setDocumentos] = useState<Empreendimento[]>([]);
@@ -38,9 +39,8 @@ const Dashboard: React.FC = () => {
         }));
 
         setDocumentos(parsed);
-      } catch (err) {
-        console.error("Erro ao buscar documentos no dashboard:", err);
-        // opcional: set algum estado de erro se quiser exibir
+      } catch {
+        toast.error("Erro ao buscar empreendimentos");
       } finally {
         setLoading(false);
       }
@@ -60,6 +60,7 @@ const Dashboard: React.FC = () => {
         px: { xs: 2, sm: 4 }, 
         py: 2,
         pb: { xs: 12, sm: 4 }, 
+        pt: { xs: '60px', sm: '70px' },
         minHeight: "auto"
       }}>
         {/* Status */}

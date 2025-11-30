@@ -61,7 +61,7 @@ function PdfEmpreendimentoContent() {
     <div>
       <ToastContainer autoClose={2000} theme="colored" />
 
-      <div className="mt-8 mx-4 md:mx-10 flex flex-col justify-between gap-6">
+      <div className="mt-8 mx-4 md:mx-10 flex flex-col justify-between gap-6 pt-[60px] sm:pt-[70px]">
 
         {idParam && !empreendimento && (
           <p className="text-gray-600 text-lg">
@@ -95,7 +95,7 @@ export default function PdfEmpreendimento() {
     <div>
       <Header />
       <Suspense fallback={
-        <div className="mt-8 mx-4 md:mx-10">
+        <div className="mt-8 mx-4 md:mx-10 pt-[60px] sm:pt-[70px]">
           <p className="text-gray-600 text-lg">Carregando...</p>
         </div>
       }>

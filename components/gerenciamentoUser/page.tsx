@@ -262,7 +262,7 @@ export default function GerenciamentoUser() {
         }
         setShowDeleteModal(false);
         setDeleting(false);
-  safeDispatch('gerenciamentoUser:delete:finished', { results });
+        safeDispatch('gerenciamentoUser:delete:finished', { results });
       }
     };
     window.addEventListener('gerenciamentoUser:delete', handler as EventListener);
@@ -270,7 +270,7 @@ export default function GerenciamentoUser() {
   }, [users, selectedUsers, deleting]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pt-[60px] sm:pt-[70px]">
       <Header />
       {/* Toasters locais (inline) */}
       <div className="fixed top-4 right-4 z-[11000] flex flex-col gap-2">

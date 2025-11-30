@@ -63,7 +63,7 @@ const StatusTabelaContent: React.FC = () => {
   }, []);   
 
   return (
-    <Box sx={{ px: 4, py: 2 }}>
+    <Box sx={{ px: 4, py: 2, pt: { xs: '60px', sm: '70px' } }}>
       {/* Cards de Status */}
       <Box mb={3}>
         <StatusSummary empreendimentos={empreendimentos} loading={loading} />

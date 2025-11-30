@@ -664,7 +664,7 @@ export default function EmpreendimentoEditor({
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pt-[60px] sm:pt-[70px]">
       <Toast ref={toast} />
       <Header />
       <CustomSidebarComponent

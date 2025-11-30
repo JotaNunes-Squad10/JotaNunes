@@ -1272,7 +1272,7 @@ export default function DocRevisao() {
     }, [options]);
 
     return (
-        <div>
+        <div className="pt-[60px] sm:pt-[70px]">
             <Header />
             <Toast ref={toast} />
             <div className="p-4">
