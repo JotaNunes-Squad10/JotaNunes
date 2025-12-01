@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import RobotIcon from "./RobotIcon";
 
 interface Message {
   id: number;
@@ -14,6 +15,7 @@ const welcomeMessages = ["Precisa de informações? Estou online!"];
 export default function AnimatedChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [showMessage, setShowMessage] = useState(false);
@@ -21,26 +23,34 @@ export default function AnimatedChatbot() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
 
-  // 🔥 Drag core
+  // ⭐ POSIÇÃO INICIAL (0,0) e só depois define
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const dragRef = useRef<HTMLDivElement>(null);
-  const isDragging = useRef(false);
-  const moved = useRef(false);
-  const offset = useRef({ x: 0, y: 0 });
 
-  // Posição inicial (igual ao design original)
+  // ⭐ O chatbot só aparece depois da posição final estar calculada
+  const [isReady, setIsReady] = useState(false);
+
+  // Ajusta a posição no canto inferior direito
   useEffect(() => {
     setPosition({
       x: window.innerWidth - 100,
       y: window.innerHeight - 120,
     });
+
+    setIsReady(true);
   }, []);
 
+  // DRAG CORE
+  const dragRef = useRef<HTMLButtonElement>(null);
+  const isDragging = useRef(false);
+  const moved = useRef(false);
+  const offset = useRef({ x: 0, y: 0 });
+
+  // Scroll automático
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Primeira mensagem
+  // Primeira mensagem automática
   useEffect(() => {
     if (!initializedRef.current) {
       setMessages([
@@ -57,13 +67,12 @@ export default function AnimatedChatbot() {
 
   useEffect(() => scrollToBottom(), [messages]);
 
-  // Mensagem flutuante
+  // Balão flutuante
   useEffect(() => {
     if (!isOpen) {
       const interval = setInterval(() => {
         setShowMessage(true);
         setCurrentMessage((prev) => (prev + 1) % welcomeMessages.length);
-
         setTimeout(() => setShowMessage(false), 4000);
       }, 60000);
 
@@ -71,7 +80,7 @@ export default function AnimatedChatbot() {
     }
   }, [isOpen]);
 
-  // Limpar iframe vindo do servidor
+  // Limpeza de frame vindo do n8n
   const cleanReply = (raw: string) => {
     let txt = raw;
 
@@ -92,7 +101,7 @@ export default function AnimatedChatbot() {
     return txt.replace(/\\n/g, "\n").trim();
   };
 
-  // Enviar mensagem
+  // Envio de mensagem
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
 
@@ -143,7 +152,7 @@ export default function AnimatedChatbot() {
     }
   };
 
-  // Abrir/fechar chat
+  // Abrir e fechar chat
   const toggleChat = () => {
     setIsOpen(!isOpen);
     if (!isOpen) {
@@ -157,7 +166,7 @@ export default function AnimatedChatbot() {
   const formatTime = (date: Date) =>
     date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
-  // 🔥 DRAG FINAL COM DESIGN ORIGINAL
+  // ⭐ DRAG FUNCIONAL COM TIPAGEM PERFEITA
   useEffect(() => {
     const el = dragRef.current;
     if (!el) return;
@@ -166,8 +175,10 @@ export default function AnimatedChatbot() {
       isDragging.current = true;
       moved.current = false;
 
-      const startX = "touches" in e ? e.touches[0].clientX : e.clientX;
-      const startY = "touches" in e ? e.touches[0].clientY : e.clientY;
+      const startX =
+        e instanceof TouchEvent ? e.touches[0].clientX : e.clientX;
+      const startY =
+        e instanceof TouchEvent ? e.touches[0].clientY : e.clientY;
 
       const rect = el.getBoundingClientRect();
 
@@ -180,20 +191,18 @@ export default function AnimatedChatbot() {
     const handleMove = (e: MouseEvent | TouchEvent) => {
       if (!isDragging.current) return;
 
-      const moveX = "touches" in e ? e.touches[0].clientX : e.clientX;
-      const moveY = "touches" in e ? e.touches[0].clientY : e.clientY;
+      const moveX =
+        e instanceof TouchEvent ? e.touches[0].clientX : e.clientX;
+      const moveY =
+        e instanceof TouchEvent ? e.touches[0].clientY : e.clientY;
 
       const newX = moveX - offset.current.x;
       const newY = moveY - offset.current.y;
 
-      if (
-        Math.abs(newX - position.x) > 3 ||
-        Math.abs(newY - position.y) > 3
-      ) {
+      if (Math.abs(newX - position.x) > 3 || Math.abs(newY - position.y) > 3) {
         moved.current = true;
       }
 
-      // limites
       setPosition({
         x: Math.min(Math.max(newX, 10), window.innerWidth - 80),
         y: Math.min(Math.max(newY, 10), window.innerHeight - 80),
@@ -219,25 +228,36 @@ export default function AnimatedChatbot() {
       window.removeEventListener("mouseup", handleUp);
       window.removeEventListener("touchend", handleUp);
     };
-  }, [position]);
+  }, [isOpen, position]);
 
   return (
     <>
-      {/* BOTÃO FLUTUANTE ORIGINAL + ARRÁSTAVEL */}
-      {!isOpen && (
+      {/* BOTÃO FLUTUANTE */}
+      {!isOpen && isReady && !isHidden && (
         <div
-          ref={dragRef}
           className="fixed z-50"
           style={{
             left: position.x,
             top: position.y,
-            transition: isDragging.current ? "none" : "all .3s ease",
+            transition: isDragging.current ? "none" : "all 0.3s ease",
             transform: showMessage
               ? "translateY(-12px) scale(1.1)"
               : "translateY(0) scale(1)",
           }}
         >
-          {/* Mensagem flutuante ORIGINAL */}
+          {/* Botão fechar (oculta o ícone até recarregar a página) */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsHidden(true);
+            }}
+            title="Fechar"
+            aria-label="Fechar assistente"
+            className="absolute -top-6 -left-6 h-8 w-8 bg-white rounded-full shadow flex items-center justify-center text-sm z-50 pointer-events-auto"
+          >
+            ✕
+          </button>
+          {/* Mensagem flutuante */}
           <div
             className={`absolute bottom-full right-0 mb-4 px-4 py-3 bg-white rounded-xl shadow-xl border border-gray-200 transition-all duration-300 ${
               showMessage
@@ -251,24 +271,26 @@ export default function AnimatedChatbot() {
             </p>
 
             <div className="flex items-center gap-2 mt-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
               <span className="text-xs text-gray-600">JotaNunes Assistant</span>
             </div>
           </div>
 
-          {/* BOTÃO ORIGINAL IGUALZINHO */}
+          {/* BOTÃO PRINCIPAL */}
           <button
+            ref={dragRef}
             onClick={() => {
               if (!moved.current) toggleChat();
             }}
-            className={`relative h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-lg transition-all duration-500 text-white text-2xl flex items-center justify-center hover:scale-110 ${
-              showMessage ? "animate-chatbot-jump" : "animate-chatbot-float"
+            className={`relative h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-lg text-white text-2xl flex items-center justify-center transition-all hover:scale-110 ${
+              !isReady
+                ? "opacity-0"
+                : showMessage
+                ? "animate-chatbot-jump"
+                : "animate-chatbot-float"
             }`}
             style={{
               background: "linear-gradient(135deg, #ef4444, #dc2626)",
-              boxShadow: showMessage
-                ? "0 0 40px rgba(239, 68, 68, 0.6)"
-                : "0 10px 30px -10px rgba(239, 68, 68, 0.4)",
             }}
           >
             <div
@@ -277,18 +299,18 @@ export default function AnimatedChatbot() {
                 background:
                   "radial-gradient(circle, rgba(239, 68, 68, 0.3), transparent)",
               }}
-            ></div>
+            />
 
-            🤖
+            <RobotIcon className="w-8 h-8 relative z-10" />
 
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             </div>
           </button>
         </div>
       )}
 
-      {/* JANELA ORIGINAL DO CHAT (SEM ALTERAR NADA DO DESIGN) */}
+      {/* JANELA DO CHAT */}
       {isOpen && (
         <div
           className={`fixed z-50 transition-all duration-300 ease-in-out animate-scale-in ${
@@ -299,18 +321,19 @@ export default function AnimatedChatbot() {
           style={{ overflow: "hidden" }}
         >
           <div
-            className={`h-full flex flex-col bg-white shadow-2xl border ${
+            className={`h-full flex flex-col bg-white shadow-2xl border border-gray-200 ${
               isFullscreen ? "rounded-none" : "rounded-2xl"
             }`}
+            style={{ overflow: "hidden" }}
           >
-            {/* Cabeçalho original */}
+            {/* HEADER */}
             <div
-              className="flex items-center justify-between p-4 border-b rounded-t-2xl text-white"
+              className="flex items-center justify-between p-4 border-b text-white rounded-t-2xl"
               style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-2xl animate-chatbot-pulse">
-                  🤖
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-2xl animate-chatbot-pulse">
+                  <RobotIcon className="w-7 h-7" />
                 </div>
 
                 <div>
@@ -319,10 +342,8 @@ export default function AnimatedChatbot() {
                   </h3>
 
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <p className="text-xs text-white text-opacity-90">
-                      Online agora
-                    </p>
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                    <p className="text-xs">Online agora</p>
                   </div>
                 </div>
               </div>
@@ -344,57 +365,78 @@ export default function AnimatedChatbot() {
               </div>
             </div>
 
-            {/* Mensagens originais */}
+            {/* MENSAGENS */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white">
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex animate-fade-in ${
-                    message.sender === "user"
-                      ? "justify-end"
-                      : "justify-start"
-                  }`}
+                  className={`flex items-end gap-3 ${
+                    message.sender === "user" ? "justify-end" : "justify-start"
+                  } animate-fade-in`}
                 >
-                  <div
-                    className={`max-w-[80%] p-3 rounded-2xl shadow-sm ${
-                      message.sender === "user"
-                        ? "text-white"
-                        : "bg-white border text-gray-800"
-                    }`}
-                    style={
-                      message.sender === "user"
-                        ? {
-                            background:
-                              "linear-gradient(135deg, #ef4444, #dc2626)",
-                          }
-                        : {}
-                    }
-                  >
-                    <p>{message.text}</p>
-                    <p className="text-[10px] opacity-80 mt-2">
+                  {message.sender === "bot" && (
+                    <div className="flex items-end">
+                      <div className="mr-3 w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm">
+                        <RobotIcon className="w-5 h-5 text-red-600" />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className={`flex flex-col ${message.sender === "user" ? "items-end" : "items-start"}`}>
+                    <div
+                      className={`max-w-[80%] p-3 sm:p-4 rounded-2xl ${
+                        message.sender === "user" ? "text-white shadow-md" : "bg-white border border-gray-200 text-gray-800 shadow-sm"
+                      }`}
+                      style={
+                        message.sender === "user"
+                          ? { background: "linear-gradient(135deg, #ef4444, #dc2626)" }
+                          : {}
+                      }
+                    >
+                      <p className="leading-relaxed break-words">{message.text}</p>
+                    </div>
+
+                    <div className={`text-xs text-gray-400 mt-1 ${message.sender === "user" ? "mr-1" : "ml-1"}`}>
                       {formatTime(message.timestamp)}
-                    </p>
+                    </div>
                   </div>
+
+                  {message.sender === "user" && (
+                    <div className="flex items-end">
+                      <div className="ml-3 w-9 h-9 rounded-full bg-red-600 flex items-center justify-center shadow-sm">
+                        {/* Ícone de usuário com gravata: silhueta branca e gravata vermelha */}
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5">
+                          <g fill="white">
+                            <circle cx="12" cy="7" r="3" />
+                            <path d="M4 20c0-3.3137 3.582-6 8-6s8 2.6863 8 6v1H4v-1z" />
+                          </g>
+                          <path fill="#ef4444" d="M11 11.5l1 3 1-3 1.5 1.5-2.5 2.5-2.5-2.5L11 11.5z" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
-
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input original */}
-            <div className="p-4 border-t flex gap-2 bg-white">
+            {/* INPUT MODIFICADO (placeholder preto, texto preto, borda preta fina) */}
+            <div className="p-4 border-t border-gray-200 flex gap-2 bg-white">
               <input
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                 placeholder="Digite sua mensagem..."
-                className="flex-1 border rounded-2xl px-4 py-3 outline-none"
+                className="flex-1 rounded-2xl px-4 py-3 outline-none
+                           placeholder-black text-black border border-black/40"
               />
 
               <button
                 onClick={handleSendMessage}
                 disabled={!inputText.trim()}
+                aria-label="Enviar mensagem"
+                title="Enviar"
                 className="h-12 w-12 rounded-2xl flex items-center justify-center text-white disabled:opacity-40 shadow-lg"
                 style={{
                   background: inputText.trim()
@@ -402,14 +444,18 @@ export default function AnimatedChatbot() {
                     : "#a3a3a3",
                 }}
               >
-                ➤
+                {/* Ícone SVG substitui o caractere ➤ — usa `currentColor` para herdar a cor do botão */}
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-white">
+                  {/* Triângulo preenchido apontando para a direita, visual próximo ao emoji ➤ */}
+                  <polygon points="6,4 18,12 6,20" />
+                </svg>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Fundo escuro */}
+      {/* Fundo do fullscreen */}
       {isOpen && isFullscreen && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"

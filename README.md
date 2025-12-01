@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+**Instalação e execução (Passo a passo)**
 
-## Getting Started
+- **Requisitos:** `Node.js` (recomendado 18+), `npm` (ou `pnpm`/`yarn`)
+- **Código:** o projeto é um app Next.js em TypeScript.
 
-First, run the development server:
+**1. Clonar o repositório**
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```bash / PowerShell
+git clone https://github.com/JotaNunes-Squad10/JotaNunes.git
+cd JotaNunes
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**2. Instalar dependências**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Use o gerenciador de pacotes que preferir (exemplo com `npm`):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash / PowerShell
+npm install
+```
 
-## Learn More
+**4. Rodar em modo de desenvolvimento**
 
-To learn more about Next.js, take a look at the following resources:
+```bash / PowerShell
+npm run dev
+# O app será servido por padrão em http://localhost:3000
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**5. Build e execução em produção (local)**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash / PowerShell
+npm run build
+npm run start
+```
 
-## Deploy on Vercel
+**6. Scripts úteis**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `npm run dev` : inicia Next.js em modo desenvolvimento
+- `npm run build`: cria o build para produção
+- `npm run start`: inicia o server em modo produção
+- `npm run lint` : checa lint
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+
