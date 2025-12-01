@@ -206,6 +206,27 @@ export default function Comparacao() {
     }
   };
 
+  const PADRAO_MAP: Record<string, string> = {
+    '1': 'RESIDENCE',
+    '2': 'MAIS VIVER',
+    '3': 'VIDA BELA',
+  };
+
+  const resolvePadraoName = (padrao?: string | number | null, data?: DadosVersao | null) => {
+    if (padrao === null || padrao === undefined || String(padrao).trim() === '') return '-';
+    const padraoStr = String(padrao);
+    
+    const fromData = data?.empreendimentos?.find((e) => String(e.id) === padraoStr);
+    if (fromData && fromData.nome) return fromData.nome;
+    
+    const fromTitulos = titulos.find((t) => String(t.id) === padraoStr);
+    if (fromTitulos) return fromTitulos.name;
+
+    if (PADRAO_MAP[padraoStr]) return PADRAO_MAP[padraoStr];
+
+    return padraoStr;
+  };
+
   const getDadosVersao = (data: DadosVersao | null) => {
     if (!data) return null;
     
@@ -445,7 +466,7 @@ export default function Comparacao() {
                   <div className="text-sm space-y-2">
                     <div><strong>Localização:</strong> {versaoAtualCorreta?.localizacao || '-'}</div>
                     <div><strong>Descrição:</strong> {versaoAtualCorreta?.descricao || '-'}</div>
-                    <div><strong>Padrão:</strong> {versaoAtualCorreta?.padrao || '-'}</div>
+                    <div><strong>Padrão:</strong> {resolvePadraoName(versaoAtualCorreta?.padrao, versaoAtualCorreta)}</div>
                     <div><strong>Status:</strong> {versaoAtualCorreta?.status || '-'}</div>
                   </div>
                 </section>
@@ -576,7 +597,7 @@ export default function Comparacao() {
                         <strong>Descrição:</strong> {versaoComparadaCorreta?.descricao || '-'}
                       </div>
                       <div className={versaoAtualCorreta?.padrao !== versaoComparadaCorreta?.padrao ? 'bg-yellow-100 p-2 rounded' : ''}>
-                        <strong>Padrão:</strong> {versaoComparadaCorreta?.padrao || '-'}
+                        <strong>Padrão:</strong> {resolvePadraoName(versaoComparadaCorreta?.padrao, versaoComparadaCorreta)}
                       </div>
                       <div className={versaoAtualCorreta?.status !== versaoComparadaCorreta?.status ? 'bg-yellow-100 p-2 rounded' : ''}>
                         <strong>Status:</strong> {versaoComparadaCorreta?.status || '-'}

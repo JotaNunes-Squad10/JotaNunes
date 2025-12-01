@@ -382,10 +382,12 @@ export default function AnimatedChatbot() {
                     </div>
                   )}
 
-                  <div className={`flex flex-col ${message.sender === "user" ? "items-end" : "items-start"}`}>
+                  <div className={`flex flex-col min-w-0 ${message.sender === "user" ? "items-end" : "items-start"}`}>
                     <div
-                      className={`max-w-[80%] p-3 sm:p-4 rounded-2xl ${
-                        message.sender === "user" ? "text-white shadow-md" : "bg-white border border-gray-200 text-gray-800 shadow-sm"
+                      className={`p-3 sm:p-4 rounded-2xl ${
+                        message.sender === "user"
+                          ? "max-w-[90%] text-white shadow-md"
+                          : "max-w-[80%] bg-white border border-gray-200 text-gray-800 shadow-sm"
                       }`}
                       style={
                         message.sender === "user"
@@ -393,7 +395,7 @@ export default function AnimatedChatbot() {
                           : {}
                       }
                     >
-                      <p className="leading-relaxed break-words">{message.text}</p>
+                      <p className="leading-relaxed break-normal whitespace-pre-wrap">{message.text}</p>
                     </div>
 
                     <div className={`text-xs text-gray-400 mt-1 ${message.sender === "user" ? "mr-1" : "ml-1"}`}>
