@@ -52,6 +52,7 @@ export default function DocRevisao() {
 
     const statusOptions: Array<{ label: string; value: string; color: string }> = [
         { label: 'Pendente', value: 'Pendente', color: '#FFD966' },
+        { label: 'Editando', value: 'Editando', color: '#A8E6A1' },
     ];
 
     const [selectedStatus, setSelectedStatus] = useState<string>('Pendente');
@@ -238,6 +239,7 @@ export default function DocRevisao() {
         if (normalized === 'aprovado' || normalized === 'aprovados') return 1;
         if (normalized === 'revisao' || normalized === 'em revisão' || normalized === 'em revisao' || normalized === 'revisão') return 2;
         if (normalized === 'pendente') return 3;
+        if (normalized === 'editando') return 4;
         if (normalized === 'cancelado') return 5;
         return 3;
     };
