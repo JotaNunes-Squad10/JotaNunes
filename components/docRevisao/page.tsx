@@ -63,8 +63,8 @@ export default function DocRevisao() {
     const getTopicoPriority = (name?: string) => {
         if (!name) return 99;
         const n = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        if (n.includes('area comum') || n.includes('área comum')) return 1;
-        if (n.includes('unidades privativas') || n.includes('unidade privativa')) return 2;
+        if (n.includes('unidades privativas') || n.includes('unidade privativa')) return 1;
+        if (n.includes('area comum') || n.includes('área comum')) return 2;
         if (n.includes('marca') || n.includes('marcas') || n.includes('material') || n.includes('materiais')) return 3;
         return 99;
     };

@@ -447,11 +447,10 @@ export default function Comparacao() {
               
               return (
             <div className="max-w-7xl mx-auto px-6">
-              <div className="lg:h-[70vh] lg:overflow-auto p-4 border rounded bg-white">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
               {/* Versão Atual (Esquerda) */}
-              <article className="p-6 border rounded bg-white h-[60vh] overflow-auto lg:h-auto lg:overflow-visible">
+              <article className="p-6 border rounded bg-white h-[60vh] overflow-auto lg:h-[70vh]">
                 <header className="mb-4 pb-4 border-b">
                   <div className="flex items-center justify-between mb-2">
                     <h2 className="text-xl font-bold">Versão {versaoAtualCorreta?.versao} (Atual)</h2>
@@ -571,11 +570,11 @@ export default function Comparacao() {
 
               {/* Versão Comparada (Direita) */}
               {loadingComparada ? (
-                <div className="flex items-center justify-center p-6 border rounded bg-white">
+                <div className="flex items-center justify-center p-6 border rounded bg-white h-[60vh] lg:h-[70vh]">
                   <p>Carregando versão para comparação...</p>
                 </div>
               ) : dadosVersaoComparada ? (
-                <article className="p-6 border rounded bg-white h-[60vh] overflow-auto lg:h-auto lg:overflow-visible">
+                <article className="p-6 border rounded bg-white h-[60vh] overflow-auto lg:h-[70vh]">
                   <header className="mb-4 pb-4 border-b">
                     <div className="flex items-center justify-between mb-2">
                       <h2 className="text-xl font-bold">Versão {versaoComparadaCorreta?.versao}</h2>
@@ -703,16 +702,15 @@ export default function Comparacao() {
                   )}
                 </article>
               ) : selectedVersao ? (
-                <div className="flex items-center justify-center p-6 border rounded bg-gray-50">
+                <div className="flex items-center justify-center p-6 border rounded bg-gray-50 h-[60vh] lg:h-[70vh]">
                   <p className="text-gray-500">Selecione uma versão para comparar</p>
                 </div>
               ) : (
-                <div className="flex items-center justify-center p-6 border rounded bg-gray-50">
+                <div className="flex items-center justify-center p-6 border rounded bg-gray-50 h-[60vh] lg:h-[70vh]">
                   <p className="text-gray-500">Selecione uma versão para comparar</p>
                 </div>
               )}
                 </div>
-              </div>
             </div>
               );
             })()
