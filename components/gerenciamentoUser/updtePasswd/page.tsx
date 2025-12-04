@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import axios from "axios";
 import { getCookie } from "cookies-next";
 import { ToastContainer, toast } from "react-toastify";
@@ -14,6 +15,12 @@ export default function UpdtePasswordModal({ onClose }: { onClose: () => void })
     confirmarSenha: "",
   });
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -69,8 +76,10 @@ export default function UpdtePasswordModal({ onClose }: { onClose: () => void })
   };
   
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+  if (!mounted) return null;
+
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <ToastContainer theme="colored" />
       <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 w-[95vw] max-w-md relative border border-gray-200 animate-fadeIn">
         <button
@@ -177,4 +186,6 @@ export default function UpdtePasswordModal({ onClose }: { onClose: () => void })
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
