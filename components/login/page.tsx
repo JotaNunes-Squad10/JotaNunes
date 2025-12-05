@@ -133,37 +133,51 @@ export default function JotanunesLogin() {
       else router.push("/dashboard");
 
     } catch (err: unknown) {
-      // Extrai a mensagem de erro
       let errorMessage = "";
+      let errorDescription = "";
       
-      // Type guard para verificar se é um erro de axios
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as { 
           response?: { 
             data?: { 
               errors?: { messages?: string[] }; 
               error_description?: string; 
+              error?: string;
             } 
           } 
         };
         
         if (axiosError.response?.data?.errors?.messages?.[0]) {
           errorMessage = axiosError.response.data.errors.messages[0];
+          
+          try {
+            const parsed = JSON.parse(errorMessage.replace(/^[^{]*/, ''));
+            if (parsed.error_description) {
+              errorDescription = parsed.error_description;
+            }
+          } catch {
+          }
         } else if (axiosError.response?.data?.error_description) {
-          errorMessage = axiosError.response.data.error_description;
+          errorDescription = axiosError.response.data.error_description;
+          errorMessage = errorDescription;
         }
       } else if (err && typeof err === 'object' && 'message' in err) {
         errorMessage = (err as Error).message;
       }
       
-      // Verifica se a conta precisa de configuração
-      const isAccountNotSetup = 
-        errorMessage.includes("Account is not fully set up") ||
-        errorMessage.includes("invalid_grant");
+      const isInvalidCredentials = errorDescription.includes("Invalid user credentials") || 
+                                     errorMessage.includes("Invalid user credentials") ||
+                                     (errorMessage.includes("invalid_grant") && !errorDescription);
       
-      if (isAccountNotSetup) {
+      const isAccountNotSetup = errorDescription.includes("Account is not fully set up") || 
+                                 errorMessage.includes("Account is not fully set up");
+      
+      if (isInvalidCredentials) {
+        toast.error("Usuário ou senha inválidos!");
+      } else if (isAccountNotSetup) {
         try {
           const userInfo = await authService.getUserByUsername(username.trim());
+          
           if (userInfo?.data?.requiredActions?.includes("UPDATE_PASSWORD")) {
             toast.info("Necessário atualizar a senha para continuar.");
             setShowUpdatePasswordModal(true);
@@ -171,12 +185,10 @@ export default function JotanunesLogin() {
             toast.error("Conta não configurada completamente. Entre em contato com o suporte.");
           }
         } catch {
-          // Se não conseguir buscar o usuário, assume que precisa atualizar senha
-          toast.info("Necessário atualizar a senha para continuar.");
-          setShowUpdatePasswordModal(true);
+          toast.error("Erro ao verificar status da conta. Entre em contato com o suporte.");
         }
       } else {
-        toast.error("Usuário ou senha inválidos!");
+        toast.error(errorDescription || errorMessage || "Erro ao realizar login!");
       }
     } finally {
       setLoading(false);
