@@ -110,11 +110,11 @@ export default function Menu_acoes_rapidas() {
         },
         {
             label: "Criar a partir do Padrão - Mais Viver",
-            command: () => openConfirmModal("019aadc9-498d-74f6-9df2-ef0a1186f587", "Padrão - Mais Viver")
+            command: () => openConfirmModal("019ac5a0-91c0-7fbf-81a0-9802917f6e60", "Padrão - Mais Viver")
         },
         {
             label: 'Criar a partir do Padrão - Residence',
-            command: () => openConfirmModal("019ab20d-5262-74dc-8770-eac753dd884f", "Padrão - Residence")
+            command: () => openConfirmModal("019ac59f-87db-7432-9062-b789d7bd0e2d", "Padrão - Residence")
         },
         {
             label: "Criar a partir do Padrão - Vida Bela",

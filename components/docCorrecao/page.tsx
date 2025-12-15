@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { createPortal } from 'react-dom';
 import Header from "../headerUser/page";
 import CommentBox from './CommentBox';
+import FormCabecalho from './FormCabecalho';
 import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 import { MultiSelect } from 'primereact/multiselect';
 import { Toast } from 'primereact/toast';
@@ -50,6 +51,11 @@ export default function DocRevisao() {
     const [commentBoxPos, setCommentBoxPos] = useState<{ top: number; left: number } | null>(null);
     const [padraoOriginal, setPadraoOriginal] = useState<string | number | null>(null);
 
+    const formValuesRef = useRef<{ nome: string; localizacao: string; descricao: string; padrao: string | number | null }>({
+        nome: '', localizacao: '', descricao: '', padrao: null
+    });
+    const lastCommentsLoadedIdRef = useRef<number | null>(null);
+
     const statusOptions: Array<{ label: string; value: string; color: string }> = [
         { label: 'Pendente', value: 'Pendente', color: '#FFD966' },
         { label: 'Editando', value: 'Editando', color: '#A8E6A1' },
@@ -81,6 +87,26 @@ export default function DocRevisao() {
         document.addEventListener('mousedown', onDocClick);
         return () => document.removeEventListener('mousedown', onDocClick);
     }, [showStatusMenu]);
+
+    const handleNomeChange = useCallback((value: string) => {
+        formValuesRef.current.nome = value;
+        setDetalhe(prev => prev ? { ...prev, nome: value } : prev);
+    }, []);
+
+    const handleLocalizacaoChange = useCallback((value: string) => {
+        formValuesRef.current.localizacao = value;
+        setDetalhe(prev => prev ? { ...prev, localizacao: value } : prev);
+    }, []);
+
+    const handleDescricaoChange = useCallback((value: string) => {
+        formValuesRef.current.descricao = value;
+        setDetalhe(prev => prev ? { ...prev, descricao: value } : prev);
+    }, []);
+
+    const handlePadraoChange = useCallback((value: string | number | null) => {
+        formValuesRef.current.padrao = value;
+        setDetalhe(prev => prev ? { ...prev, padrao: value ?? undefined } : prev);
+    }, []);
 
     const getColorForStatus = (s: string) => {
         const found = statusOptions.find((o) => o.value === s || o.label === s);
@@ -208,7 +234,6 @@ export default function DocRevisao() {
         }
     };
 
-    // Helper: normaliza respostas de marcas/material e atualiza mapas de estado
     const processMarcasResponse = (id: number, fetched: unknown) => {
         try {
             if (!fetched) return;
@@ -226,7 +251,6 @@ export default function DocRevisao() {
         } catch {}
     };
 
-    // Helper: extrai string de filtro de eventos do PrimeReact
     const parseFilter = (evt: unknown) => {
         try {
             const e = evt as Record<string, unknown> | null;
@@ -343,7 +367,6 @@ export default function DocRevisao() {
             return;
         }
         
-        // Primeiro salvar as alterações do empreendimento
         if (detalhe?.id) {
             setSavingStatus(true);
             try {
@@ -728,7 +751,6 @@ export default function DocRevisao() {
         const item = ambiente.ambienteItens?.[itemIndex];
         if (!item) return;
 
-        // Atualização imutável para evitar efeitos colaterais em referências compartilhadas
         setDetalhe((prev) => {
             if (!prev) return prev;
             const newTopicos = (prev.empreendimentoTopicos || []).map((t, tIdx) => {
@@ -1106,6 +1128,7 @@ export default function DocRevisao() {
         setSelectedCommentKey(key);
         setCommentBoxPos({ top, left });
     };
+
     const handleSaveComment = async (comment: string, itemKey: string) => {
         try {
             const parts = itemKey.split(':');
@@ -1189,7 +1212,19 @@ export default function DocRevisao() {
 
     useEffect(() => {
         try {
-            if (!detalhe?.id) { setCommentsMap({}); return; }
+            if (!detalhe?.id) { 
+                setCommentsMap({}); 
+                lastCommentsLoadedIdRef.current = null;
+                return; 
+            }
+
+            const currentId = typeof detalhe.id === 'number' ? detalhe.id : parseInt(String(detalhe.id), 10);
+            
+            if (lastCommentsLoadedIdRef.current === currentId) {
+                return;
+            }
+
+            lastCommentsLoadedIdRef.current = currentId;
 
             const newCommentsMap: Record<string, { text: string; createdAt: string }> = {};
 
@@ -1232,7 +1267,7 @@ export default function DocRevisao() {
     }, []);
 
         useEffect(() => {
-            if (options.length === 0) return; // ainda não carregou
+            if (options.length === 0) return; 
 
             const storedId = sessionStorage.getItem("empreendimentoSelecionado");
             if (!storedId) return;
@@ -1240,15 +1275,13 @@ export default function DocRevisao() {
             const emp = options.find(e => String(e.value.id) === String(storedId));
             if (!emp) return;
             sessionStorage.removeItem("empreendimentoSelecionado");
-            setSelected(emp.value);        // preenche dropdown
+            setSelected(emp.value);       
             empreendimentoService
                 .getEmpreendimentoById(String(emp.value.id))
                 .then((resp) => {
                     if (resp) {
-                        // Armazena o padrão original para usar ao salvar
                         setPadraoOriginal(resp.padrao ?? null);
                         
-                        // Converte o padrão numérico para string para exibição
                         const detalheCopy = { ...resp } as Empreendimento;
                         if (typeof detalheCopy.padrao === 'number') {
                             switch (detalheCopy.padrao) {
@@ -1292,10 +1325,8 @@ export default function DocRevisao() {
                             setLoadingDetalhe(true);
                             const resp = await empreendimentoService.getEmpreendimentoById(emp.id as string | number);
                             if (resp) {
-                                // Armazena o padrão original para usar ao salvar
                                 setPadraoOriginal(resp.padrao ?? null);
                                 
-                                // Converte o padrão numérico para string para exibição
                                 const detalheCopy = { ...resp } as Empreendimento;
                                 if (typeof detalheCopy.padrao === 'number') {
                                     switch (detalheCopy.padrao) {
@@ -1438,52 +1469,19 @@ export default function DocRevisao() {
                         <p className="text-red-600">{erroDetalhe}</p>
                     ) : detalhe ? (
                         <article className="p-6 border rounded bg-white max-w-4xl mx-auto">
-                            {/* Cabeçalho similar ao PDF: nome, local, descrição */}
+                            {/* Cabeçalho com FormCabecalho memoizado */}
                             <header className="mb-4">
-                                <div className="flex flex-col gap-3">
-                                    <div>
-                                        <label className="block text-sm font-medium">Nome do empreendimento</label>
-                                        <input
-                                            type="text"
-                                            value={detalhe.nome ?? detalhe.name ?? ''}
-                                            onChange={(e) => setDetalhe((prev) => prev ? ({ ...prev, nome: e.target.value } as Empreendimento) : prev)}
-                                            className="w-full p-2 border rounded"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium">Localização</label>
-                                        <input
-                                            type="text"
-                                            value={detalhe.localizacao ?? ''}
-                                            onChange={(e) => setDetalhe((prev) => prev ? ({ ...prev, localizacao: e.target.value } as Empreendimento) : prev)}
-                                            className="w-full p-2 border rounded"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium">Alterar padrão</label>
-                                        <Dropdown
-                                            value={detalhe.padrao ?? ''}
-                                            options={[
-                                                { label: 'Residence', value: 'Residence' },
-                                                { label: 'Mais Viver', value: 'Mais Viver' },
-                                                { label: 'Vida Bela', value: 'Vida Bela' },
-                                            ]}
-                                            optionLabel="label"
-                                            optionValue="value"
-                                            onChange={(e: DropdownChangeEvent) => setDetalhe((prev) => prev ? ({ ...prev, padrao: e.value } as Empreendimento) : prev)}
-                                            placeholder="Selecione um padrão"
-                                            className="w-full"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block font-semibold">Descrição</label>
-                                        <textarea
-                                            value={detalhe.descricao ?? ''}
-                                            onChange={(e) => setDetalhe((prev) => prev ? ({ ...prev, descricao: e.target.value } as Empreendimento) : prev)}
-                                            className="w-full p-2 border rounded h-28"
-                                        />
-                                    </div>
-                                </div>
+                                <FormCabecalho
+                                    empreendimentoId={typeof detalhe.id === 'number' ? detalhe.id : (typeof detalhe.id === 'string' ? parseInt(detalhe.id, 10) : 0)}
+                                    nome={detalhe.nome ?? detalhe.name ?? ''}
+                                    localizacao={detalhe.localizacao ?? ''}
+                                    descricao={detalhe.descricao ?? ''}
+                                    padrao={detalhe.padrao ?? ''}
+                                    onNomeChange={handleNomeChange}
+                                    onLocalizacaoChange={handleLocalizacaoChange}
+                                    onDescricaoChange={handleDescricaoChange}
+                                    onPadraoChange={handlePadraoChange}
+                                />
                             </header>
 
                             {/* Metadados simples */}
