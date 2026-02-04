@@ -20,7 +20,7 @@ const Dashboard: React.FC = () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          "https://jotanunesservice.onrender.com/api/v1/empreendimento/GetAllEmpreendimentos"
+          "https://jotanunes-service.vxxvad.easypanel.host/api/v1/empreendimento/GetAllEmpreendimentos"
         );
 
         const data = response.data?.data || response.data || [];
@@ -50,16 +50,16 @@ const Dashboard: React.FC = () => {
   }, []);
 
   return (
-    <Box sx={{ 
+    <Box sx={{
       position: "relative",
       minHeight: "100vh",
       overflow: "visible"
     }}>
       <Header />
-      <Box sx={{ 
-        px: { xs: 2, sm: 4 }, 
+      <Box sx={{
+        px: { xs: 2, sm: 4 },
         py: 2,
-        pb: { xs: 12, sm: 4 }, 
+        pb: { xs: 12, sm: 4 },
         pt: { xs: '60px', sm: '70px' },
         minHeight: "auto"
       }}>
@@ -95,7 +95,7 @@ const Dashboard: React.FC = () => {
               flex: { xs: "1 1 100%", md: "1 1 calc(66.66% - 16px)" },
               minWidth: { xs: "100%", sm: "300px" },
               width: { xs: "100%", md: "auto" },
-              order: { xs: 2, md: 1 } 
+              order: { xs: 2, md: 1 }
             }}
           >
             {/* passa documentos e loading para Recentes */}

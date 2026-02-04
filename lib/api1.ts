@@ -304,13 +304,13 @@ const getAuthToken = (): string => {
 
 // Configuração da API principal
 export const api = axios.create({
-  baseURL: "https://jotanunesservice.onrender.com",
+  baseURL: "https://jotanunes-service.vxxvad.easypanel.host",
   timeout: 10000,
 });
 
 // API para endpoints de autenticação (sempre produção)
 export const authApi = axios.create({
-  baseURL: "https://jotanunesservice.onrender.com",
+  baseURL: "https://jotanunes-service.vxxvad.easypanel.host",
   timeout: 10000,
 });
 
@@ -377,14 +377,14 @@ authApi.interceptors.response.use(
 export const topicoService = {
   async getAllTopic(): Promise<Topico[]> {
     const response = await axios.get<GetAllTopicResponse>(
-      "https://jotanunesservice.onrender.com/api/v1/topico/GetAllTopicos"
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/topico/GetAllTopicos"
     );
     return response.data.data;
   },
 
   async createTopic(payload: CreateTopicPayload): Promise<string> {
     const response = await api.post<string>(
-      "https://jotanunesservice.onrender.com/api/v1/topico/CreateTopico",
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/topico/CreateTopico",
       payload
     );
     return response.data;
@@ -392,7 +392,7 @@ export const topicoService = {
 
   async deleteTopic(payload: DeleteTopicPayload): Promise<DeleteTopicResponse> {
     const response = await axios.delete<DeleteTopicResponse>(
-      `https://jotanunesservice.onrender.com/api/v1/topico/DeleteTopico/${payload.id}`
+      `https://jotanunes-service.vxxvad.easypanel.host/api/v1/topico/DeleteTopico/${payload.id}`
     );
     return response.data;
   },
@@ -402,7 +402,7 @@ export const topicoService = {
 export const subTopicosAmbienteService = {
   async getAllAmbiente(): Promise<SubTopic[]> {
     const response = await axios.get<GetAllSubTopicProps>(
-      "https://jotanunesservice.onrender.com/api/v1/ambiente/GetAllAmbientes"
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/ambiente/GetAllAmbientes"
     );
 
     return response.data.data;
@@ -412,7 +412,7 @@ export const subTopicosAmbienteService = {
 export const itemService = {
   async getAllItem(): Promise<Item[]> {
     const response = await axios.get<GetAllItemProps>(
-      "https://jotanunesservice.onrender.com/api/v1/items/GetAllItems"
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/items/GetAllItems"
     );
 
     return response.data.data;
@@ -420,7 +420,7 @@ export const itemService = {
 
   async getItemById(id: number): Promise<Item> {
     const response = await axios.get<GetItemById>(
-      `https://jotanunesservice.onrender.com/api/v1/items/GetItemById/${id}`
+      `https://jotanunes-service.vxxvad.easypanel.host/api/v1/items/GetItemById/${id}`
     );
 
     return response.data.data;
@@ -428,7 +428,7 @@ export const itemService = {
 
   async updateItem(payload: { id: number; nome: string; descricao: string }) {
     const response = await axios.patch(
-      "https://jotanunesservice.onrender.com/api/v1/items/UpdateItem",
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/items/UpdateItem",
       payload
     );
     return response.data;
@@ -438,7 +438,7 @@ export const itemService = {
 export const marcaService = {
   async getAllMarca(): Promise<Marca[]> {
     const response = await axios.get<GetAllMarcaProps>(
-      "https://jotanunesservice.onrender.com/api/v1/marca/GetAllMarcas"
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/marca/GetAllMarcas"
     );
 
     return response.data.data;
@@ -446,7 +446,7 @@ export const marcaService = {
 
   async getAllMarcaMateriais(): Promise<MarcaMateriais[]> {
     const response = await axios.get<MarcaMateriaisGet>(
-      "https://jotanunesservice.onrender.com/api/v1/marca-material/GetAllMarcaMateriais"
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/marca-material/GetAllMarcaMateriais"
     );
 
     return response.data.data;
@@ -454,7 +454,7 @@ export const marcaService = {
 
   async createMarca(payload: CreateMarca): Promise<CreateMarcaResponse> {
     const response = await axios.post<CreateMarcaResponse>(
-      "https://jotanunesservice.onrender.com/api/v1/marca/CreateMarca",
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/marca/CreateMarca",
       payload
     );
 
@@ -468,7 +468,7 @@ export const MarcaMaterial = {
   ): Promise<GetAllMarcasByMaterialId> {
     try {
       const response = await axios.get(
-        `https://jotanunesservice.onrender.com/api/v1/marca-material/GetAllMarcasByMaterialId/${materialId}`
+        `https://jotanunes-service.vxxvad.easypanel.host/api/v1/marca-material/GetAllMarcasByMaterialId/${materialId}`
       );
 
       return response.data.data;
@@ -483,14 +483,14 @@ export const MarcaMaterial = {
 export const MaterialService = {
   async getAllMateriais(): Promise<Material[]> {
     const response = await axios.get(
-      "https://jotanunesservice.onrender.com/api/v1/material/GetAllMateriais"
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/material/GetAllMateriais"
     );
     return response.data.data;
   },
 
   async createMaterial(payload: CreateMaterialPayload) {
     const response = await axios.post(
-      "https://jotanunesservice.onrender.com/api/v1/material/CreateMaterial",
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/material/CreateMaterial",
       payload
     );
     return response.data;
@@ -502,7 +502,7 @@ export const MaterialService = {
     marcaIds: number[];
   }) {
     const response = await axios.put(
-      "https://jotanunesservice.onrender.com/api/v1/material/UpdateMaterial",
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/material/UpdateMaterial",
       payload
     );
     return response.data;
@@ -515,7 +515,7 @@ export const AmbienteService = {
     payload: CreateAmbientePayload
   ): Promise<{ id: number; nome: string; topicoId: number }> {
     const response = await axios.post(
-      "https://jotanunesservice.onrender.com/api/v1/ambiente/CreateAmbiente",
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/ambiente/CreateAmbiente",
       payload
     );
 
@@ -526,7 +526,7 @@ export const AmbienteService = {
 export const ItemsServie = {
   async createItem(payload: Item): Promise<Item> {
     const response = await axios.post<Item>(
-      "https://jotanunesservice.onrender.com/api/v1/items/CreateItem",
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/items/CreateItem",
       payload
     );
 
@@ -536,15 +536,15 @@ export const ItemsServie = {
 export const empreendimentoService = {
   async getAllEmpreendimento(): Promise<Empreendimento[]> {
     const response = await axios.get<GetAllEmpreendimentoProps>(
-      "https://jotanunesservice.onrender.com/api/v1/empreendimento/GetAllEmpreendimentos"
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/empreendimento/GetAllEmpreendimentos"
     );
 
     return response.data.data;
   },
-    async getEmpreendimentoById(id: string): Promise<GetEmpreendimentoByIdResponse> {
+  async getEmpreendimentoById(id: string): Promise<GetEmpreendimentoByIdResponse> {
     try {
       const response = await axios.get(
-        `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${id}`
+        `https://jotanunes-service.vxxvad.easypanel.host/api/v1/empreendimento/GetEmpreendimentoById/${id}`
       );
       return response.data;
     } catch (error) {
@@ -552,24 +552,24 @@ export const empreendimentoService = {
       throw error;
     }
   },
-    async createEmpreendimento(
-      payload: CreateDocumentoPayload,
-      token: string
-    ): Promise<CreateEmpreendimentoResponse> {
-      const response = await axios.post<CreateEmpreendimentoResponse>(
-        "https://jotanunesservice.onrender.com/api/v1/empreendimento/CreateEmpreendimento",
-        payload,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+  async createEmpreendimento(
+    payload: CreateDocumentoPayload,
+    token: string
+  ): Promise<CreateEmpreendimentoResponse> {
+    const response = await axios.post<CreateEmpreendimentoResponse>(
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/empreendimento/CreateEmpreendimento",
+      payload,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
 
-      return response.data;
-    },
+    return response.data;
+  },
   async getEmpreendimentoByVersion(id: string, versionNumber: number): Promise<GetEmpreendimentoByIdResponse> {
     try {
       const response = await axios.get(
-        `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoByVersion/${id}/${versionNumber}`
+        `https://jotanunes-service.vxxvad.easypanel.host/api/v1/empreendimento/GetEmpreendimentoByVersion/${id}/${versionNumber}`
       );
       return response.data;
     } catch (error) {
@@ -586,7 +586,7 @@ export const DocumentoService = {
     payload: CreateDocumentoPayload
   ): Promise<CreateEmpreendimentoResponse> {
     const response = await axios.post<CreateEmpreendimentoResponse>(
-      "https://jotanunesservice.onrender.com/api/v1/empreendimento/CreateEmpreendimento",
+      "https://jotanunes-service.vxxvad.easypanel.host/api/v1/empreendimento/CreateEmpreendimento",
       payload
     );
 
@@ -600,7 +600,7 @@ export const DocumentoService = {
       const response = await axios.get<{
         data: GetDocumentoById;
       }>(
-        `https://jotanunesservice.onrender.com/api/v1/empreendimento/GetEmpreendimentoById/${documentId}`
+        `https://jotanunes-service.vxxvad.easypanel.host/api/v1/empreendimento/GetEmpreendimentoById/${documentId}`
       );
 
       return response.data.data;
@@ -615,13 +615,13 @@ export const DocumentoService = {
   ): Promise<UpdateEmpreendimentoResponse> {
     try {
       const response = await axios.put<UpdateEmpreendimentoResponse>(
-        "https://jotanunesservice.onrender.com/api/v1/empreendimento/UpdateEmpreendimento",
+        "https://jotanunes-service.vxxvad.easypanel.host/api/v1/empreendimento/UpdateEmpreendimento",
         payload,
         {
-        headers: {
-          Authorization: getAuthToken(),
+          headers: {
+            Authorization: getAuthToken(),
+          }
         }
-      }
       );
 
       return response.data;
@@ -642,13 +642,13 @@ export const DocumentoService = {
 
     try {
       const response = await axios.patch<UpdateEmpreendimentoStatusResponse>(
-        "https://jotanunesservice.onrender.com/api/v1/empreendimento/UpdateEmpreendimentoStatus",
+        "https://jotanunes-service.vxxvad.easypanel.host/api/v1/empreendimento/UpdateEmpreendimentoStatus",
         payload,
         {
-        headers: {
-          Authorization: getAuthToken(),
+          headers: {
+            Authorization: getAuthToken(),
+          }
         }
-      }
       );
 
       return response.data;

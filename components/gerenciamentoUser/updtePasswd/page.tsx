@@ -5,7 +5,7 @@ import { getCookie } from "cookies-next";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const BASE_URL = "https://jotanunesservice.onrender.com";
+const BASE_URL = "https://jotanunes-service.vxxvad.easypanel.host";
 
 export default function UpdtePasswordModal({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState({
@@ -36,26 +36,26 @@ export default function UpdtePasswordModal({ onClose }: { onClose: () => void })
 
       const response = await axios.patch(
         `${BASE_URL}/api/v1/authentication/UpdatePassword`,
-          {
-            username: form.username,
-            currentPassword: form.currentPassword,
-            newPassword: form.newPassword,
+        {
+          username: form.username,
+          currentPassword: form.currentPassword,
+          newPassword: form.newPassword,
+        },
+        {
+          timeout: 10000,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
-          {
-            timeout: 10000,
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        }
+      );
       if (response.status === 200 || response.status === 201) {
         toast.success(`Senha alterada com sucesso!`);
         setForm({
           username: "",
           currentPassword: "",
           newPassword: "",
-          confirmarSenha:""
+          confirmarSenha: ""
         });
         setTimeout(() => {
           onClose();
@@ -65,16 +65,16 @@ export default function UpdtePasswordModal({ onClose }: { onClose: () => void })
       }
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-          const errorMessage = err.response?.data?.message || err.response?.data?.error || `Erro ${err.response?.status}: ${err.response?.statusText}` || "Erro ao criar usuário!";
-          toast.error(errorMessage);
-        } else {
-          toast.error("Erro inesperado ao Alterar a Senha!");
-        }
+        const errorMessage = err.response?.data?.message || err.response?.data?.error || `Erro ${err.response?.status}: ${err.response?.statusText}` || "Erro ao criar usuário!";
+        toast.error(errorMessage);
+      } else {
+        toast.error("Erro inesperado ao Alterar a Senha!");
+      }
     } finally {
       setLoading(false);
     }
   };
-  
+
 
   if (!mounted) return null;
 
@@ -94,7 +94,7 @@ export default function UpdtePasswordModal({ onClose }: { onClose: () => void })
         </h2>
         <p className="text-gray-500 text-sm mb-4 text-center">Preencha os dados para alterar a sua senha.</p>
         <form className="space-y-4" onSubmit={handleSubmit}>
-                    <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <label htmlFor="username" className="text-sm font-medium text-gray-700 flex items-center gap-2">
               <i className="pi pi-user text-gray-400" /> Usuário
             </label>
@@ -154,11 +154,10 @@ export default function UpdtePasswordModal({ onClose }: { onClose: () => void })
               value={form.confirmarSenha}
               onChange={handleChange}
               required
-              className={`w-full rounded-xl border px-3 py-2 text-base focus:ring-2 transition shadow-sm ${
-                form.confirmarSenha && form.newPassword !== form.confirmarSenha
-                  ? "border-red-400 focus:ring-red-200"
-                  : "border-gray-300 focus:ring-red-200 focus:border-red-400"
-              }`}
+              className={`w-full rounded-xl border px-3 py-2 text-base focus:ring-2 transition shadow-sm ${form.confirmarSenha && form.newPassword !== form.confirmarSenha
+                ? "border-red-400 focus:ring-red-200"
+                : "border-gray-300 focus:ring-red-200 focus:border-red-400"
+                }`}
             />
             {/* Feedback visual */}
             {form.confirmarSenha && form.newPassword !== form.confirmarSenha && (

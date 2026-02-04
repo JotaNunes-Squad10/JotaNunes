@@ -63,7 +63,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   const { copiarEmpreendimento } = useCopiarEmpreendimento();
 
   const router = useRouter();
-  
+
   const [page, setPage] = useState(0);
 
   useEffect(() => {
@@ -108,33 +108,33 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
     // REGRAS ESPECIAIS DO OPERADOR
     if (userProfile === 3) {
       if (status === "Pendente") {
-        return ["Imprimir","Comparar", "Criar cópia"];
+        return ["Imprimir", "Comparar", "Criar cópia"];
       }
 
     }
 
     // REGRAS ESPECIAIS DO GESTOR
     if (userProfile === 2) {
-      if (status === "Editando") return ["Imprimir","Comparar"];
-      if (status === "Em revisão") return ["Imprimir","Comparar"];
-      if (status === "Pendente") return ["Imprimir","Comparar","Verificar","Mudar status"];
-      if (status === "Aprovado") return ["Imprimir","Comparar"];
-      if (status === "Cancelado") return ["Imprimir","Comparar"];
+      if (status === "Editando") return ["Imprimir", "Comparar"];
+      if (status === "Em revisão") return ["Imprimir", "Comparar"];
+      if (status === "Pendente") return ["Imprimir", "Comparar", "Verificar", "Mudar status"];
+      if (status === "Aprovado") return ["Imprimir", "Comparar"];
+      if (status === "Cancelado") return ["Imprimir", "Comparar"];
     }
 
 
     // REGRAS NORMAIS (ADMIN + restante do sistema)
     switch (status) {
       case "Editando":
-        return ["Imprimir","Comparar","Editar","Criar cópia","Mudar status"];
+        return ["Imprimir", "Comparar", "Editar", "Criar cópia", "Mudar status"];
       case "Em revisão":
-        return ["Imprimir","Comparar","Revisar","Criar cópia","Mudar status"];
+        return ["Imprimir", "Comparar", "Revisar", "Criar cópia", "Mudar status"];
       case "Pendente":
-        return ["Imprimir","Comparar","Verificar","Criar cópia","Mudar status"];
+        return ["Imprimir", "Comparar", "Verificar", "Criar cópia", "Mudar status"];
       case "Aprovado":
-        return ["Imprimir","Comparar","Criar cópia"];
+        return ["Imprimir", "Comparar", "Criar cópia"];
       case "Cancelado":
-        return ["Imprimir","Comparar","Criar cópia"];
+        return ["Imprimir", "Comparar", "Criar cópia"];
       default:
         return [];
     }
@@ -193,8 +193,8 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
     filtroAtivo === "Todos"
       ? true
       : userProfile
-      ? permissoes[userProfile]?.includes(filtroAtivo) ?? false
-      : false;
+        ? permissoes[userProfile]?.includes(filtroAtivo) ?? false
+        : false;
 
   // Ordenação e filtragem
   const parseDateToTimestamp = (s?: string): number => {
@@ -218,7 +218,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
     return isNaN(t) ? 0 : t;
   };
 
-    const formatarData = (dataISO?: string) => {
+  const formatarData = (dataISO?: string) => {
     if (!dataISO) return "";
     const d = new Date(dataISO);
     if (isNaN(d.getTime())) return dataISO;
@@ -234,7 +234,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
       const token = getCookie("accessToken");
 
       const response = await axios.patch(
-        "https://jotanunesservice.onrender.com/api/v1/empreendimento/UpdateEmpreendimentoStatus",
+        "https://jotanunes-service.vxxvad.easypanel.host/api/v1/empreendimento/UpdateEmpreendimentoStatus",
         { id, status },
         {
           headers: {
@@ -246,8 +246,8 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
 
       return response.data;
     } catch (error) {
-        throw error;
-      }
+      throw error;
+    }
   };
 
   const handleSort = (column: "nome" | "ultimaAlteracao" | "usuario") => {
@@ -315,7 +315,7 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
     if (menuLoading) return;
 
     if (opt !== "Criar cópia" && opt !== "Mudar status") {
-        setMenuLoading(opt);
+      setMenuLoading(opt);
     }
 
     try {
@@ -332,16 +332,16 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
       }
 
       if (opt === "Criar cópia") {
-          handleMenuClose(); // fecha o menu
-          setPadraoIdSelecionado(String(selectedEmp.id));
-          setSelectedPadraoName(selectedEmp.nome);
-          setShowConfirmModal(true);
-          return;
+        handleMenuClose(); // fecha o menu
+        setPadraoIdSelecionado(String(selectedEmp.id));
+        setSelectedPadraoName(selectedEmp.nome);
+        setShowConfirmModal(true);
+        return;
       }
 
       if (opt === "Mudar status") {
-          setSelectedEmp({ ...selectedEmp, showStatusChange: true });
-          return;
+        setSelectedEmp({ ...selectedEmp, showStatusChange: true });
+        return;
       }
 
       if (opt === "Verificar") {
@@ -368,27 +368,27 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
   };
 
   const cancelConfirmModal = () => {
-      setShowConfirmModal(false);
-      setPadraoIdSelecionado(null);
-      setSelectedPadraoName(null);
+    setShowConfirmModal(false);
+    setPadraoIdSelecionado(null);
+    setSelectedPadraoName(null);
   };
 
   const applyCopy = async () => {
-      if (!padraoIdSelecionado) return;
+    if (!padraoIdSelecionado) return;
 
-      setSavingStatus(true);
+    setSavingStatus(true);
 
-      try {
-          await copiarEmpreendimento(padraoIdSelecionado);
+    try {
+      await copiarEmpreendimento(padraoIdSelecionado);
 
-          setShowConfirmModal(false);
+      setShowConfirmModal(false);
 
-      } catch (err) {
-          console.error(err);
-          toast.error("Erro ao criar empreendimento.");
-      } finally {
-          setSavingStatus(false);
-      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao criar empreendimento.");
+    } finally {
+      setSavingStatus(false);
+    }
   };
 
   return (
@@ -513,14 +513,14 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                           empreendimento.status === "Editando"
                             ? "#A8E6A1"
                             : empreendimento.status === "Pendente"
-                            ? "#FFD966"
-                            : empreendimento.status === "Em revisão"
-                            ? "#FF9800"
-                            : empreendimento.status === "Aprovado"
-                            ? "#4CAF50"
-                            : empreendimento.status === "Cancelado"
-                            ? "#F44336"
-                            : "#9E9E9E",
+                              ? "#FFD966"
+                              : empreendimento.status === "Em revisão"
+                                ? "#FF9800"
+                                : empreendimento.status === "Aprovado"
+                                  ? "#4CAF50"
+                                  : empreendimento.status === "Cancelado"
+                                    ? "#F44336"
+                                    : "#9E9E9E",
                         color: "white",
                         fontWeight: "bold",
                         borderRadius: "20px",
@@ -530,8 +530,8 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                   </TableCell>
 
                   {possuiPermissaoGeral && (
-                    <TableCell align="center" onClick={ 
-                      (e) => handleMenuOpen(e, empreendimento) } sx={{cursor : "pointer"}}>
+                    <TableCell align="center" onClick={
+                      (e) => handleMenuOpen(e, empreendimento)} sx={{ cursor: "pointer" }}>
                       {(
                         // Se Operador e status é Pendente ícone aparece
                         (userProfile === 3 && empreendimento.status === "Pendente") ||
@@ -539,10 +539,10 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                         // Caso contrário, segue regras normais
                         podeEditar(userProfile, empreendimento.status)
                       ) && (
-                        <IconButton>
-                          <i className="pi pi-pen-to-square" style={{ fontSize: "1.2rem", color: "red" }}></i>
-                        </IconButton>
-                      )}
+                          <IconButton>
+                            <i className="pi pi-pen-to-square" style={{ fontSize: "1.2rem", color: "red" }}></i>
+                          </IconButton>
+                        )}
                     </TableCell>
                   )}
                 </TableRow>
@@ -589,158 +589,158 @@ const EmpreendimentosTable: React.FC<EmpreendimentosTableProps> = ({
                 ) : null}
                 {opt}
               </MenuItem>
-              ))
+            ))
             : (() => {
-                const status = selectedEmp.status;
-                const opcoesStatus =
-                  status === "Editando"
-                    ? ["Pendente"]
-                    : status === "Em revisão"
+              const status = selectedEmp.status;
+              const opcoesStatus =
+                status === "Editando"
+                  ? ["Pendente"]
+                  : status === "Em revisão"
                     ? ["Pendente"]
                     : status === "Pendente"
-                    ? ["Em revisão", "Aprovado", "Cancelado"]
-                    : [];
+                      ? ["Em revisão", "Aprovado", "Cancelado"]
+                      : [];
 
-                return opcoesStatus.map((novo) => (
-                  <MenuItem
-                    key={novo}
-                    onClick={() => {
-                      setNovoStatusSelecionado(novo);
-                      setOpenConfirmModal(true);
-                      setAnchorEl(null);
-                    }}
-                    sx={{
-                      fontWeight: "bold",
-                      borderBottom: "1px solid #d7d7d7",
-                      "&:last-of-type": { borderBottom: "none" },
-                      "&:hover": { backgroundColor: "#e9e9e9" },
-                    }}
-                  >
-                    {novo}
-                  </MenuItem>
-                ));
-              })())}
+              return opcoesStatus.map((novo) => (
+                <MenuItem
+                  key={novo}
+                  onClick={() => {
+                    setNovoStatusSelecionado(novo);
+                    setOpenConfirmModal(true);
+                    setAnchorEl(null);
+                  }}
+                  sx={{
+                    fontWeight: "bold",
+                    borderBottom: "1px solid #d7d7d7",
+                    "&:last-of-type": { borderBottom: "none" },
+                    "&:hover": { backgroundColor: "#e9e9e9" },
+                  }}
+                >
+                  {novo}
+                </MenuItem>
+              ));
+            })())}
       </Menu>
 
-        {!loading && totalPages > 1 && (
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-            <Pagination
-              currentPage={page + 1}
-              totalPages={totalPages}
-              totalItems={empreendimentosFiltrados.length}        // <-- ADICIONE
-              itemsPerPage={rowsPerPage}    // <-- ADICIONE
-              onPageChange={(p) => setPage(p - 1)}
-            />
-          </Box>
-        )}
+      {!loading && totalPages > 1 && (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+          <Pagination
+            currentPage={page + 1}
+            totalPages={totalPages}
+            totalItems={empreendimentosFiltrados.length}        // <-- ADICIONE
+            itemsPerPage={rowsPerPage}    // <-- ADICIONE
+            onPageChange={(p) => setPage(p - 1)}
+          />
+        </Box>
+      )}
 
       {/* Modal de confirmação – PrimeReact */}
-        <Dialog
-            header="Confirmar alteração de status"
-            visible={openConfirmModal}
-            style={{ width: "90%", maxWidth: "520px" }}
-            modal
-            onHide={() => setOpenConfirmModal(false)}
-            footer={
-                <div className="flex justify-end gap-2">
-                    <Button
-                        label="Cancelar"
-                        onClick={() => setOpenConfirmModal(false)}
-                        className="p-button-secondary"
-                    />
-                    <Button
-                        label={savingStatus ? "Atualizando" : "Confirmar"}
-                        icon={savingStatus ? "pi pi-spin pi-spinner" : "pi pi-check"}
-                        iconPos="left"
-                        onClick={async () => {
-                            if (!selectedEmp || !novoStatusSelecionado) return;
+      <Dialog
+        header="Confirmar alteração de status"
+        visible={openConfirmModal}
+        style={{ width: "90%", maxWidth: "520px" }}
+        modal
+        onHide={() => setOpenConfirmModal(false)}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button
+              label="Cancelar"
+              onClick={() => setOpenConfirmModal(false)}
+              className="p-button-secondary"
+            />
+            <Button
+              label={savingStatus ? "Atualizando" : "Confirmar"}
+              icon={savingStatus ? "pi pi-spin pi-spinner" : "pi pi-check"}
+              iconPos="left"
+              onClick={async () => {
+                if (!selectedEmp || !novoStatusSelecionado) return;
 
-                            setSavingStatus(true); // <-- inicia loading
+                setSavingStatus(true); // <-- inicia loading
 
-                            type StatusPermitidos =
-                                | "Aprovado"
-                                | "Em revisão"
-                                | "Pendente"
-                                | "Editando"
-                                | "Cancelado";
+                type StatusPermitidos =
+                  | "Aprovado"
+                  | "Em revisão"
+                  | "Pendente"
+                  | "Editando"
+                  | "Cancelado";
 
-                            const mapStatus: Record<StatusPermitidos, number> = {
-                                Aprovado: 1,
-                                "Em revisão": 2,
-                                Pendente: 3,
-                                Editando: 4,
-                                Cancelado: 5,
-                            };
+                const mapStatus: Record<StatusPermitidos, number> = {
+                  Aprovado: 1,
+                  "Em revisão": 2,
+                  Pendente: 3,
+                  Editando: 4,
+                  Cancelado: 5,
+                };
 
-                            const novoStatusCode = mapStatus[novoStatusSelecionado as StatusPermitidos];
+                const novoStatusCode = mapStatus[novoStatusSelecionado as StatusPermitidos];
 
-                            try {
-                                const result = await atualizarStatusEmpreendimento(
-                                    selectedEmp.id.toString(),
-                                    novoStatusCode
-                                );
+                try {
+                  const result = await atualizarStatusEmpreendimento(
+                    selectedEmp.id.toString(),
+                    novoStatusCode
+                  );
 
-                                if (result) {
-                                    toast.success("Status atualizado com sucesso!", {
-                                        onClose: () => window.location.reload(),
-                                    });
+                  if (result) {
+                    toast.success("Status atualizado com sucesso!", {
+                      onClose: () => window.location.reload(),
+                    });
 
-                                    setOpenConfirmModal(false);
-                                }
-                            } catch (error) {
-                                console.error(error);
-                                toast.error("Erro ao atualizar o status.");
-                            } finally {
-                                setSavingStatus(false); // <-- encerra loading
-                            }
-                        }}
-                        disabled={savingStatus}   // <-- bloqueia cliques
-                        className="p-button-danger"
-                    />
-                </div>
-            }
-        >
-            <div className="px-1 py-2 text-sm">
-                <p>
-                    Deseja alterar o status do empreendimento{" "}
-                    <strong>{selectedEmp?.nome}</strong> de{" "}
-                    <strong>{selectedEmp?.status}</strong> para{" "}
-                    <strong className="text-yellow-600">{novoStatusSelecionado}</strong>?
-                </p>
-            </div>
-        </Dialog>
-        {/* --- MODAL DE CONFIRMAÇÃO DE CÓPIA --- */}
-        <Dialog
-            header="Confirmar criação"
-            visible={showConfirmModal}
-            style={{ width: '90%', maxWidth: '520px' }}
-            modal
-            onHide={cancelConfirmModal}
-            footer={
-                <div className="flex justify-end gap-2">
-                    <Button
-                        label="Cancelar"
-                        onClick={cancelConfirmModal}
-                        className="p-button-secondary"
-                    />
-                    <Button
-                        label={savingStatus ? 'Criando...' : 'Confirmar'}
-                        icon={savingStatus ? 'pi pi-spin pi-spinner' : undefined}
-                        iconPos="left"
-                        onClick={applyCopy}
-                        disabled={savingStatus}
-                        className="p-button-danger"
-                    />
-                </div>
-            }
-        >
-            <div className="px-1 py-2 text-sm">
-                <p>
-                    Deseja criar um novo empreendimento a partir de{' '}
-                    <strong className="text-yellow-600">{selectedPadraoName}</strong>?
-                </p>
-            </div>
-        </Dialog>
+                    setOpenConfirmModal(false);
+                  }
+                } catch (error) {
+                  console.error(error);
+                  toast.error("Erro ao atualizar o status.");
+                } finally {
+                  setSavingStatus(false); // <-- encerra loading
+                }
+              }}
+              disabled={savingStatus}   // <-- bloqueia cliques
+              className="p-button-danger"
+            />
+          </div>
+        }
+      >
+        <div className="px-1 py-2 text-sm">
+          <p>
+            Deseja alterar o status do empreendimento{" "}
+            <strong>{selectedEmp?.nome}</strong> de{" "}
+            <strong>{selectedEmp?.status}</strong> para{" "}
+            <strong className="text-yellow-600">{novoStatusSelecionado}</strong>?
+          </p>
+        </div>
+      </Dialog>
+      {/* --- MODAL DE CONFIRMAÇÃO DE CÓPIA --- */}
+      <Dialog
+        header="Confirmar criação"
+        visible={showConfirmModal}
+        style={{ width: '90%', maxWidth: '520px' }}
+        modal
+        onHide={cancelConfirmModal}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button
+              label="Cancelar"
+              onClick={cancelConfirmModal}
+              className="p-button-secondary"
+            />
+            <Button
+              label={savingStatus ? 'Criando...' : 'Confirmar'}
+              icon={savingStatus ? 'pi pi-spin pi-spinner' : undefined}
+              iconPos="left"
+              onClick={applyCopy}
+              disabled={savingStatus}
+              className="p-button-danger"
+            />
+          </div>
+        }
+      >
+        <div className="px-1 py-2 text-sm">
+          <p>
+            Deseja criar um novo empreendimento a partir de{' '}
+            <strong className="text-yellow-600">{selectedPadraoName}</strong>?
+          </p>
+        </div>
+      </Dialog>
       <ToastContainer autoClose={2000} theme="colored" />
     </Paper>
   );

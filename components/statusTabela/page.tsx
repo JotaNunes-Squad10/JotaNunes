@@ -30,7 +30,7 @@ const StatusTabelaContent: React.FC = () => {
         setLoading(true);
 
         const response = await axios.get(
-          "https://jotanunesservice.onrender.com/api/v1/empreendimento/GetAllEmpreendimentos"
+          "https://jotanunes-service.vxxvad.easypanel.host/api/v1/empreendimento/GetAllEmpreendimentos"
         );
 
         const data = response.data?.data || [];
@@ -60,7 +60,7 @@ const StatusTabelaContent: React.FC = () => {
     };
 
     fetchData();
-  }, []);   
+  }, []);
 
   return (
     <Box sx={{ px: 4, py: 2, pt: { xs: '60px', sm: '70px' } }}>
